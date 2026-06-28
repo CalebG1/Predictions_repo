@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/data.ts","./src/main.tsx","./src/components/categorynav.tsx","./src/components/featuredcard.tsx","./src/components/header.tsx","./src/components/marketcard.tsx","./src/components/sidebar.tsx","./src/pages/elections.tsx","./src/pages/trending.tsx"],"version":"5.9.3"}
