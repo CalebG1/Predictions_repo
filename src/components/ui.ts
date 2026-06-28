@@ -1,0 +1,31 @@
+import type { Category, ImpactLevel } from "../domain/types";
+
+export const categoryColors: Record<Category, string> = {
+  Financial: "#2f6df6",
+  Operational: "#0ea5a4",
+  Geopolitical: "#e5484d",
+  Regulatory: "#8b5cf6",
+  Talent: "#f0a500",
+  "Security/Cyber": "#0e1a16",
+  "Supply Chain": "#d97706",
+  Product: "#00b888",
+  Reputational: "#db2777",
+  Macro: "#475569",
+};
+
+export function pct(p: number): string {
+  return `${(p * 100).toFixed(0)}%`;
+}
+
+export function signedPct(d: number | null): string {
+  if (d === null) return "–";
+  const v = (d * 100).toFixed(0);
+  return `${d >= 0 ? "+" : ""}${v}`;
+}
+
+export const impactRank: Record<ImpactLevel, number> = {
+  low: 1,
+  medium: 2,
+  high: 3,
+  critical: 4,
+};

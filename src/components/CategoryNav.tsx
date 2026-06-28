@@ -1,18 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 
-const categories = [
-  { label: "Trending", path: "/" },
-  { label: "Elections", path: "/elections" },
-  { label: "Politics", path: "/politics" },
-  { label: "Sports", path: "/sports" },
-  { label: "Culture", path: "/culture" },
-  { label: "Crypto", path: "/crypto" },
-  { label: "Commodities", path: "/commodities" },
-  { label: "Climate", path: "/climate" },
-  { label: "Economics", path: "/economics" },
-  { label: "Mentions", path: "/mentions" },
-  { label: "Finance", path: "/finance" },
-  { label: "Tech & Science", path: "/tech" },
+const tabs = [
+  { label: "Overview", path: "/" },
+  { label: "Risk Matrix", path: "/matrix" },
+  { label: "Calibration & Accuracy", path: "/calibration" },
+  { label: "Decision View", path: "/decision" },
+  { label: "Movers", path: "/movers" },
 ];
 
 export default function CategoryNav() {
@@ -20,18 +13,11 @@ export default function CategoryNav() {
   return (
     <div className="cat-nav">
       <div className="cat-nav-inner">
-        {categories.map((c, i) => {
-          const active = c.path === pathname;
+        {tabs.map((t) => {
+          const active = t.path === "/" ? pathname === "/" : pathname.startsWith(t.path);
           return (
-            <Link key={c.label} to={c.path} className={`cat-link${active ? " active" : ""}`}>
-              {i === 0 && (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="16" rx="2" />
-                  <line x1="7" y1="9" x2="17" y2="9" />
-                  <line x1="7" y1="13" x2="17" y2="13" />
-                </svg>
-              )}
-              {c.label}
+            <Link key={t.label} to={t.path} className={`cat-link${active ? " active" : ""}`}>
+              {t.label}
             </Link>
           );
         })}
