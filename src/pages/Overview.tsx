@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useStore, probabilityDelta, riskWeighted } from "../store";
 import QuestionCard from "../components/QuestionCard";
-import type { Category, RiskOrOpportunity } from "../domain/types";
+import type { Category, RiskOrOpportunity, Visibility } from "../domain/types";
+import { visibilityConfig, visibilityOrder } from "../components/ui";
 
 type SortKey = "movers" | "risk_weighted" | "resolving_soon" | "most_uncertain";
 
@@ -17,7 +18,7 @@ export default function Overview() {
   const [sort, setSort] = useState<SortKey>("movers");
   const [cat, setCat] = useState<Category | "all">("all");
   const [kind, setKind] = useState<RiskOrOpportunity | "all">("all");
-  const [vis, setVis] = useState<"all" | "public" | "private">("all");
+  const [vis, setVis] = useState<"all" | Visibility>("all");
 
   const categories = useMemo(
     () => Array.from(new Set(questions.map((q) => q.category))).sort(),
@@ -93,10 +94,13 @@ export default function Overview() {
             <option value="risk">Risks</option>
             <option value="opportunity">Opportunities</option>
           </select>
-          <select value={vis} onChange={(e) => setVis(e.target.value as "all" | "public" | "private")}>
+          <select value={vis} onChange={(e) => setVis(e.target.value as "all" | Visibility)}>
             <option value="all">All visibility</option>
-            <option value="public">Public</option>
-            <option value="private">Private</option>
+            {visibilityOrder.map((v) => (
+              <option key={v} value={v}>
+                {visibilityConfig[v].label}
+              </option>
+            ))}
           </select>
         </div>
       </div>

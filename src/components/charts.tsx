@@ -2,7 +2,7 @@
 
 export function Sparkline({
   values,
-  width = 120,
+  width = 100,
   height = 34,
   color = "#00b888",
 }: {
@@ -12,18 +12,67 @@ export function Sparkline({
   color?: string;
 }) {
   if (values.length < 2) return null;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const pts = values.map((v, i) => {
-    const x = (i / (values.length - 1)) * width;
-    const y = height - ((v - min) / range) * (height - 4) - 2;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
+
+  const padL = 26;
+  const padR = 4;
+  const padT = 4;
+  const padB = 10;
+  const svgW = padL + width + padR;
+  const svgH = padT + height + padB;
+
+  const dataMin = Math.min(...values);
+  const dataMax = Math.max(...values);
+  const padding = Math.max(0.05, (dataMax - dataMin) * 0.2);
+  let axisMin = Math.max(0, dataMin - padding);
+  let axisMax = Math.min(1, dataMax + padding);
+  axisMin = Math.floor(axisMin * 20) / 20;
+  axisMax = Math.ceil(axisMax * 20) / 20;
+  if (axisMax <= axisMin) {
+    axisMin = Math.max(0, axisMin - 0.05);
+    axisMax = Math.min(1, axisMax + 0.05);
+  }
+  const range = axisMax - axisMin || 1;
+
+  const plotX0 = padL;
+  const plotY0 = padT;
+  const plotX1 = padL + width;
+  const plotY1 = padT + height;
+
+  const xs = (i: number) => plotX0 + (i / (values.length - 1)) * width;
+  const ys = (v: number) => plotY1 - ((v - axisMin) / range) * height;
+
+  const yTicks: number[] = [axisMax, axisMin];
+  if (axisMax - axisMin >= 0.15) {
+    yTicks.splice(1, 0, Math.round(((axisMax + axisMin) / 2) * 20) / 20);
+  }
+
+  const pts = values.map((v, i) => `${xs(i).toFixed(1)},${ys(v).toFixed(1)}`);
   const up = values[values.length - 1] >= values[0];
   const stroke = color ?? (up ? "#00b888" : "#e5484d");
+
   return (
-    <svg width={width} height={height} className="sparkline">
+    <svg width={svgW} height={svgH} className="sparkline" role="img">
+      {yTicks.map((tick) => (
+        <g key={tick}>
+          <line x1={plotX0} x2={plotX1} y1={ys(tick)} y2={ys(tick)} stroke="#eef1ef" />
+          <text x={plotX0 - 4} y={ys(tick) + 3} textAnchor="end" fontSize="8" fill="#8a978f">
+            {(tick * 100).toFixed(0)}%
+          </text>
+        </g>
+      ))}
+      <line x1={plotX0} x2={plotX1} y1={plotY1} y2={plotY1} stroke="#d4dad6" strokeWidth="1" />
+      <line x1={plotX0} x2={plotX0} y1={plotY0} y2={plotY1} stroke="#d4dad6" strokeWidth="1" />
+      {[0, values.length - 1].map((i) => (
+        <line
+          key={i}
+          x1={xs(i)}
+          x2={xs(i)}
+          y1={plotY1}
+          y2={plotY1 + 3}
+          stroke="#d4dad6"
+          strokeWidth="1"
+        />
+      ))}
       <polyline points={pts.join(" ")} fill="none" stroke={stroke} strokeWidth="1.8" />
     </svg>
   );
@@ -94,59 +143,6 @@ export function ProbChart({
           </text>
         ) : null
       )}
-    </svg>
-  );
-}
-
-export interface ScatterDot {
-  x: number; // probability 0..1
-  y: number; // impact 0..1
-  color: string;
-  label: string;
-  r?: number;
-}
-
-export function ScatterMatrix({ dots }: { dots: ScatterDot[] }) {
-  const W = 640;
-  const H = 420;
-  const pad = 44;
-  const innerW = W - pad * 2;
-  const innerH = H - pad * 2;
-  const px = (x: number) => pad + x * innerW;
-  const py = (y: number) => pad + (1 - y) * innerH;
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="scatter">
-      {/* quadrant shading: top-right = high prob + high impact */}
-      <rect x={px(0.5)} y={py(1)} width={innerW / 2} height={innerH / 2} fill="#fdeceb" />
-      {[0, 0.25, 0.5, 0.75, 1].map((g) => (
-        <g key={`x${g}`}>
-          <line x1={px(g)} x2={px(g)} y1={pad} y2={H - pad} stroke="#eef1ef" />
-          <text x={px(g)} y={H - pad + 16} textAnchor="middle" fontSize="10" fill="#8a978f">
-            {(g * 100).toFixed(0)}%
-          </text>
-        </g>
-      ))}
-      {[0, 0.25, 0.5, 0.75, 1].map((g) => (
-        <g key={`y${g}`}>
-          <line x1={pad} x2={W - pad} y1={py(g)} y2={py(g)} stroke="#eef1ef" />
-          <text x={pad - 8} y={py(g) + 3} textAnchor="end" fontSize="10" fill="#8a978f">
-            {(g * 100).toFixed(0)}
-          </text>
-        </g>
-      ))}
-      <text x={W / 2} y={H - 8} textAnchor="middle" fontSize="11" fill="#5b6b66" fontWeight={600}>
-        Probability →
-      </text>
-      <text x={14} y={H / 2} textAnchor="middle" fontSize="11" fill="#5b6b66" fontWeight={600} transform={`rotate(-90 14 ${H / 2})`}>
-        Impact →
-      </text>
-      {dots.map((d, i) => (
-        <g key={i}>
-          <circle cx={px(d.x)} cy={py(d.y)} r={d.r ?? 8} fill={d.color} fillOpacity="0.85" stroke="#fff" strokeWidth="1.5">
-            <title>{d.label}</title>
-          </circle>
-        </g>
-      ))}
     </svg>
   );
 }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import {
   accessGrants,
   organization,
@@ -7,8 +7,9 @@ import {
   questions as seedQuestions,
   users,
 } from "./domain/seed";
+import { runForecast } from "./domain/engine";
 import { canViewQuestion, visibleQuestions } from "./domain/access";
-import type { ForecastQuestion, Outcome, ProbabilityPoint, User } from "./domain/types";
+import type { ForecastQuestion, Outcome, ProbabilityPoint, User, Visibility } from "./domain/types";
 
 interface StoreCtx {
   org: typeof organization;
@@ -21,15 +22,76 @@ interface StoreCtx {
   historyFor: (outcomeId: string) => ProbabilityPoint[];
   yesOutcome: (questionId: string) => Outcome | undefined;
   canView: (q: ForecastQuestion) => boolean;
+  setVisibility: (questionId: string, visibility: Visibility) => void;
+  refreshForecast: (questionId: string) => void;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>(users[0]);
+  const [visibilityOverrides, setVisibilityOverrides] = useState<Record<string, Visibility>>({});
+  const [probabilityOverrides, setProbabilityOverrides] = useState<Record<string, number>>({});
+  const [extraHistory, setExtraHistory] = useState<ProbabilityPoint[]>([]);
+
+  const mergedQuestions = useMemo(
+    () =>
+      seedQuestions.map((q) =>
+        visibilityOverrides[q.id] ? { ...q, visibility: visibilityOverrides[q.id] } : q
+      ),
+    [visibilityOverrides]
+  );
+
+  const applyOutcomeOverrides = useCallback(
+    (outcome: Outcome): Outcome => {
+      const override = probabilityOverrides[outcome.id];
+      return override !== undefined ? { ...outcome, currentProbability: override } : outcome;
+    },
+    [probabilityOverrides]
+  );
+
+  const historyFor = useCallback(
+    (outcomeId: string) =>
+      [...seedHistory.filter((h) => h.outcomeId === outcomeId), ...extraHistory.filter((h) => h.outcomeId === outcomeId)].sort(
+        (a, b) => a.timestamp.localeCompare(b.timestamp)
+      ),
+    [extraHistory]
+  );
+
+  const refreshForecast = useCallback(
+    (questionId: string) => {
+      const q = mergedQuestions.find((item) => item.id === questionId);
+      const yes = seedOutcomes.find((o) => o.questionId === questionId && o.id.endsWith("-yes"));
+      if (!q || !yes) return;
+
+      const prior = probabilityOverrides[yes.id] ?? yes.currentProbability;
+      const forecast = runForecast(q, { anchor: prior, trigger: `refresh-${Date.now()}` });
+      const newP = Number(forecast.currentProbability.toFixed(3));
+      const no = seedOutcomes.find((o) => o.questionId === questionId && o.id.endsWith("-no"));
+
+      setProbabilityOverrides((prev) => ({
+        ...prev,
+        [yes.id]: newP,
+        ...(no ? { [no.id]: Number((1 - newP).toFixed(3)) } : {}),
+      }));
+
+      setExtraHistory((prev) => [
+        ...prev,
+        {
+          id: `${questionId}-ph-refresh-${Date.now()}`,
+          outcomeId: yes.id,
+          probability: newP,
+          timestamp: new Date().toISOString().slice(0, 10),
+          source: "agent-ensemble",
+          updateTrigger: "Manual forecast refresh",
+        },
+      ]);
+    },
+    [mergedQuestions, probabilityOverrides]
+  );
 
   const value = useMemo<StoreCtx>(() => {
-    const visible = visibleQuestions(user, seedQuestions, accessGrants);
+    const visible = visibleQuestions(user, mergedQuestions, accessGrants);
     return {
       org: organization,
       user,
@@ -37,15 +99,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       allUsers: users,
       questions: visible,
       canView: (q) => canViewQuestion(user, q, accessGrants),
-      outcomesFor: (questionId) => seedOutcomes.filter((o) => o.questionId === questionId),
-      historyFor: (outcomeId) =>
-        seedHistory
-          .filter((h) => h.outcomeId === outcomeId)
-          .sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
-      yesOutcome: (questionId) =>
-        seedOutcomes.find((o) => o.questionId === questionId && o.id.endsWith("-yes")),
+      setVisibility: (questionId, visibility) =>
+        setVisibilityOverrides((prev) => ({ ...prev, [questionId]: visibility })),
+      refreshForecast,
+      outcomesFor: (questionId) =>
+        seedOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
+      historyFor,
+      yesOutcome: (questionId) => {
+        const outcome = seedOutcomes.find((o) => o.questionId === questionId && o.id.endsWith("-yes"));
+        return outcome ? applyOutcomeOverrides(outcome) : undefined;
+      },
     };
-  }, [user]);
+  }, [user, mergedQuestions, applyOutcomeOverrides, historyFor, refreshForecast]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -75,7 +75,7 @@ const Q: QSeed[] = [
     impactEstimate: "$8–20M remediation + disclosure", impactLevel: "critical", impactScore: 0.9,
     resolutionCriteria: "Resolves YES if SecOps confirms exfiltration of customer PII in a SEV-1/2 incident.",
     resolutionSource: "SecOps incident review board", openDate: "2026-04-01", resolutionDate: "2026-10-01",
-    status: "open", visibility: "private", owningTeam: "Security", createdBy: "u-risk", priorBaseRate: 0.18, initial: 0.22,
+    status: "open", visibility: "leadership", owningTeam: "Security", createdBy: "u-risk", priorBaseRate: 0.18, initial: 0.22,
   },
   {
     id: "q-supplier-default",
@@ -115,7 +115,7 @@ const Q: QSeed[] = [
     impactEstimate: "Roadmap slip + ~$6M backfill cost", impactLevel: "medium", impactScore: 0.5,
     resolutionCriteria: "Resolves YES if HRIS rolling attrition > 15%.",
     resolutionSource: "People analytics (HRIS)", openDate: "2026-02-01", resolutionDate: "2026-12-31",
-    status: "open", visibility: "private", owningTeam: "People", createdBy: "u-exec", priorBaseRate: 0.3, initial: 0.28,
+    status: "open", visibility: "team", owningTeam: "People", createdBy: "u-exec", priorBaseRate: 0.3, initial: 0.28,
   },
   {
     id: "q-regulation",
@@ -165,7 +165,7 @@ const Q: QSeed[] = [
     impactEstimate: "Beats guidance; multiple re-rate", impactLevel: "medium", impactScore: 0.55,
     resolutionCriteria: "Resolves YES if reported Q3 GM ≥ 64.0%.",
     resolutionSource: "Q3 financial statements", openDate: "2026-05-01", resolutionDate: "2026-10-30",
-    status: "open", visibility: "private", owningTeam: "Finance", createdBy: "u-exec", priorBaseRate: 0.5, initial: 0.52,
+    status: "open", visibility: "leadership", owningTeam: "Finance", createdBy: "u-exec", priorBaseRate: 0.5, initial: 0.52,
   },
   {
     id: "q-cloud",
@@ -185,7 +185,7 @@ const Q: QSeed[] = [
     impactEstimate: "+$120M revenue, integration risk", impactLevel: "critical", impactScore: 0.85,
     resolutionCriteria: "Resolves YES on deal close (8-K filed).",
     resolutionSource: "SEC EDGAR", openDate: "2026-04-20", resolutionDate: "2026-12-31",
-    status: "open", visibility: "private", owningTeam: "Corp Dev", createdBy: "u-exec", priorBaseRate: 0.3, initial: 0.27,
+    status: "open", visibility: "restricted", owningTeam: "Corp Dev", createdBy: "u-exec", priorBaseRate: 0.3, initial: 0.27,
   },
   {
     id: "q-cpi",

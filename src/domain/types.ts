@@ -18,7 +18,7 @@ export type Category =
 
 export type QuestionType = "binary" | "categorical" | "scalar";
 export type RiskOrOpportunity = "risk" | "opportunity";
-export type Visibility = "public" | "private";
+export type Visibility = "public" | "team" | "leadership" | "restricted";
 export type QuestionStatus = "open" | "resolved" | "void";
 
 export type ImpactLevel = "low" | "medium" | "high" | "critical";

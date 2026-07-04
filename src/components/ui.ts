@@ -1,4 +1,4 @@
-import type { Category, ImpactLevel } from "../domain/types";
+import type { Category, ImpactLevel, Visibility } from "../domain/types";
 
 export const categoryColors: Record<Category, string> = {
   Financial: "#2f6df6",
@@ -28,4 +28,13 @@ export const impactRank: Record<ImpactLevel, number> = {
   medium: 2,
   high: 3,
   critical: 4,
+};
+
+export const visibilityOrder: Visibility[] = ["public", "team", "leadership", "restricted"];
+
+export const visibilityConfig: Record<Visibility, { label: string; description: string }> = {
+  public: { label: "Everyone", description: "Visible to all org members" },
+  team: { label: "Team only", description: "Visible to the owning team" },
+  leadership: { label: "Leadership", description: "Executives and risk managers" },
+  restricted: { label: "Restricted", description: "Explicit access grants only" },
 };

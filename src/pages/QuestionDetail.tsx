@@ -5,11 +5,12 @@ import { runForecast } from "../domain/engine";
 import { evidenceSources } from "../domain/seed";
 import AgentPanel from "../components/AgentPanel";
 import { ProbChart } from "../components/charts";
+import VisibilityPicker from "../components/VisibilityPicker";
 import { categoryColors, pct } from "../components/ui";
 
 export default function QuestionDetail() {
   const { id } = useParams();
-  const { questions, yesOutcome, historyFor } = useStore();
+  const { questions, yesOutcome, historyFor, setVisibility } = useStore();
   const q = questions.find((x) => x.id === id);
 
   const forecast = useMemo(() => (q ? runForecast(q) : null), [q]);
@@ -20,7 +21,7 @@ export default function QuestionDetail() {
         <div className="locked-card">
           <h2>🔒 Not available</h2>
           <p>
-            This question is either private and outside your access grants, or doesn't exist. Private lines are never
+            This question is outside your visibility level, or doesn't exist. Restricted lines are never
             exposed outside authorized roles.
           </p>
           <Link to="/" className="btn">
@@ -55,10 +56,7 @@ export default function QuestionDetail() {
           {q.category}
         </span>
         <span className="qc-tags">
-          <span className={`tag ${q.riskOrOpportunity === "risk" ? "tag-risk" : "tag-opp"}`}>
-            {q.riskOrOpportunity === "risk" ? "Risk" : "Opportunity"}
-          </span>
-          {q.visibility === "private" && <span className="tag tag-private">🔒 Private · {q.owningTeam}</span>}
+          <VisibilityPicker value={q.visibility} onChange={(v) => setVisibility(q.id, v)} />
         </span>
       </div>
       <h1 className="detail-title">{q.title}</h1>
