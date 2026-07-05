@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
-import { useStore, probabilityDelta, riskWeighted } from "../store";
+import { useStore, probabilityDelta, riskWeighted, sortWithPins } from "../store";
 import QuestionCard from "../components/QuestionCard";
+import QuestionTable from "../components/QuestionTable";
 import type { Category, RiskOrOpportunity, Visibility } from "../domain/types";
 import { visibilityConfig, visibilityOrder } from "../components/ui";
 
 type SortKey = "movers" | "risk_weighted" | "resolving_soon" | "most_uncertain";
+type ViewMode = "cards" | "table";
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "movers", label: "Biggest movers" },
@@ -14,11 +16,12 @@ const SORTS: { key: SortKey; label: string }[] = [
 ];
 
 export default function Overview() {
-  const { questions, yesOutcome, historyFor } = useStore();
+  const { questions, yesOutcome, historyFor, pinnedIds } = useStore();
   const [sort, setSort] = useState<SortKey>("movers");
   const [cat, setCat] = useState<Category | "all">("all");
   const [kind, setKind] = useState<RiskOrOpportunity | "all">("all");
   const [vis, setVis] = useState<"all" | Visibility>("all");
+  const [view, setView] = useState<ViewMode>("cards");
 
   const categories = useMemo(
     () => Array.from(new Set(questions.map((q) => q.category))).sort(),
@@ -54,8 +57,8 @@ export default function Overview() {
           return Math.abs(0.5 - sa.p) - Math.abs(0.5 - sb.p);
       }
     });
-    return list;
-  }, [questions, cat, kind, vis, sort, yesOutcome, historyFor]);
+    return view === "table" ? sortWithPins(list, pinnedIds) : list;
+  }, [questions, cat, kind, vis, sort, view, pinnedIds, yesOutcome, historyFor]);
 
   const riskCount = questions.filter((q) => q.riskOrOpportunity === "risk").length;
   const oppCount = questions.length - riskCount;
@@ -81,6 +84,22 @@ export default function Overview() {
           ))}
         </div>
         <div className="filter-group right">
+          <div className="view-toggle">
+            <button
+              type="button"
+              className={`chip view-chip${view === "cards" ? " active" : ""}`}
+              onClick={() => setView("cards")}
+            >
+              Cards
+            </button>
+            <button
+              type="button"
+              className={`chip view-chip${view === "table" ? " active" : ""}`}
+              onClick={() => setView("table")}
+            >
+              Table
+            </button>
+          </div>
           <select value={cat} onChange={(e) => setCat(e.target.value as Category | "all")}>
             <option value="all">All categories</option>
             {categories.map((c) => (
@@ -105,11 +124,15 @@ export default function Overview() {
         </div>
       </div>
 
-      <div className="qgrid">
-        {rows.map((q) => (
-          <QuestionCard key={q.id} q={q} />
-        ))}
-      </div>
+      {view === "cards" ? (
+        <div className="qgrid">
+          {rows.map((q) => (
+            <QuestionCard key={q.id} q={q} />
+          ))}
+        </div>
+      ) : (
+        <QuestionTable questions={rows} />
+      )}
     </div>
   );
 }

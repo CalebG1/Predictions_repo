@@ -3,11 +3,12 @@ import Header from "./components/Header";
 import CategoryNav from "./components/CategoryNav";
 import Overview from "./pages/Overview";
 import QuestionDetail from "./pages/QuestionDetail";
+import QuestionEmbed from "./pages/QuestionEmbed";
 import Calibration from "./pages/Calibration";
 import Decision from "./pages/Decision";
 import Movers from "./pages/Movers";
 
-export default function App() {
+function AppShell() {
   return (
     <>
       <Header />
@@ -21,5 +22,14 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/embed/q/:id" element={<QuestionEmbed />} />
+      <Route path="/*" element={<AppShell />} />
+    </Routes>
   );
 }

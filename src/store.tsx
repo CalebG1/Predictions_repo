@@ -27,6 +27,9 @@ interface StoreCtx {
   refreshForecast: (questionId: string) => void;
   touchpointSignalsFor: (questionId: string) => TouchpointSignal[];
   addTouchpoint: (questionId: string, kind: TouchpointKind) => void;
+  pinnedIds: string[];
+  isPinned: (questionId: string) => boolean;
+  togglePin: (questionId: string) => void;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -39,6 +42,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [touchpointSignals, setTouchpointSignals] = useState<Record<string, TouchpointSignal[]>>(() => ({
     ...seedTouchpointSignals,
   }));
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
 
   const mergedQuestions = useMemo(
     () =>
@@ -109,6 +113,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const isPinned = useCallback((questionId: string) => pinnedIds.includes(questionId), [pinnedIds]);
+
+  const togglePin = useCallback((questionId: string) => {
+    setPinnedIds((prev) =>
+      prev.includes(questionId) ? prev.filter((id) => id !== questionId) : [...prev, questionId]
+    );
+  }, []);
+
   const value = useMemo<StoreCtx>(() => {
     const visible = visibleQuestions(user, mergedQuestions, accessGrants);
     return {
@@ -123,6 +135,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       refreshForecast,
       touchpointSignalsFor,
       addTouchpoint,
+      pinnedIds,
+      isPinned,
+      togglePin,
       outcomesFor: (questionId) =>
         seedOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
       historyFor,
@@ -131,7 +146,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return outcome ? applyOutcomeOverrides(outcome) : undefined;
       },
     };
-  }, [user, mergedQuestions, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addTouchpoint]);
+  }, [user, mergedQuestions, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addTouchpoint, pinnedIds, isPinned, togglePin]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -156,4 +171,13 @@ export function probabilityDelta(history: ProbabilityPoint[], days: number): num
 
 export function riskWeighted(q: ForecastQuestion, p: number): number {
   return p * q.impactScore;
+}
+
+export function sortWithPins(questions: ForecastQuestion[], pinnedIds: string[]): ForecastQuestion[] {
+  if (pinnedIds.length === 0) return questions;
+  const pinned = pinnedIds
+    .map((id) => questions.find((q) => q.id === id))
+    .filter((q): q is ForecastQuestion => q !== undefined);
+  const unpinned = questions.filter((q) => !pinnedIds.includes(q.id));
+  return [...pinned, ...unpinned];
 }
