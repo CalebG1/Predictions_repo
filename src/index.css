@@ -257,6 +257,41 @@ input {
   padding: 26px 22px 90px;
 }
 
+/* Questions page: title + filters fixed, table scrolls */
+.dash-page-questions {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 58px - 46px);
+  padding: 26px 22px 0;
+  box-sizing: border-box;
+}
+
+.dash-page-top {
+  flex-shrink: 0;
+  background: var(--bg-soft);
+  z-index: 10;
+}
+
+.dash-page-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 24px;
+}
+
+.dash-page-body .qtable-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.dash-page-body .qtable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-2);
+  box-shadow: 0 1px 0 var(--line);
+}
+
 .dash-head {
   display: flex;
   justify-content: space-between;
@@ -723,21 +758,35 @@ input {
 
 .qtable th.qt-sources-col,
 .qtable td.qt-sources-col {
-  width: 132px;
-  max-width: 132px;
+  width: 180px;
+  min-width: 180px;
+  max-width: 180px;
   white-space: nowrap;
   padding-left: 12px;
-  padding-right: 28px;
+  padding-right: 20px;
+  overflow: hidden;
 }
 
 .qtable td.qt-sources-col .qc-touchpoints {
   flex-wrap: nowrap;
+  gap: 3px;
+}
+
+.qtable td.qt-sources-col .qc-tp {
+  padding: 3px;
+}
+
+.qtable td.qt-sources-col .qc-tp svg,
+.qtable td.qt-sources-col .source-mono {
+  width: 12px;
+  height: 12px;
 }
 
 .qtable th.qt-date-col,
 .qtable td.qt-date-col {
   width: 1%;
   white-space: nowrap;
+  padding-left: 12px;
   padding-right: 28px;
 }
 

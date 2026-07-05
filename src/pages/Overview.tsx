@@ -67,39 +67,43 @@ export default function Overview() {
   }, [questions, search, cat, owner, vis, horizon, sort, view, pinnedIds, yesOutcome, historyFor]);
 
   return (
-    <div className="dash-page">
-      <div className="dash-head">
-        <div>
-          <h1>Questions</h1>
+    <div className="dash-page dash-page-questions">
+      <div className="dash-page-top">
+        <div className="dash-head">
+          <div>
+            <h1>Questions</h1>
+          </div>
         </div>
+
+        <QuestionFilters
+          search={search}
+          onSearchChange={setSearch}
+          cat={cat}
+          onCatChange={setCat}
+          categories={categories}
+          owner={owner}
+          onOwnerChange={setOwner}
+          owners={owners}
+          vis={vis}
+          onVisChange={setVis}
+          sort={sort}
+          onSortChange={setSort}
+          horizon={horizon}
+          onHorizonChange={setHorizon}
+        />
       </div>
 
-      <QuestionFilters
-        search={search}
-        onSearchChange={setSearch}
-        cat={cat}
-        onCatChange={setCat}
-        categories={categories}
-        owner={owner}
-        onOwnerChange={setOwner}
-        owners={owners}
-        vis={vis}
-        onVisChange={setVis}
-        sort={sort}
-        onSortChange={setSort}
-        horizon={horizon}
-        onHorizonChange={setHorizon}
-      />
-
-      {view === "cards" ? (
-        <div className="qgrid">
-          {rows.map((q) => (
-            <QuestionCard key={q.id} q={q} />
-          ))}
-        </div>
-      ) : (
-        <QuestionTable questions={rows} />
-      )}
+      <div className="dash-page-body">
+        {view === "cards" ? (
+          <div className="qgrid">
+            {rows.map((q) => (
+              <QuestionCard key={q.id} q={q} />
+            ))}
+          </div>
+        ) : (
+          <QuestionTable questions={rows} />
+        )}
+      </div>
     </div>
   );
 }

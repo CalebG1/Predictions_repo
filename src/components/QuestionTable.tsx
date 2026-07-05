@@ -14,6 +14,7 @@ function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean 
   const yes = yesOutcome(q.id);
   const p = yes?.currentProbability ?? q.priorBaseRate;
   const d1 = yes ? probabilityDelta(historyFor(yes.id), 1) : null;
+  const delta = d1 ?? 0;
   const signals = touchpointSignalsFor(q.id);
 
   const goToQuestion = () => navigate(`/q/${q.id}`);
@@ -57,9 +58,7 @@ function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean 
       <td className="qt-prob">
         <div className="qt-prob-inner">
           <span className="qt-prob-val">{pct(p)}</span>
-          {d1 !== null && d1 !== 0 && (
-            <span className={`qt-prob-delta delta ${d1 >= 0 ? "up" : "down"}`}>{signedPct(d1)}%</span>
-          )}
+          <span className={`qt-prob-delta delta ${delta >= 0 ? "up" : "down"}`}>{signedPct(delta)}%</span>
         </div>
       </td>
       <td className="qt-sources-col">
