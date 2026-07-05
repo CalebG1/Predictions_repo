@@ -23,14 +23,31 @@ export type QuestionStatus = "open" | "resolved" | "void";
 
 export type ImpactLevel = "low" | "medium" | "high" | "critical";
 
-/** Real-world data sources that can feed a forecast (interviews, apps, polls). */
-export type TouchpointKind = "interview" | "teams" | "excel" | "slack" | "survey";
+/**
+ * Real-world data sources that can feed a forecast (interviews, apps, polls).
+ * `upload` = files imported directly; `custom` = any connector from the gallery
+ * that doesn't have a dedicated brand icon (rendered as a monogram chip).
+ */
+export type TouchpointKind =
+  | "interview"
+  | "teams"
+  | "excel"
+  | "slack"
+  | "survey"
+  | "upload"
+  | "custom";
 
 /** An active signal from a connected touchpoint with relevant information. */
 export interface TouchpointSignal {
   kind: TouchpointKind;
   summary: string;
   updatedAt: string;
+  /** For `custom` connectors: stable identity used for de-duplication. */
+  sourceId?: string;
+  /** Display label override (used by `custom` connectors and uploads). */
+  label?: string;
+  /** Brand color override for the monogram chip (used by `custom` connectors). */
+  brandColor?: string;
 }
 
 export interface Organization {

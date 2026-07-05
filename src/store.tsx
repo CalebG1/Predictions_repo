@@ -7,10 +7,11 @@ import {
   questions as seedQuestions,
   users,
 } from "./domain/seed";
-import { seedTouchpointSignals, demoSignalFor } from "./domain/touchpoints";
+import { seedTouchpointSignals, connectSignalFor, uploadSignalFor } from "./domain/touchpoints";
+import type { Connector } from "./domain/connectors";
 import { runForecast } from "./domain/engine";
 import { canViewQuestion, visibleQuestions } from "./domain/access";
-import type { ForecastQuestion, Outcome, ProbabilityPoint, TouchpointKind, TouchpointSignal, User, Visibility } from "./domain/types";
+import type { ForecastQuestion, Outcome, ProbabilityPoint, TouchpointSignal, User, Visibility } from "./domain/types";
 
 interface StoreCtx {
   org: typeof organization;
@@ -26,7 +27,10 @@ interface StoreCtx {
   setVisibility: (questionId: string, visibility: Visibility) => void;
   refreshForecast: (questionId: string) => void;
   touchpointSignalsFor: (questionId: string) => TouchpointSignal[];
-  addTouchpoint: (questionId: string, kind: TouchpointKind) => void;
+  /** Connect an app from the source gallery. */
+  addSource: (questionId: string, connector: Connector) => void;
+  /** Import files as an "Uploaded files" source. */
+  addUpload: (questionId: string, fileNames: string[]) => void;
   pinnedIds: string[];
   isPinned: (questionId: string) => boolean;
   togglePin: (questionId: string) => void;
@@ -105,11 +109,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [touchpointSignals]
   );
 
-  const addTouchpoint = useCallback((questionId: string, kind: TouchpointKind) => {
+  const addSource = useCallback((questionId: string, connector: Connector) => {
+    const signal = connectSignalFor(connector);
     setTouchpointSignals((prev) => {
       const current = prev[questionId] ?? [];
-      if (current.some((s) => s.kind === kind)) return prev;
-      return { ...prev, [questionId]: [...current, demoSignalFor(kind)] };
+      const already = current.some((s) =>
+        signal.kind === "custom" ? s.sourceId === signal.sourceId : s.kind === signal.kind
+      );
+      if (already) return prev;
+      return { ...prev, [questionId]: [...current, signal] };
+    });
+  }, []);
+
+  const addUpload = useCallback((questionId: string, fileNames: string[]) => {
+    if (fileNames.length === 0) return;
+    const signal = uploadSignalFor(fileNames);
+    setTouchpointSignals((prev) => {
+      const current = prev[questionId] ?? [];
+      const existing = current.find((s) => s.kind === "upload");
+      if (existing) {
+        return {
+          ...prev,
+          [questionId]: current.map((s) => (s.kind === "upload" ? signal : s)),
+        };
+      }
+      return { ...prev, [questionId]: [...current, signal] };
     });
   }, []);
 
@@ -134,7 +158,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setVisibilityOverrides((prev) => ({ ...prev, [questionId]: visibility })),
       refreshForecast,
       touchpointSignalsFor,
-      addTouchpoint,
+      addSource,
+      addUpload,
       pinnedIds,
       isPinned,
       togglePin,
@@ -146,7 +171,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return outcome ? applyOutcomeOverrides(outcome) : undefined;
       },
     };
-  }, [user, mergedQuestions, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addTouchpoint, pinnedIds, isPinned, togglePin]);
+  }, [user, mergedQuestions, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addSource, addUpload, pinnedIds, isPinned, togglePin]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -7,7 +7,7 @@ import VisibilityBadge from "./VisibilityBadge";
 import { pct } from "./ui";
 
 export default function QuestionCard({ q }: { q: ForecastQuestion }) {
-  const { yesOutcome, touchpointSignalsFor, addTouchpoint } = useStore();
+  const { yesOutcome, touchpointSignalsFor, addSource, addUpload } = useStore();
   const yes = yesOutcome(q.id);
   const p = yes?.currentProbability ?? q.priorBaseRate;
   const signals = touchpointSignalsFor(q.id);
@@ -26,7 +26,11 @@ export default function QuestionCard({ q }: { q: ForecastQuestion }) {
         </div>
 
         <div className="qc-foot">
-          <TouchpointIcons signals={signals} onAdd={(kind) => addTouchpoint(q.id, kind)} />
+          <TouchpointIcons
+            signals={signals}
+            onConnect={(connector) => addSource(q.id, connector)}
+            onImport={(fileNames) => addUpload(q.id, fileNames)}
+          />
           <span className="qc-foot-meta">
             <span className="qc-date">resolves {q.resolutionDate}</span>
             <VisibilityBadge value={q.visibility} owningTeam={q.owningTeam} />

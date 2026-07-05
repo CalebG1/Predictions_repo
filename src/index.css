@@ -1146,10 +1146,6 @@ input {
   border-color: color-mix(in srgb, var(--tp-color) 40%, white);
 }
 
-.qc-tp-add {
-  position: relative;
-}
-
 .qc-tp-add-btn {
   cursor: pointer;
   border-style: dashed;
@@ -1162,28 +1158,339 @@ input {
   background: var(--green-soft);
 }
 
-.qc-tp-menu {
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 0;
-  display: flex;
-  gap: 2px;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  padding: 4px;
-  z-index: 20;
+/* Colored monogram tile used for connectors without a dedicated brand icon. */
+.source-mono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
-.qc-tp-menu .qc-tp {
+/* ---------- Add source modal ---------- */
+.asrc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(14, 26, 22, 0.42);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  animation: asrc-fade 0.14s ease-out;
+}
+
+@keyframes asrc-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.asrc-modal {
+  width: min(1040px, 94vw);
+  height: min(86vh, 820px);
+  background: var(--bg);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(16, 30, 24, 0.28);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: asrc-rise 0.16s ease-out;
+}
+
+@keyframes asrc-rise {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+}
+
+.asrc-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 26px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.asrc-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.asrc-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.asrc-close {
+  color: var(--text-3);
+  border-radius: 8px;
+  padding: 6px;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.asrc-close:hover {
+  background: var(--bg-soft);
+  color: var(--text);
+}
+
+.asrc-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 26px 26px;
+}
+
+/* File importer */
+.asrc-drop {
+  border: 2px dashed var(--line);
+  border-radius: 14px;
+  background: var(--bg-soft);
+  padding: 30px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.asrc-drop:hover,
+.asrc-drop.over {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+
+.asrc-drop-icon {
+  color: var(--green);
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.asrc-drop-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.asrc-drop-sub {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-top: 4px;
+}
+
+.asrc-link {
+  color: var(--green-dark);
+  font-weight: 700;
+}
+
+.asrc-filelist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.asrc-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 6px 5px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.asrc-file-chip button {
+  color: var(--text-3);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 6px;
+  border-radius: 999px;
+}
+
+.asrc-file-chip button:hover {
+  color: var(--red);
+}
+
+.asrc-import-btn {
+  margin-left: auto;
+  background: var(--green);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  border-radius: 9px;
+  padding: 8px 16px;
+}
+
+.asrc-import-btn:hover {
+  background: var(--green-dark);
+}
+
+/* App gallery */
+.asrc-apps {
+  margin-top: 26px;
+}
+
+.asrc-apps-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.asrc-apps-title {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.asrc-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: var(--text-3);
+  min-width: 250px;
+}
+
+.asrc-search input {
   border: none;
   background: transparent;
-  cursor: pointer;
+  outline: none;
+  font-size: 13.5px;
+  color: var(--text);
+  width: 100%;
 }
 
-.qc-tp-menu .qc-tp:hover {
-  background: var(--bg-2);
+.asrc-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+.asrc-cat {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 13px;
+  transition: all 0.12s;
+}
+
+.asrc-cat:hover {
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+
+.asrc-cat.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.asrc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.asrc-tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.06s;
+}
+
+.asrc-tile:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--green) 55%, var(--line));
+  box-shadow: var(--shadow);
+}
+
+.asrc-tile:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.asrc-tile.connected {
+  background: var(--bg-soft);
+  cursor: default;
+}
+
+.asrc-tile-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.asrc-tile.connected .asrc-tile-icon {
+  background: var(--bg);
+}
+
+.asrc-tile-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.asrc-tile-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.asrc-tile-cat {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+.asrc-tile-action {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green-dark);
+  flex-shrink: 0;
+}
+
+.asrc-tile-action.done {
+  color: var(--text-3);
+}
+
+.asrc-empty {
+  color: var(--text-2);
+  font-size: 13.5px;
+  padding: 24px 4px;
 }
 
 .qc-date {

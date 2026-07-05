@@ -121,15 +121,68 @@ export function GoogleFormsBrandIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-const BRAND_ICONS: Record<TouchpointKind, (props: SVGProps<SVGSVGElement>) => JSX.Element> = {
+/** Generic file-upload glyph for the "Uploaded files" source. */
+export function UploadBrandIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...sizeProps} {...props}>
+      <path
+        d="M6 20h12a3 3 0 0 0 .4-5.97 5.5 5.5 0 0 0-10.6-1.64A4 4 0 0 0 6 20z"
+        fill="#8a978f"
+      />
+      <path d="M12 15v-5m0 0-2.2 2.2M12 10l2.2 2.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+const BRAND_ICONS: Partial<Record<TouchpointKind, (props: SVGProps<SVGSVGElement>) => JSX.Element>> = {
   interview: GoogleMeetBrandIcon,
   teams: TeamsBrandIcon,
   excel: ExcelBrandIcon,
   slack: SlackBrandIcon,
   survey: GoogleFormsBrandIcon,
+  upload: UploadBrandIcon,
 };
 
-export function BrandIcon({ kind }: { kind: TouchpointKind }) {
+export function hasBrandIcon(kind: TouchpointKind): boolean {
+  return kind in BRAND_ICONS;
+}
+
+export function BrandIcon({ kind, ...props }: { kind: TouchpointKind } & SVGProps<SVGSVGElement>) {
   const Icon = BRAND_ICONS[kind];
-  return <Icon />;
+  return Icon ? <Icon {...props} /> : null;
+}
+
+/**
+ * Renders a source's visual mark: a real brand icon when we have one, otherwise
+ * a colored rounded-square monogram (used by generic gallery connectors).
+ */
+export function SourceMark({
+  kind,
+  mono,
+  brandColor,
+  size = 14,
+}: {
+  kind: TouchpointKind;
+  mono?: string;
+  brandColor?: string;
+  size?: number;
+}) {
+  if (hasBrandIcon(kind)) {
+    return <BrandIcon kind={kind} width={size} height={size} />;
+  }
+  const text = (mono ?? "?").slice(0, 2);
+  return (
+    <span
+      className="source-mono"
+      style={{
+        width: size,
+        height: size,
+        background: brandColor ?? "#5b6b66",
+        fontSize: Math.round(size * (text.length > 1 ? 0.4 : 0.5)),
+      }}
+      aria-hidden
+    >
+      {text}
+    </span>
+  );
 }

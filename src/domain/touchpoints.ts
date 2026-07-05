@@ -1,3 +1,4 @@
+import type { Connector } from "./connectors";
 import type { TouchpointKind, TouchpointSignal } from "./types";
 
 export interface TouchpointMeta {
@@ -37,6 +38,12 @@ export const TOUCHPOINT_CATALOG: TouchpointMeta[] = [
     label: "Surveys",
     description: "Ingest polled responses from internal or external surveys",
     brandColor: "#0ea5a4",
+  },
+  {
+    kind: "upload",
+    label: "Uploaded files",
+    description: "Documents, spreadsheets, and exports imported directly",
+    brandColor: "#5b6b66",
   },
 ];
 
@@ -130,23 +137,42 @@ export const seedTouchpointSignals: Record<string, TouchpointSignal[]> = {
   ],
 };
 
-export function touchpointMeta(kind: TouchpointKind): TouchpointMeta {
-  return TOUCHPOINT_CATALOG.find((t) => t.kind === kind)!;
+export function touchpointMeta(kind: TouchpointKind): TouchpointMeta | undefined {
+  return TOUCHPOINT_CATALOG.find((t) => t.kind === kind);
 }
 
-/** Demo summary shown when a user connects a new source. */
-export function demoSignalFor(kind: TouchpointKind): TouchpointSignal {
-  const meta = touchpointMeta(kind);
-  const summaries: Record<TouchpointKind, string> = {
-    interview: "New stakeholder interview queued for ingestion",
-    teams: "Teams channel linked — monitoring for updates",
-    excel: "Workbook connected — awaiting next model refresh",
-    slack: "Slack channel linked — watching for signals",
-    survey: "Survey source connected — next poll cycle pending",
-  };
+const today = () => new Date().toISOString().slice(0, 10);
+
+/** Demo summary shown when a user connects a source from the gallery. */
+export function connectSignalFor(connector: Connector): TouchpointSignal {
+  if (connector.kind) {
+    const summaries: Partial<Record<TouchpointKind, string>> = {
+      interview: "New stakeholder interview queued for ingestion",
+      teams: "Teams channel linked — monitoring for updates",
+      excel: "Workbook connected — awaiting next model refresh",
+      slack: "Slack channel linked — watching for signals",
+      survey: "Survey source connected — next poll cycle pending",
+    };
+    return {
+      kind: connector.kind,
+      summary: summaries[connector.kind] ?? `${connector.name} connected`,
+      updatedAt: today(),
+    };
+  }
   return {
-    kind,
-    summary: summaries[kind] ?? `${meta.label} connected`,
-    updatedAt: new Date().toISOString().slice(0, 10),
+    kind: "custom",
+    sourceId: connector.id,
+    label: connector.name,
+    brandColor: connector.brandColor,
+    summary: `${connector.name} connected — awaiting first sync`,
+    updatedAt: today(),
   };
+}
+
+/** Signal produced after importing one or more files. */
+export function uploadSignalFor(fileNames: string[]): TouchpointSignal {
+  const n = fileNames.length;
+  const summary =
+    n === 1 ? `Imported ${fileNames[0]}` : `${n} files imported — parsing for signals`;
+  return { kind: "upload", label: "Uploaded files", summary, updatedAt: today() };
 }

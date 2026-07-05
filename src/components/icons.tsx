@@ -1,6 +1,3 @@
-import type { TouchpointKind } from "../domain/types";
-import { BrandIcon } from "./brandIcons";
-
 const svgProps = {
   width: 14,
   height: 14,
@@ -98,8 +95,4 @@ export function IconSort() {
       <polyline points="4 16 8 20 12 16" />
     </svg>
   );
-}
-
-export function TouchpointIcon({ kind }: { kind: TouchpointKind }) {
-  return <BrandIcon kind={kind} />;
 }
