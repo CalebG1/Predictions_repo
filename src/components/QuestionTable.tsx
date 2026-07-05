@@ -65,6 +65,7 @@ function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean 
       <td className="qt-sources-col">
         <TouchpointIcons
           signals={signals}
+          maxVisible={3}
           onConnect={(connector) => addSource(q.id, connector)}
           onImport={(fileNames) => addUpload(q.id, fileNames)}
         />

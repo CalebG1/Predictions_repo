@@ -723,11 +723,11 @@ input {
 
 .qtable th.qt-sources-col,
 .qtable td.qt-sources-col {
-  width: 1%;
+  width: 132px;
+  max-width: 132px;
   white-space: nowrap;
   padding-left: 12px;
   padding-right: 28px;
-  min-width: 112px;
 }
 
 .qtable td.qt-sources-col .qc-touchpoints {
@@ -1139,6 +1139,7 @@ input {
   align-items: center;
   justify-content: center;
   line-height: 0;
+  flex-shrink: 0;
 }
 
 .qc-tp.connected {
@@ -1146,10 +1147,27 @@ input {
   border-color: color-mix(in srgb, var(--tp-color) 40%, white);
 }
 
+.qc-tp-overflow {
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-2);
+  min-width: 22px;
+  padding: 4px 5px;
+  line-height: 1;
+}
+
+.qc-tp-overflow:hover {
+  border-color: var(--line);
+  background: var(--bg-soft);
+  color: var(--text);
+}
+
 .qc-tp-add-btn {
   cursor: pointer;
   border-style: dashed;
   color: var(--text-3);
+  flex-shrink: 0;
 }
 
 .qc-tp-add-btn:hover {

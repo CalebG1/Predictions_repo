@@ -14,30 +14,42 @@ function signalColor(signal: TouchpointSignal): string {
   return signal.brandColor ?? touchpointMeta(signal.kind)?.brandColor ?? "#5b6b66";
 }
 
+function signalKey(signal: TouchpointSignal): string {
+  return signal.sourceId ?? signal.kind;
+}
+
 export default function TouchpointIcons({
   signals,
   onConnect,
   onImport,
+  maxVisible,
 }: {
   signals: TouchpointSignal[];
   onConnect: (connector: Connector) => void;
   onImport: (fileNames: string[]) => void;
+  /** When set, only the first N sources are shown; the rest collapse into a +N chip. */
+  maxVisible?: number;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const overflow = maxVisible != null && signals.length > maxVisible ? signals.length - maxVisible : 0;
+  const visible = overflow > 0 ? signals.slice(0, maxVisible) : signals;
+  const hidden = overflow > 0 ? signals.slice(maxVisible) : [];
 
   const stopNav = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
+  const openModal = () => setModalOpen(true);
+
   return (
     <div className="qc-touchpoints" onClick={stopNav} onMouseDown={stopNav}>
-      {signals.map((signal) => {
+      {visible.map((signal) => {
         const label = signalLabel(signal);
         const color = signalColor(signal);
         return (
           <span
-            key={signal.sourceId ?? signal.kind}
+            key={signalKey(signal)}
             className={`qc-tp connected`}
             style={{ "--tp-color": color } as CSSProperties}
             title={`${label} · ${signal.summary}`}
@@ -52,12 +64,24 @@ export default function TouchpointIcons({
         );
       })}
 
+      {overflow > 0 && (
+        <button
+          type="button"
+          className="qc-tp qc-tp-overflow"
+          title={hidden.map((s) => signalLabel(s)).join(", ")}
+          aria-label={`${overflow} more sources: ${hidden.map((s) => signalLabel(s)).join(", ")}`}
+          onClick={openModal}
+        >
+          +{overflow}
+        </button>
+      )}
+
       <button
         type="button"
         className="qc-tp qc-tp-add-btn"
         title="Add source"
         aria-label="Add source"
-        onClick={() => setModalOpen(true)}
+        onClick={openModal}
       >
         <IconPlus />
       </button>
