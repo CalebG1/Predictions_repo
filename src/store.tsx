@@ -7,9 +7,10 @@ import {
   questions as seedQuestions,
   users,
 } from "./domain/seed";
+import { seedTouchpointSignals, demoSignalFor } from "./domain/touchpoints";
 import { runForecast } from "./domain/engine";
 import { canViewQuestion, visibleQuestions } from "./domain/access";
-import type { ForecastQuestion, Outcome, ProbabilityPoint, User, Visibility } from "./domain/types";
+import type { ForecastQuestion, Outcome, ProbabilityPoint, TouchpointKind, TouchpointSignal, User, Visibility } from "./domain/types";
 
 interface StoreCtx {
   org: typeof organization;
@@ -24,6 +25,8 @@ interface StoreCtx {
   canView: (q: ForecastQuestion) => boolean;
   setVisibility: (questionId: string, visibility: Visibility) => void;
   refreshForecast: (questionId: string) => void;
+  touchpointSignalsFor: (questionId: string) => TouchpointSignal[];
+  addTouchpoint: (questionId: string, kind: TouchpointKind) => void;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -33,6 +36,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [visibilityOverrides, setVisibilityOverrides] = useState<Record<string, Visibility>>({});
   const [probabilityOverrides, setProbabilityOverrides] = useState<Record<string, number>>({});
   const [extraHistory, setExtraHistory] = useState<ProbabilityPoint[]>([]);
+  const [touchpointSignals, setTouchpointSignals] = useState<Record<string, TouchpointSignal[]>>(() => ({
+    ...seedTouchpointSignals,
+  }));
 
   const mergedQuestions = useMemo(
     () =>
@@ -90,6 +96,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [mergedQuestions, probabilityOverrides]
   );
 
+  const touchpointSignalsFor = useCallback(
+    (questionId: string) => touchpointSignals[questionId] ?? [],
+    [touchpointSignals]
+  );
+
+  const addTouchpoint = useCallback((questionId: string, kind: TouchpointKind) => {
+    setTouchpointSignals((prev) => {
+      const current = prev[questionId] ?? [];
+      if (current.some((s) => s.kind === kind)) return prev;
+      return { ...prev, [questionId]: [...current, demoSignalFor(kind)] };
+    });
+  }, []);
+
   const value = useMemo<StoreCtx>(() => {
     const visible = visibleQuestions(user, mergedQuestions, accessGrants);
     return {
@@ -102,6 +121,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setVisibility: (questionId, visibility) =>
         setVisibilityOverrides((prev) => ({ ...prev, [questionId]: visibility })),
       refreshForecast,
+      touchpointSignalsFor,
+      addTouchpoint,
       outcomesFor: (questionId) =>
         seedOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
       historyFor,
@@ -110,7 +131,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return outcome ? applyOutcomeOverrides(outcome) : undefined;
       },
     };
-  }, [user, mergedQuestions, applyOutcomeOverrides, historyFor, refreshForecast]);
+  }, [user, mergedQuestions, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addTouchpoint]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

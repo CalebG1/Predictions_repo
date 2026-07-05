@@ -2,16 +2,16 @@ import { useState, type MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import { useStore } from "../store";
 import type { ForecastQuestion } from "../domain/types";
-import { Sparkline } from "./charts";
+import TouchpointIcons from "./TouchpointIcons";
 import VisibilityPicker from "./VisibilityPicker";
 import { categoryColors, pct } from "./ui";
 
 export default function QuestionCard({ q }: { q: ForecastQuestion }) {
-  const { yesOutcome, historyFor, setVisibility, refreshForecast } = useStore();
+  const { yesOutcome, setVisibility, refreshForecast, touchpointSignalsFor, addTouchpoint } = useStore();
   const [refreshing, setRefreshing] = useState(false);
   const yes = yesOutcome(q.id);
-  const history = yes ? historyFor(yes.id) : [];
   const p = yes?.currentProbability ?? q.priorBaseRate;
+  const signals = touchpointSignalsFor(q.id);
 
   const handleRefresh = (e: MouseEvent) => {
     e.preventDefault();
@@ -49,13 +49,11 @@ export default function QuestionCard({ q }: { q: ForecastQuestion }) {
         <h3 className="qc-title">{q.title}</h3>
 
         <div className="qc-mid">
-          <div className="qc-prob">
-            <div className="qc-prob-num">{pct(p)}</div>
-          </div>
-          <Sparkline values={history.map((h) => h.probability)} />
+          <div className="qc-prob-num">{pct(p)}</div>
         </div>
 
         <div className="qc-foot">
+          <TouchpointIcons signals={signals} onAdd={(kind) => addTouchpoint(q.id, kind)} />
           <span className="qc-date">resolves {q.resolutionDate}</span>
         </div>
       </Link>

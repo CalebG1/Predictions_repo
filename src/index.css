@@ -472,9 +472,6 @@ input {
 }
 
 .qc-mid {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
   margin-bottom: 12px;
 }
 
@@ -506,16 +503,116 @@ input {
 
 .qc-foot {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
+  gap: 10px;
   border-top: 1px solid var(--line-2);
   padding-top: 10px;
   font-size: 11.5px;
   color: var(--text-3);
 }
 
-.sparkline {
+.qc-touchpoints {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.qc-tp {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--text-3);
+  border-radius: 6px;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.qc-tp.connected {
+  background: color-mix(in srgb, var(--tp-color) 14%, white);
+  border-color: color-mix(in srgb, var(--tp-color) 40%, white);
+  color: var(--tp-color);
+}
+
+.qc-tp-add {
+  position: relative;
+}
+
+.qc-tp-add-btn {
+  cursor: pointer;
+  border-style: dashed;
+  color: var(--text-3);
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.qc-tp-add-btn:hover {
+  border-color: var(--green);
+  color: var(--green-dark);
+  background: var(--green-soft);
+}
+
+.qc-tp-menu {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 4px;
+  z-index: 20;
+}
+
+.qc-tp-menu-empty {
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.qc-tp-menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  padding: 7px 9px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.qc-tp-menu-item:hover {
+  background: var(--bg-2);
+}
+
+.qc-tp-menu-icon {
+  color: var(--tp-color);
+  line-height: 0;
+  margin-top: 1px;
+}
+
+.qc-tp-menu-label {
   display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.qc-tp-menu-desc {
+  display: block;
+  font-size: 10px;
+  color: var(--text-3);
+  margin-top: 1px;
+}
+
+.qc-date {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* ---------- Detail page ---------- */

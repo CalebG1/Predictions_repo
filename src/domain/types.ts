@@ -23,6 +23,16 @@ export type QuestionStatus = "open" | "resolved" | "void";
 
 export type ImpactLevel = "low" | "medium" | "high" | "critical";
 
+/** Real-world data sources that can feed a forecast (interviews, apps, polls). */
+export type TouchpointKind = "interview" | "teams" | "excel" | "slack" | "survey";
+
+/** An active signal from a connected touchpoint with relevant information. */
+export interface TouchpointSignal {
+  kind: TouchpointKind;
+  summary: string;
+  updatedAt: string;
+}
+
 export interface Organization {
   id: string;
   name: string;
