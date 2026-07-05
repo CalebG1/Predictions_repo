@@ -1,6 +1,9 @@
 import { NavLink, Outlet } from "react-router-dom";
 
-const tabs = [{ label: "Methodology", path: "methodology" }];
+const tabs = [
+  { label: "Methodology", path: "methodology" },
+  { label: "Context", path: "context" },
+];
 
 export default function Settings() {
   return (

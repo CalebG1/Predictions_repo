@@ -7,6 +7,7 @@ import QuestionEmbed from "./pages/QuestionEmbed";
 import Movers from "./pages/Movers";
 import Settings from "./pages/Settings";
 import Methodology from "./pages/settings/Methodology";
+import Context from "./pages/settings/Context";
 
 function AppShell() {
   return (
@@ -20,6 +21,7 @@ function AppShell() {
         <Route path="/settings" element={<Settings />}>
           <Route index element={<Navigate to="methodology" replace />} />
           <Route path="methodology" element={<Methodology />} />
+          <Route path="context" element={<Context />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
