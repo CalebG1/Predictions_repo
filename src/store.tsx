@@ -11,7 +11,7 @@ import { seedTouchpointSignals, connectSignalFor, uploadSignalFor } from "./doma
 import type { Connector } from "./domain/connectors";
 import { runForecast } from "./domain/engine";
 import { canViewQuestion, visibleQuestions } from "./domain/access";
-import type { ForecastQuestion, Outcome, ProbabilityAlert, ProbabilityPoint, TouchpointSignal, User, Visibility } from "./domain/types";
+import type { ForecastQuestion, Outcome, ProbabilityAlert, ProbabilityPoint, TouchpointSignal, User, Visibility, Category } from "./domain/types";
 
 const ALERTS_STORAGE_KEY = "foresight-probability-alerts";
 
@@ -64,6 +64,7 @@ interface StoreCtx {
   yesOutcome: (questionId: string) => Outcome | undefined;
   canView: (q: ForecastQuestion) => boolean;
   setVisibility: (questionId: string, visibility: Visibility) => void;
+  setCategory: (questionId: string, category: Category) => void;
   refreshForecast: (questionId: string) => void;
   touchpointSignalsFor: (questionId: string) => TouchpointSignal[];
   /** Connect an app from the source gallery. */
@@ -86,6 +87,7 @@ const Ctx = createContext<StoreCtx | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>(users[0]);
   const [visibilityOverrides, setVisibilityOverrides] = useState<Record<string, Visibility>>({});
+  const [categoryOverrides, setCategoryOverrides] = useState<Record<string, Category>>({});
   const [probabilityOverrides, setProbabilityOverrides] = useState<Record<string, number>>({});
   const [extraHistory, setExtraHistory] = useState<ProbabilityPoint[]>([]);
   const [touchpointSignals, setTouchpointSignals] = useState<Record<string, TouchpointSignal[]>>(() => ({
@@ -124,10 +126,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const mergedQuestions = useMemo(
     () =>
-      seedQuestions.map((q) =>
-        visibilityOverrides[q.id] ? { ...q, visibility: visibilityOverrides[q.id] } : q
-      ),
-    [visibilityOverrides]
+      seedQuestions.map((q) => ({
+        ...q,
+        ...(visibilityOverrides[q.id] ? { visibility: visibilityOverrides[q.id] } : {}),
+        ...(categoryOverrides[q.id] ? { category: categoryOverrides[q.id] } : {}),
+      })),
+    [visibilityOverrides, categoryOverrides]
   );
 
   const applyOutcomeOverrides = useCallback(
@@ -270,6 +274,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       canView: (q) => canViewQuestion(user, q, accessGrants),
       setVisibility: (questionId, visibility) =>
         setVisibilityOverrides((prev) => ({ ...prev, [questionId]: visibility })),
+      setCategory: (questionId, category) =>
+        setCategoryOverrides((prev) => ({ ...prev, [questionId]: category })),
       refreshForecast,
       touchpointSignalsFor,
       addSource,

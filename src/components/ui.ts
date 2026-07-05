@@ -1,4 +1,17 @@
-import type { Category, ImpactLevel, Visibility } from "../domain/types";
+import type { Category, ImpactLevel, RiskOrOpportunity, Visibility } from "../domain/types";
+
+export const categoryOrder: Category[] = [
+  "Financial",
+  "Operational",
+  "Geopolitical",
+  "Regulatory",
+  "Talent",
+  "Security/Cyber",
+  "Supply Chain",
+  "Product",
+  "Reputational",
+  "Macro",
+];
 
 export const categoryColors: Record<Category, string> = {
   Financial: "#2f6df6",
@@ -57,4 +70,21 @@ export function visibilityLabel(visibility: Visibility, owningTeam?: string): st
     case "restricted":
       return "Private";
   }
+}
+
+export function isCategory(value: string): value is Category {
+  return categoryOrder.includes(value as Category);
+}
+
+export function overviewHref(filters: {
+  cat?: Category;
+  owner?: string;
+  type?: RiskOrOpportunity;
+}): string {
+  const params = new URLSearchParams();
+  if (filters.type) params.set("type", filters.type);
+  if (filters.cat) params.set("cat", filters.cat);
+  if (filters.owner) params.set("owner", filters.owner);
+  const query = params.toString();
+  return query ? `/?${query}` : "/";
 }

@@ -1,21 +1,36 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useStore, probabilityDelta, riskWeighted, sortWithPins } from "../store";
 import QuestionCard from "../components/QuestionCard";
 import QuestionFilters, { type HorizonKey, type SortKey, withinHorizon } from "../components/QuestionFilters";
 import QuestionTable from "../components/QuestionTable";
-import type { Category, Visibility } from "../domain/types";
+import { isCategory } from "../components/ui";
+import type { Category, RiskOrOpportunity, Visibility } from "../domain/types";
 
 type ViewMode = "cards" | "table";
 
 export default function Overview() {
   const { questions, yesOutcome, historyFor, pinnedIds } = useStore();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey | null>(null);
   const [cat, setCat] = useState<Category | "all">("all");
   const [owner, setOwner] = useState<string>("all");
+  const [riskType, setRiskType] = useState<RiskOrOpportunity | "all">("all");
   const [vis, setVis] = useState<"all" | Visibility>("all");
   const [horizon, setHorizon] = useState<HorizonKey>("all");
   const [view] = useState<ViewMode>("table");
+
+  useEffect(() => {
+    const catParam = searchParams.get("cat");
+    setCat(catParam && isCategory(catParam) ? catParam : "all");
+
+    const ownerParam = searchParams.get("owner");
+    setOwner(ownerParam ?? "all");
+
+    const typeParam = searchParams.get("type");
+    setRiskType(typeParam === "risk" || typeParam === "opportunity" ? typeParam : "all");
+  }, [searchParams]);
 
   const categories = useMemo(
     () => Array.from(new Set(questions.map((q) => q.category))).sort(),
@@ -34,6 +49,7 @@ export default function Overview() {
       if (query && !q.title.toLowerCase().includes(query)) return false;
       if (cat !== "all" && q.category !== cat) return false;
       if (owner !== "all" && q.owningTeam !== owner) return false;
+      if (riskType !== "all" && q.riskOrOpportunity !== riskType) return false;
       if (vis !== "all" && q.visibility !== vis) return false;
       if (!withinHorizon(q.resolutionDate, horizon)) return false;
       return true;
@@ -64,7 +80,7 @@ export default function Overview() {
     }
 
     return view === "table" ? sortWithPins(list, pinnedIds) : list;
-  }, [questions, search, cat, owner, vis, horizon, sort, view, pinnedIds, yesOutcome, historyFor]);
+  }, [questions, search, cat, owner, riskType, vis, horizon, sort, view, pinnedIds, yesOutcome, historyFor]);
 
   return (
     <div className="dash-page dash-page-questions">

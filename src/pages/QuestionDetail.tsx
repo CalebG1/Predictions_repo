@@ -6,7 +6,7 @@ import { evidenceSources } from "../domain/seed";
 import AgentPanel from "../components/AgentPanel";
 import { buildProbPoints, ProbChart } from "../components/charts";
 import VisibilityPicker from "../components/VisibilityPicker";
-import { categoryColors, pct } from "../components/ui";
+import { overviewHref, pct } from "../components/ui";
 
 export default function QuestionDetail() {
   const { id } = useParams();
@@ -40,32 +40,47 @@ export default function QuestionDetail() {
 
   return (
     <div className="dash-page detail">
-      <Link to="/" className="back-link">
-        ← Overview
-      </Link>
-
-      <div className="detail-head">
-        <span className="qc-cat" style={{ color: categoryColors[q.category] }}>
-          <span className="qc-dot" style={{ background: categoryColors[q.category] }} />
-          {q.category}
-        </span>
-        <span className="qc-tags">
-          <VisibilityPicker
-            value={q.visibility}
-            owningTeam={q.owningTeam}
-            onChange={(v) => setVisibility(q.id, v)}
-          />
-        </span>
+      <div className="detail-hero">
+        <div className="detail-head">
+          <div className="detail-head-main">
+            <nav className="detail-breadcrumbs" aria-label="Question categories">
+              <Link to={overviewHref({ type: q.riskOrOpportunity })}>
+                {q.riskOrOpportunity === "risk" ? "Risk" : "Opportunity"}
+              </Link>
+              <span className="detail-crumb-sep" aria-hidden="true">
+                ·
+              </span>
+              <Link to={overviewHref({ type: q.riskOrOpportunity, cat: q.category })}>{q.category}</Link>
+              <span className="detail-crumb-sep" aria-hidden="true">
+                ·
+              </span>
+              <Link
+                to={overviewHref({
+                  type: q.riskOrOpportunity,
+                  cat: q.category,
+                  owner: q.owningTeam,
+                })}
+              >
+                {q.owningTeam}
+              </Link>
+            </nav>
+            <h1 className="detail-title">{q.title}</h1>
+          </div>
+          <div className="detail-nav-meta">
+            <VisibilityPicker
+              value={q.visibility}
+              owningTeam={q.owningTeam}
+              onChange={(v) => setVisibility(q.id, v)}
+            />
+          </div>
+        </div>
       </div>
-      <h1 className="detail-title">{q.title}</h1>
-      <p className="detail-def">{q.preciseDefinition}</p>
 
       <div className="panel detail-chart">
-        <div className="panel-head">
-          <span>Probability over time</span>
-          <span className="big-prob">{pct(yes.currentProbability)}</span>
-        </div>
-        <ProbChart points={chartPoints} />
+        <ProbChart
+          points={chartPoints}
+          endpointLabel={{ tag: "Yes", probability: yes.currentProbability }}
+        />
       </div>
 
       <div className="detail-grid">

@@ -49,10 +49,14 @@ export function kindFor(trigger?: string): RefreshKind {
 }
 
 const KIND_META: Record<RefreshKind, { label: string; color: string }> = {
-  backcast: { label: "Backcast", color: "#9aa7b4" },
-  hard: { label: "Hard refresh", color: "#5b6b7a" },
-  soft: { label: "Soft refresh", color: "#f5a742" },
+  backcast: { label: "Backcast", color: "#8a95a3" },
+  hard: { label: "Hard refresh", color: "#4a5568" },
+  soft: { label: "Soft refresh", color: "#d97706" },
 };
+
+const CHART_GRID = "#f0f1f3";
+const CHART_AXIS = "#5b6672";
+const CHART_LINE = "#16345c";
 
 /** Map probability history into chart-ready points with soft-refresh popup copy. */
 export function buildProbPoints(history: ProbabilityPoint[]): ProbPoint[] {
@@ -210,11 +214,13 @@ function canZoomIn(current: ViewRange): boolean {
 export function ProbChart({
   points,
   height = 300,
+  endpointLabel,
 }: {
   points: ProbPoint[];
   // Kept for backwards compatibility; annotations are now derived internally.
   annotations?: { index: number; label: string }[];
   height?: number;
+  endpointLabel?: { tag?: string; probability: number };
 }) {
   const [tf, setTf] = useState("All");
   const [displayRange, setDisplayRange] = useState<ViewRange>({ i0: 0, i1: 1, yLo: 0, yHi: 1 });
@@ -315,7 +321,7 @@ export function ProbChart({
   const W = 760;
   const H = height;
   const padL = 56;
-  const padR = 16;
+  const padR = endpointLabel ? 54 : 16;
   const padB = 46;
   const padT = 14;
   const innerW = W - padL - padR;
@@ -425,7 +431,6 @@ export function ProbChart({
     baseVisible.map((p, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${getY(p).toFixed(1)}`).join(" ");
 
   const line = smoothPath((p) => ys(p.probability));
-  const area = `${line} L${xAt(baseVisible.length - 1)},${padT + innerH} L${xAt(0)},${padT + innerH} Z`;
 
   const selected = selectedIdx !== null ? baseVisible[selectedIdx] : null;
   const selectedKind = selected ? kindFor(selected.trigger) : null;
@@ -435,6 +440,14 @@ export function ProbChart({
   const iStart = Math.max(0, Math.floor(displayRange.i0));
   const iEnd = Math.min(baseVisible.length - 1, Math.ceil(displayRange.i1));
   const labelEvery = Math.max(1, Math.ceil((iEnd - iStart + 1) / 7));
+  const lastIdx = baseVisible.length - 1;
+  const lastPoint = baseVisible[lastIdx];
+  const endX = xAt(lastIdx);
+  const endY = ys(lastPoint.probability);
+  const endpointTag = endpointLabel?.tag ?? "Yes";
+  const endpointPct = endpointLabel
+    ? `${((endpointLabel.probability ?? lastPoint.probability) * 100).toFixed(0)}%`
+    : null;
 
   return (
     <div className="prob-chart-wrap">
@@ -493,6 +506,11 @@ export function ProbChart({
           width="100%"
           className={`prob-chart${brushing ? " pc-brushing" : ""}${isAnimating ? " pc-animating" : ""}`}
           role="img"
+          aria-label={
+            endpointPct
+              ? `Probability over time. Current estimate: ${endpointPct}`
+              : "Probability over time"
+          }
           onPointerDown={onPlotPointerDown}
           onPointerMove={onPlotPointerMove}
           onPointerUp={onPlotPointerUp}
@@ -500,10 +518,6 @@ export function ProbChart({
           onDoubleClick={resetView}
         >
           <defs>
-            <linearGradient id="pcfill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2f6df6" stopOpacity="0.14" />
-              <stop offset="100%" stopColor="#2f6df6" stopOpacity="0" />
-            </linearGradient>
             <clipPath id="pc-clip">
               <rect x={padL} y={padT} width={innerW} height={innerH} />
             </clipPath>
@@ -511,16 +525,15 @@ export function ProbChart({
 
           {gridY.map((g, i) => (
             <g key={i}>
-              <line x1={padL} x2={W - padR} y1={ys(g)} y2={ys(g)} stroke="#eef1f4" />
-              <text x={padL - 10} y={ys(g) + 3.5} textAnchor="end" fontSize="10.5" fill="#8a95a3">
+              <line x1={padL} x2={W - padR} y1={ys(g)} y2={ys(g)} stroke={CHART_GRID} />
+              <text x={padL - 10} y={ys(g) + 3.5} textAnchor="end" fontSize="10.5" fill={CHART_AXIS}>
                 {(g * 100).toFixed(0)}
               </text>
             </g>
           ))}
 
           <g clipPath="url(#pc-clip)">
-            <path d={area} fill="url(#pcfill)" />
-            <path d={line} fill="none" stroke="#2f6df6" strokeWidth="2.4" strokeLinejoin="round" />
+            <path d={line} fill="none" stroke={CHART_LINE} strokeWidth="2.4" strokeLinejoin="round" />
 
             {baseVisible.map((p, i) => {
               const cx = xAt(i);
@@ -538,7 +551,7 @@ export function ProbChart({
                   cx={cx}
                   cy={ys(p.probability)}
                   r={r}
-                  fill={isLast ? "#16345c" : KIND_META[kind].color}
+                  fill={isLast ? CHART_LINE : KIND_META[kind].color}
                   stroke="#fff"
                   strokeWidth={isSelected ? 2 : isLast ? 1.5 : 1}
                   className={isSoft ? "pc-dot-soft" : undefined}
@@ -568,9 +581,28 @@ export function ProbChart({
             })}
           </g>
 
+          {endpointLabel && endpointPct && (
+            <g className="pc-endpoint-label" aria-hidden="true">
+              <circle cx={endX} cy={endY} r={18} fill={CHART_LINE} fillOpacity="0.1" />
+              <text x={endX + 11} y={endY - 2} fontSize="9.5" fontWeight="600" fill={CHART_LINE}>
+                {endpointTag}
+              </text>
+              <text
+                x={endX + 11}
+                y={endY + 14}
+                fontSize="18"
+                fontWeight="700"
+                fill={CHART_LINE}
+                fontFamily="Roboto Condensed, Arial Narrow, sans-serif"
+              >
+                {endpointPct}
+              </text>
+            </g>
+          )}
+
           {baseVisible.map((p, i) =>
             i >= iStart && (i === iEnd || (i - iStart) % labelEvery === 0) ? (
-              <text key={`l-${i}`} x={xAt(i)} y={H - 24} textAnchor="middle" fontSize="9.5" fill="#8a95a3">
+              <text key={`l-${i}`} x={xAt(i)} y={H - 24} textAnchor="middle" fontSize="9.5" fill={CHART_AXIS}>
                 {fmtDate(p.timestamp)}
               </text>
             ) : null
@@ -583,8 +615,8 @@ export function ProbChart({
               y={Math.min(brush.y0, brush.y1)}
               width={Math.abs(brush.x1 - brush.x0)}
               height={Math.abs(brush.y1 - brush.y0)}
-              fill="rgba(47, 109, 246, 0.08)"
-              stroke="#2f6df6"
+              fill="rgba(22, 52, 92, 0.1)"
+              stroke={CHART_LINE}
               strokeWidth="1"
               strokeDasharray="4 3"
               pointerEvents="none"
