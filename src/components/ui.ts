@@ -34,7 +34,20 @@ export const visibilityOrder: Visibility[] = ["public", "team", "leadership", "r
 
 export const visibilityConfig: Record<Visibility, { label: string; description: string }> = {
   public: { label: "Everyone", description: "Visible to all org members" },
-  team: { label: "Team only", description: "Visible to the owning team" },
+  team: { label: "Team", description: "Visible to the owning team only" },
   leadership: { label: "Leadership", description: "Executives and risk managers" },
-  restricted: { label: "Restricted", description: "Explicit access grants only" },
+  restricted: { label: "Private", description: "Explicit access grants only" },
 };
+
+export function visibilityLabel(visibility: Visibility, owningTeam?: string): string {
+  switch (visibility) {
+    case "public":
+      return "Everyone";
+    case "team":
+      return owningTeam ?? "Team";
+    case "leadership":
+      return "Leadership";
+    case "restricted":
+      return "Private";
+  }
+}

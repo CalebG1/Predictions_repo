@@ -2,8 +2,6 @@ import { Link, useLocation } from "react-router-dom";
 
 const tabs = [
   { label: "Overview", path: "/" },
-  { label: "Calibration & Accuracy", path: "/calibration" },
-  { label: "Decision View", path: "/decision" },
   { label: "Movers", path: "/movers" },
 ];
 

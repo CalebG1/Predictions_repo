@@ -34,6 +34,15 @@ export function IconPin({ filled = false }: { filled?: boolean }) {
   );
 }
 
+export function IconLock() {
+  return (
+    <svg {...svgProps} width={12} height={12}>
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
 export function IconShare() {
   return (
     <svg {...svgProps}>

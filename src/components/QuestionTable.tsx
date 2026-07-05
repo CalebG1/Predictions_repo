@@ -1,32 +1,60 @@
-import { Link } from "react-router-dom";
-import { useStore } from "../store";
+import { useNavigate } from "react-router-dom";
+import { probabilityDelta, useStore } from "../store";
 import type { ForecastQuestion } from "../domain/types";
 import TouchpointIcons from "./TouchpointIcons";
 import QuestionOverflowMenu from "./QuestionOverflowMenu";
-import VisibilityPicker from "./VisibilityPicker";
-import { pct } from "./ui";
+import VisibilityBadge from "./VisibilityBadge";
+import { IconPin } from "./icons";
+import { pct, signedPct } from "./ui";
 
 function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean }) {
-  const { yesOutcome, setVisibility, touchpointSignalsFor, addTouchpoint } = useStore();
+  const navigate = useNavigate();
+  const { yesOutcome, historyFor, touchpointSignalsFor, addTouchpoint } = useStore();
   const yes = yesOutcome(q.id);
   const p = yes?.currentProbability ?? q.priorBaseRate;
+  const d1 = yes ? probabilityDelta(historyFor(yes.id), 1) : null;
   const signals = touchpointSignalsFor(q.id);
 
+  const goToQuestion = () => navigate(`/q/${q.id}`);
+
   return (
-    <tr className={pinned ? "qt-pinned" : undefined}>
-      <td>
-        <Link to={`/q/${q.id}`} className="qt-title">
-          {q.title}
-        </Link>
+    <tr
+      className="qt-row"
+      role="link"
+      tabIndex={0}
+      onClick={goToQuestion}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          goToQuestion();
+        }
+      }}
+    >
+      <td className="qt-pin-col" aria-hidden={!pinned}>
+        {pinned && (
+          <span className="qt-pin" title="Pinned">
+            <IconPin filled />
+          </span>
+        )}
       </td>
-      <td className="qt-prob">{pct(p)}</td>
-      <td>
-        <VisibilityPicker value={q.visibility} onChange={(v) => setVisibility(q.id, v)} />
+      <td className="qt-question-col">
+        <span className="qt-title">{q.title}</span>
       </td>
-      <td>
+      <td className="qt-prob">
+        <div className="qt-prob-inner">
+          <span className="qt-prob-val">{pct(p)}</span>
+          {d1 !== null && d1 !== 0 && (
+            <span className={`qt-prob-delta delta ${d1 >= 0 ? "up" : "down"}`}>{signedPct(d1)}%</span>
+          )}
+        </div>
+      </td>
+      <td className="qt-sources-col">
         <TouchpointIcons signals={signals} onAdd={(kind) => addTouchpoint(q.id, kind)} />
       </td>
-      <td className="qt-date">{q.resolutionDate}</td>
+      <td className="qt-date-col">{q.resolutionDate}</td>
+      <td className="qt-vis-col">
+        <VisibilityBadge value={q.visibility} owningTeam={q.owningTeam} />
+      </td>
       <td className="qt-menu">
         <QuestionOverflowMenu q={q} probability={p} showPin />
       </td>
@@ -42,11 +70,12 @@ export default function QuestionTable({ questions }: { questions: ForecastQuesti
       <table className="qtable">
         <thead>
           <tr>
-            <th>Question</th>
-            <th>Probability</th>
-            <th>Visibility</th>
-            <th>Sources</th>
-            <th>Resolves</th>
+            <th className="qt-pin-col" aria-hidden="true" />
+            <th className="qt-question-col">Question</th>
+            <th className="qt-prob-col">Probability</th>
+            <th className="qt-sources-col">Sources</th>
+            <th className="qt-date-col">Resolves</th>
+            <th className="qt-vis-col">Visibility</th>
             <th aria-label="Actions" />
           </tr>
         </thead>

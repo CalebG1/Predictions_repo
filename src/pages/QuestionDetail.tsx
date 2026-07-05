@@ -56,7 +56,11 @@ export default function QuestionDetail() {
           {q.category}
         </span>
         <span className="qc-tags">
-          <VisibilityPicker value={q.visibility} onChange={(v) => setVisibility(q.id, v)} />
+          <VisibilityPicker
+            value={q.visibility}
+            owningTeam={q.owningTeam}
+            onChange={(v) => setVisibility(q.id, v)}
+          />
         </span>
       </div>
       <h1 className="detail-title">{q.title}</h1>
@@ -193,9 +197,6 @@ export default function QuestionDetail() {
             ))}
           </div>
 
-          <Link to={`/decision?q=${q.id}`} className="btn full">
-            Open decision view →
-          </Link>
         </aside>
       </div>
     </div>

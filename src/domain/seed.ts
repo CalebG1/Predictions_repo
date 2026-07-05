@@ -300,6 +300,7 @@ export const accessGrants: AccessGrant[] = [
   { questionId: "q-attrition", role: "executive" },
   { questionId: "q-opex", role: "executive" },
   { questionId: "q-mna", role: "executive" },
+  { questionId: "q-mna", role: "risk_manager" },
   // analyst gets one explicit grant to demo user-level access:
   { questionId: "q-attrition", userId: "u-analyst" },
 ];

@@ -21,7 +21,7 @@ export default function Overview() {
   const [cat, setCat] = useState<Category | "all">("all");
   const [kind, setKind] = useState<RiskOrOpportunity | "all">("all");
   const [vis, setVis] = useState<"all" | Visibility>("all");
-  const [view, setView] = useState<ViewMode>("cards");
+  const [view, setView] = useState<ViewMode>("table");
 
   const categories = useMemo(
     () => Array.from(new Set(questions.map((q) => q.category))).sort(),
@@ -87,8 +87,10 @@ export default function Overview() {
           <div className="view-toggle">
             <button
               type="button"
-              className={`chip view-chip${view === "cards" ? " active" : ""}`}
-              onClick={() => setView("cards")}
+              className="chip view-chip"
+              disabled
+              aria-disabled="true"
+              title="Card view coming soon"
             >
               Cards
             </button>

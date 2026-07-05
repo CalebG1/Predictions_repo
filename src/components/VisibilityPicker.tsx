@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type { Visibility } from "../domain/types";
+import VisibilityLabel from "./VisibilityLabel";
 import { visibilityConfig, visibilityOrder } from "./ui";
 
 export default function VisibilityPicker({
   value,
+  owningTeam,
   onChange,
 }: {
   value: Visibility;
+  owningTeam?: string;
   onChange: (v: Visibility) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -30,13 +33,13 @@ export default function VisibilityPicker({
     <div className="vis-picker" ref={ref} onClick={stopNav} onMouseDown={stopNav}>
       <button
         type="button"
-        className={`tag tag-vis tag-vis-${value}`}
+        className="vis-trigger"
         title={visibilityConfig[value].description}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        {visibilityConfig[value].label}
+        <VisibilityLabel value={value} owningTeam={owningTeam} />
       </button>
       {open && (
         <div className="vis-menu" role="listbox">
@@ -46,13 +49,15 @@ export default function VisibilityPicker({
               type="button"
               role="option"
               aria-selected={v === value}
-              className={`vis-menu-item tag-vis-${v}${v === value ? " active" : ""}`}
+              className={`vis-menu-item${v === value ? " active" : ""}`}
               onClick={() => {
                 onChange(v);
                 setOpen(false);
               }}
             >
-              <span className="vis-menu-label">{visibilityConfig[v].label}</span>
+              <span className="vis-menu-label">
+                <VisibilityLabel value={v} owningTeam={owningTeam} />
+              </span>
               <span className="vis-menu-desc">{visibilityConfig[v].description}</span>
             </button>
           ))}

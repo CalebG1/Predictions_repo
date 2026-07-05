@@ -1,8 +1,8 @@
-import { brierOverTime, calibrationCurve, calibrationData } from "../domain/seed";
-import { meanBrier, rmsCalibrationError, calibrationVsSharpness } from "../domain/scoring";
-import { MiniBars, ReliabilityDiagram } from "../components/charts";
+import { brierOverTime, calibrationCurve, calibrationData } from "../../domain/seed";
+import { meanBrier, rmsCalibrationError, calibrationVsSharpness } from "../../domain/scoring";
+import { MiniBars, ReliabilityDiagram } from "../../components/charts";
 
-export default function Calibration() {
+export default function Methodology() {
   const brier = meanBrier(calibrationData);
   const rmsce = rmsCalibrationError(calibrationCurve);
   const { reliability, resolution, uncertainty } = calibrationVsSharpness(calibrationData);
@@ -16,12 +16,12 @@ export default function Calibration() {
   ];
 
   return (
-    <div className="dash-page">
-      <div className="dash-head">
-        <h1>Calibration &amp; Accuracy</h1>
+    <>
+      <div className="settings-section-head">
+        <h2>Methodology</h2>
         <p className="dash-sub">
-          The trust layer. Forecasts are scored with proper scoring rules and only count once questions resolve. Private
-          lines are excluded from these org-wide metrics.
+          How forecasts are scored and validated. Proper scoring rules apply once questions resolve; private lines are
+          excluded from org-wide metrics.
         </p>
       </div>
 
@@ -79,7 +79,7 @@ export default function Calibration() {
                   <td>{b.name}</td>
                   <td>{b.brier.toFixed(3)}</td>
                   <td className={b.brier <= brier ? "down" : "up"}>
-                    {b.name === "Model (engine)" ? "—" : `${b.brier <= brier ? "" : "+"}${(brier - b.brier).toFixed(3)}`}
+                    {b.name === "Model (engine)" ? "—" : `${b.brier <= brier ? "" : "+"}${(b.brier - b.brier).toFixed(3)}`}
                   </td>
                 </tr>
               ))}
@@ -87,6 +87,6 @@ export default function Calibration() {
           </table>
         </div>
       </div>
-    </div>
+    </>
   );
 }

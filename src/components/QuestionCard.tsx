@@ -3,11 +3,11 @@ import { useStore } from "../store";
 import type { ForecastQuestion } from "../domain/types";
 import TouchpointIcons from "./TouchpointIcons";
 import QuestionOverflowMenu from "./QuestionOverflowMenu";
-import VisibilityPicker from "./VisibilityPicker";
+import VisibilityBadge from "./VisibilityBadge";
 import { pct } from "./ui";
 
 export default function QuestionCard({ q }: { q: ForecastQuestion }) {
-  const { yesOutcome, setVisibility, touchpointSignalsFor, addTouchpoint } = useStore();
+  const { yesOutcome, touchpointSignalsFor, addTouchpoint } = useStore();
   const yes = yesOutcome(q.id);
   const p = yes?.currentProbability ?? q.priorBaseRate;
   const signals = touchpointSignalsFor(q.id);
@@ -15,10 +15,7 @@ export default function QuestionCard({ q }: { q: ForecastQuestion }) {
   return (
     <div className="qcard">
       <div className="qc-top">
-        <span className="qc-tags">
-          <VisibilityPicker value={q.visibility} onChange={(v) => setVisibility(q.id, v)} />
-          <QuestionOverflowMenu q={q} probability={p} />
-        </span>
+        <QuestionOverflowMenu q={q} probability={p} />
       </div>
 
       <Link to={`/q/${q.id}`} className="qcard-link">
@@ -30,7 +27,10 @@ export default function QuestionCard({ q }: { q: ForecastQuestion }) {
 
         <div className="qc-foot">
           <TouchpointIcons signals={signals} onAdd={(kind) => addTouchpoint(q.id, kind)} />
-          <span className="qc-date">resolves {q.resolutionDate}</span>
+          <span className="qc-foot-meta">
+            <span className="qc-date">resolves {q.resolutionDate}</span>
+            <VisibilityBadge value={q.visibility} owningTeam={q.owningTeam} />
+          </span>
         </div>
       </Link>
     </div>

@@ -4,9 +4,9 @@ import CategoryNav from "./components/CategoryNav";
 import Overview from "./pages/Overview";
 import QuestionDetail from "./pages/QuestionDetail";
 import QuestionEmbed from "./pages/QuestionEmbed";
-import Calibration from "./pages/Calibration";
-import Decision from "./pages/Decision";
 import Movers from "./pages/Movers";
+import Settings from "./pages/Settings";
+import Methodology from "./pages/settings/Methodology";
 
 function AppShell() {
   return (
@@ -16,9 +16,11 @@ function AppShell() {
       <Routes>
         <Route path="/" element={<Overview />} />
         <Route path="/q/:id" element={<QuestionDetail />} />
-        <Route path="/calibration" element={<Calibration />} />
-        <Route path="/decision" element={<Decision />} />
         <Route path="/movers" element={<Movers />} />
+        <Route path="/settings" element={<Settings />}>
+          <Route index element={<Navigate to="methodology" replace />} />
+          <Route path="methodology" element={<Methodology />} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
