@@ -226,14 +226,19 @@ export const questions: ForecastQuestion[] = Q.map(({ initial, ...q }) => {
 
 // --- Probability history generation (with annotated update reasons) ---
 
-const TRIGGERS = [
-  "Scheduled weekly run",
+const SOFT_TRIGGERS = ["Scheduled weekly run", "Watched market signal moved"];
+const HARD_TRIGGERS = [
   "New primary-source filing ingested",
-  "Watched market signal moved",
   "Red-team challenge incorporated",
   "Internal status change",
-  "Base-rate refresh",
 ];
+
+function pickTrigger(rng: () => number): string {
+  const r = rng();
+  if (r < 0.62) return SOFT_TRIGGERS[Math.floor(rng() * SOFT_TRIGGERS.length)];
+  if (r < 0.82) return HARD_TRIGGERS[Math.floor(rng() * HARD_TRIGGERS.length)];
+  return "Base-rate refresh";
+}
 
 function seeded(seed: string): () => number {
   let h = 2166136261;
@@ -257,7 +262,7 @@ const NOW = new Date("2026-06-28");
 
 Q.forEach((q) => {
   const rng = seeded(q.id);
-  const points = 18;
+  const points = 40;
   const start = new Date(q.openDate);
   const totalMs = NOW.getTime() - start.getTime();
   let p = q.initial;
@@ -271,7 +276,7 @@ Q.forEach((q) => {
       probability: Number(p.toFixed(3)),
       timestamp: t.toISOString().slice(0, 10),
       source: i % 3 === 0 ? "human-risk" : "agent-ensemble",
-      updateTrigger: TRIGGERS[Math.floor(rng() * TRIGGERS.length)],
+      updateTrigger: pickTrigger(rng),
       rationaleId: `${q.id}-r-${i}`,
     });
   }

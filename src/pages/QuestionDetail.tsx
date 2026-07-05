@@ -4,7 +4,7 @@ import { useStore } from "../store";
 import { runForecast } from "../domain/engine";
 import { evidenceSources } from "../domain/seed";
 import AgentPanel from "../components/AgentPanel";
-import { ProbChart } from "../components/charts";
+import { buildProbPoints, ProbChart } from "../components/charts";
 import VisibilityPicker from "../components/VisibilityPicker";
 import { categoryColors, pct } from "../components/ui";
 
@@ -34,13 +34,7 @@ export default function QuestionDetail() {
 
   const yes = yesOutcome(q.id)!;
   const history = historyFor(yes.id);
-  const chartPoints = history.map((h) => ({ timestamp: h.timestamp, probability: h.probability, trigger: h.updateTrigger }));
-  // Annotate the biggest single-step moves.
-  const annotations = history
-    .map((h, i) => ({ i, move: i === 0 ? 0 : Math.abs(h.probability - history[i - 1].probability) }))
-    .sort((a, b) => b.move - a.move)
-    .slice(0, 3)
-    .map((a) => ({ index: a.i, label: `${history[a.i].updateTrigger}: ${pct(history[a.i].probability)}` }));
+  const chartPoints = useMemo(() => buildProbPoints(history), [history]);
 
   const evidence = evidenceSources.slice(0, 5);
 
@@ -66,23 +60,16 @@ export default function QuestionDetail() {
       <h1 className="detail-title">{q.title}</h1>
       <p className="detail-def">{q.preciseDefinition}</p>
 
+      <div className="panel detail-chart">
+        <div className="panel-head">
+          <span>Probability over time</span>
+          <span className="big-prob">{pct(yes.currentProbability)}</span>
+        </div>
+        <ProbChart points={chartPoints} />
+      </div>
+
       <div className="detail-grid">
         <div className="detail-main">
-          <div className="panel">
-            <div className="panel-head">
-              <span>Probability over time</span>
-              <span className="big-prob">{pct(yes.currentProbability)}</span>
-            </div>
-            <ProbChart points={chartPoints} annotations={annotations} />
-            <div className="anno-legend">
-              {annotations.map((a) => (
-                <div key={a.index} className="anno-item">
-                  <span className="anno-dot" /> {a.label}
-                </div>
-              ))}
-            </div>
-          </div>
-
           <div className="panel">
             <div className="panel-head">
               <span>Agent panel (dragonfly eye)</span>

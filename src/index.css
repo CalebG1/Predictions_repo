@@ -1669,6 +1669,27 @@ input {
   line-height: 1.5;
 }
 
+.detail-chart {
+  margin-bottom: 20px;
+}
+
+.detail-chart .prob-chart-wrap {
+  margin-left: -18px;
+  margin-right: -18px;
+  width: calc(100% + 36px);
+}
+
+.detail-chart .pc-toolbar,
+.detail-chart .pc-legend {
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
+.detail-chart .prob-chart {
+  display: block;
+  width: 100%;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 340px;
@@ -1755,6 +1776,243 @@ input {
   background: #fff;
   border: 2px solid var(--ink);
   display: inline-block;
+}
+
+/* --- Probability chart (dual-line, categorized scatter) --- */
+.prob-chart-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.pc-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.pc-timeframes {
+  display: inline-flex;
+  background: var(--line-2);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.pc-tf {
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.12s, color 0.12s;
+}
+
+.pc-tf:hover {
+  color: var(--text);
+}
+
+.pc-tf.active {
+  background: #16345c;
+  color: #fff;
+}
+
+.pc-zoom {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.pc-reset {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 10px;
+  height: 26px;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pc-reset:hover {
+  border-color: #16345c;
+  color: #16345c;
+}
+
+.pc-zoom-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text-2);
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pc-zoom-btn:hover {
+  border-color: #16345c;
+  color: #16345c;
+}
+
+.pc-zoom-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pc-zoom-btn:disabled:hover {
+  border-color: var(--line);
+  color: var(--text-2);
+}
+
+.prob-chart.pc-animating {
+  cursor: wait;
+}
+
+.pc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 6px;
+  padding-left: 4px;
+}
+
+.pc-leg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+
+.pc-leg-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.pc-plot {
+  position: relative;
+}
+
+.prob-chart {
+  display: block;
+}
+
+.prob-chart.pc-brushing {
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.pc-brush-rect {
+  pointer-events: none;
+}
+
+.pc-popup {
+  position: absolute;
+  z-index: 20;
+  width: min(260px, 72vw);
+  padding: 12px 14px 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow), 0 10px 28px rgba(16, 30, 24, 0.12);
+  transform: translate(-50%, calc(-100% - 10px));
+  pointer-events: auto;
+}
+
+.pc-popup::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.pc-popup-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.pc-popup-close:hover {
+  color: var(--text);
+}
+
+.pc-popup-meta {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-3);
+  margin-bottom: 6px;
+  padding-right: 16px;
+}
+
+.pc-popup-summary {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.pc-popup-detail {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.pc-popup-toggle {
+  margin-top: 8px;
+  border: none;
+  background: transparent;
+  color: #2f6df6;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pc-popup-toggle:hover {
+  text-decoration: underline;
+}
+
+.pc-dot-soft:focus {
+  outline: none;
+}
+
+.prob-chart circle.pc-dot-soft {
+  cursor: pointer;
 }
 
 .panel.two-col {
