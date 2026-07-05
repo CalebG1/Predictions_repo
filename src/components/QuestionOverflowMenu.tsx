@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type { ForecastQuestion } from "../domain/types";
 import { questionUrl, shareMessage } from "../domain/share";
 import { useStore } from "../store";
-import { IconDots, IconPin, IconRefresh, IconShare } from "./icons";
+import CreateAlertModal from "./CreateAlertModal";
+import { IconBell, IconDots, IconPin, IconRefresh, IconShare } from "./icons";
 
 async function copyText(text: string): Promise<boolean> {
   try {
@@ -24,6 +25,7 @@ export default function QuestionOverflowMenu({
 }) {
   const { refreshForecast, togglePin, isPinned } = useStore();
   const [open, setOpen] = useState(false);
+  const [alertOpen, setAlertOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const pinned = isPinned(q.id);
 
@@ -78,6 +80,19 @@ export default function QuestionOverflowMenu({
             type="button"
             className="overflow-icon"
             role="menuitem"
+            title="Set alert"
+            aria-label="Set alert"
+            onClick={() => {
+              setAlertOpen(true);
+              closeMenu();
+            }}
+          >
+            <IconBell />
+          </button>
+          <button
+            type="button"
+            className="overflow-icon"
+            role="menuitem"
             title="Share"
             aria-label="Share"
             onClick={async () => {
@@ -102,6 +117,8 @@ export default function QuestionOverflowMenu({
           </button>
         </div>
       )}
+
+      <CreateAlertModal open={alertOpen} q={q} probability={probability} onClose={() => setAlertOpen(false)} />
     </div>
   );
 }

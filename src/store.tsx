@@ -11,7 +11,46 @@ import { seedTouchpointSignals, connectSignalFor, uploadSignalFor } from "./doma
 import type { Connector } from "./domain/connectors";
 import { runForecast } from "./domain/engine";
 import { canViewQuestion, visibleQuestions } from "./domain/access";
-import type { ForecastQuestion, Outcome, ProbabilityPoint, TouchpointSignal, User, Visibility } from "./domain/types";
+import type { ForecastQuestion, Outcome, ProbabilityAlert, ProbabilityPoint, TouchpointSignal, User, Visibility } from "./domain/types";
+
+const ALERTS_STORAGE_KEY = "foresight-probability-alerts";
+
+function loadAlerts(): ProbabilityAlert[] {
+  try {
+    const raw = localStorage.getItem(ALERTS_STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as ProbabilityAlert[];
+  } catch {
+    return [];
+  }
+}
+
+function saveAlerts(alerts: ProbabilityAlert[]) {
+  try {
+    localStorage.setItem(ALERTS_STORAGE_KEY, JSON.stringify(alerts));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+function checkAlertCrossing(
+  alert: ProbabilityAlert,
+  prior: number,
+  current: number
+): ProbabilityAlert | null {
+  if (alert.triggeredAt) return null;
+  const crossed =
+    alert.direction === "above"
+      ? prior < alert.threshold && current >= alert.threshold
+      : prior > alert.threshold && current <= alert.threshold;
+  if (!crossed) return null;
+  return {
+    ...alert,
+    triggeredAt: new Date().toISOString(),
+    triggeredProbability: current,
+    read: false,
+  };
+}
 
 interface StoreCtx {
   org: typeof organization;
@@ -34,6 +73,12 @@ interface StoreCtx {
   pinnedIds: string[];
   isPinned: (questionId: string) => boolean;
   togglePin: (questionId: string) => void;
+  alerts: ProbabilityAlert[];
+  addAlert: (alert: Omit<ProbabilityAlert, "id" | "createdAt" | "read">) => void;
+  removeAlert: (alertId: string) => void;
+  markAlertRead: (alertId: string) => void;
+  markAllAlertsRead: () => void;
+  unreadAlertCount: number;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -47,6 +92,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     ...seedTouchpointSignals,
   }));
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [alerts, setAlerts] = useState<ProbabilityAlert[]>(() => loadAlerts());
+
+  const persistAlerts = useCallback((updater: ProbabilityAlert[] | ((prev: ProbabilityAlert[]) => ProbabilityAlert[])) => {
+    setAlerts((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      saveAlerts(next);
+      return next;
+    });
+  }, []);
+
+  const evaluateAlertsForOutcome = useCallback(
+    (outcomeId: string, prior: number, current: number) => {
+      setAlerts((prev) => {
+        let changed = false;
+        const next = prev.map((a) => {
+          if (a.outcomeId !== outcomeId) return a;
+          const updated = checkAlertCrossing(a, prior, current);
+          if (updated) {
+            changed = true;
+            return updated;
+          }
+          return a;
+        });
+        if (changed) saveAlerts(next);
+        return changed ? next : prev;
+      });
+    },
+    []
+  );
 
   const mergedQuestions = useMemo(
     () =>
@@ -83,6 +157,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const newP = Number(forecast.currentProbability.toFixed(3));
       const no = seedOutcomes.find((o) => o.questionId === questionId && o.id.endsWith("-no"));
 
+      evaluateAlertsForOutcome(yes.id, prior, newP);
+
       setProbabilityOverrides((prev) => ({
         ...prev,
         [yes.id]: newP,
@@ -101,7 +177,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         },
       ]);
     },
-    [mergedQuestions, probabilityOverrides]
+    [mergedQuestions, probabilityOverrides, evaluateAlertsForOutcome]
   );
 
   const touchpointSignalsFor = useCallback(
@@ -145,6 +221,44 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const addAlert = useCallback(
+    (input: Omit<ProbabilityAlert, "id" | "createdAt" | "read">) => {
+      persistAlerts((prev) => [
+        ...prev,
+        {
+          ...input,
+          id: `alert-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          createdAt: new Date().toISOString(),
+          read: false,
+        },
+      ]);
+    },
+    [persistAlerts]
+  );
+
+  const removeAlert = useCallback(
+    (alertId: string) => {
+      persistAlerts((prev) => prev.filter((a) => a.id !== alertId));
+    },
+    [persistAlerts]
+  );
+
+  const markAlertRead = useCallback(
+    (alertId: string) => {
+      persistAlerts((prev) => prev.map((a) => (a.id === alertId ? { ...a, read: true } : a)));
+    },
+    [persistAlerts]
+  );
+
+  const markAllAlertsRead = useCallback(() => {
+    persistAlerts((prev) => prev.map((a) => ({ ...a, read: true })));
+  }, [persistAlerts]);
+
+  const unreadAlertCount = useMemo(
+    () => alerts.filter((a) => a.triggeredAt && !a.read).length,
+    [alerts]
+  );
+
   const value = useMemo<StoreCtx>(() => {
     const visible = visibleQuestions(user, mergedQuestions, accessGrants);
     return {
@@ -163,6 +277,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       pinnedIds,
       isPinned,
       togglePin,
+      alerts,
+      addAlert,
+      removeAlert,
+      markAlertRead,
+      markAllAlertsRead,
+      unreadAlertCount,
       outcomesFor: (questionId) =>
         seedOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
       historyFor,
@@ -171,7 +291,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return outcome ? applyOutcomeOverrides(outcome) : undefined;
       },
     };
-  }, [user, mergedQuestions, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addSource, addUpload, pinnedIds, isPinned, togglePin]);
+  }, [user, mergedQuestions, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addSource, addUpload, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

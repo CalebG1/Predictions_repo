@@ -257,3 +257,18 @@ export interface BaselineComparison {
   externalMarket?: number;
   model: number;
 }
+
+/** User-defined alert when a probability crosses a threshold (stock-style price alert). */
+export interface ProbabilityAlert {
+  id: string;
+  questionId: string;
+  outcomeId: string;
+  direction: "above" | "below";
+  /** 0..1 — alert fires when probability crosses this boundary. */
+  threshold: number;
+  createdAt: string;
+  /** Set when the threshold is crossed; alert stays listed until deleted. */
+  triggeredAt?: string;
+  triggeredProbability?: number;
+  read: boolean;
+}
