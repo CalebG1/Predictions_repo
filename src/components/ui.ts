@@ -30,6 +30,13 @@ export const impactRank: Record<ImpactLevel, number> = {
   critical: 4,
 };
 
+export const impactLevelLabel: Record<ImpactLevel, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+  critical: "Critical",
+};
+
 export const visibilityOrder: Visibility[] = ["public", "team", "leadership", "restricted"];
 
 export const visibilityConfig: Record<Visibility, { label: string; description: string }> = {

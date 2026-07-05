@@ -1,38 +1,41 @@
 import { useMemo, useState } from "react";
 import { useStore, probabilityDelta, riskWeighted, sortWithPins } from "../store";
 import QuestionCard from "../components/QuestionCard";
+import QuestionFilters, { type HorizonKey, type SortKey, withinHorizon } from "../components/QuestionFilters";
 import QuestionTable from "../components/QuestionTable";
-import type { Category, RiskOrOpportunity, Visibility } from "../domain/types";
-import { visibilityConfig, visibilityOrder } from "../components/ui";
+import type { Category, Visibility } from "../domain/types";
 
-type SortKey = "movers" | "risk_weighted" | "resolving_soon" | "most_uncertain";
 type ViewMode = "cards" | "table";
-
-const SORTS: { key: SortKey; label: string }[] = [
-  { key: "movers", label: "Biggest movers" },
-  { key: "risk_weighted", label: "Highest risk-weighted" },
-  { key: "resolving_soon", label: "Resolving soon" },
-  { key: "most_uncertain", label: "Most uncertain" },
-];
 
 export default function Overview() {
   const { questions, yesOutcome, historyFor, pinnedIds } = useStore();
-  const [sort, setSort] = useState<SortKey>("movers");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortKey | null>(null);
   const [cat, setCat] = useState<Category | "all">("all");
-  const [kind, setKind] = useState<RiskOrOpportunity | "all">("all");
+  const [owner, setOwner] = useState<string>("all");
   const [vis, setVis] = useState<"all" | Visibility>("all");
-  const [view, setView] = useState<ViewMode>("table");
+  const [horizon, setHorizon] = useState<HorizonKey>("all");
+  const [view] = useState<ViewMode>("table");
 
   const categories = useMemo(
     () => Array.from(new Set(questions.map((q) => q.category))).sort(),
     [questions]
   );
 
+  const owners = useMemo(
+    () => Array.from(new Set(questions.map((q) => q.owningTeam))).sort(),
+    [questions]
+  );
+
   const rows = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
     let list = questions.filter((q) => {
+      if (query && !q.title.toLowerCase().includes(query)) return false;
       if (cat !== "all" && q.category !== cat) return false;
-      if (kind !== "all" && q.riskOrOpportunity !== kind) return false;
+      if (owner !== "all" && q.owningTeam !== owner) return false;
       if (vis !== "all" && q.visibility !== vis) return false;
+      if (!withinHorizon(q.resolutionDate, horizon)) return false;
       return true;
     });
 
@@ -43,88 +46,50 @@ export default function Overview() {
       return { p, d7: probabilityDelta(h, 7) ?? 0 };
     };
 
-    list = [...list].sort((a, b) => {
-      const sa = score(a.id);
-      const sb = score(b.id);
-      switch (sort) {
-        case "movers":
-          return Math.abs(sb.d7) - Math.abs(sa.d7);
-        case "risk_weighted":
-          return riskWeighted(b, sb.p) - riskWeighted(a, sa.p);
-        case "resolving_soon":
-          return a.resolutionDate.localeCompare(b.resolutionDate);
-        case "most_uncertain":
-          return Math.abs(0.5 - sa.p) - Math.abs(0.5 - sb.p);
-      }
-    });
-    return view === "table" ? sortWithPins(list, pinnedIds) : list;
-  }, [questions, cat, kind, vis, sort, view, pinnedIds, yesOutcome, historyFor]);
+    if (sort) {
+      list = [...list].sort((a, b) => {
+        const sa = score(a.id);
+        const sb = score(b.id);
+        switch (sort) {
+          case "movers":
+            return Math.abs(sb.d7) - Math.abs(sa.d7);
+          case "risk_weighted":
+            return riskWeighted(b, sb.p) - riskWeighted(a, sb.p);
+          case "resolving_soon":
+            return a.resolutionDate.localeCompare(b.resolutionDate);
+          case "most_uncertain":
+            return Math.abs(0.5 - sa.p) - Math.abs(0.5 - sb.p);
+        }
+      });
+    }
 
-  const riskCount = questions.filter((q) => q.riskOrOpportunity === "risk").length;
-  const oppCount = questions.length - riskCount;
+    return view === "table" ? sortWithPins(list, pinnedIds) : list;
+  }, [questions, search, cat, owner, vis, horizon, sort, view, pinnedIds, yesOutcome, historyFor]);
 
   return (
     <div className="dash-page">
       <div className="dash-head">
         <div>
-          <h1>Risk &amp; Opportunity Overview</h1>
-          <p className="dash-sub">
-            {questions.length} open questions · {riskCount} risks · {oppCount} opportunities · probabilities produced
-            by a calibrated multi-agent engine and fully auditable.
-          </p>
+          <h1>Questions</h1>
         </div>
       </div>
 
-      <div className="filters">
-        <div className="filter-group">
-          {SORTS.map((s) => (
-            <button key={s.key} className={`chip ${sort === s.key ? "active" : ""}`} onClick={() => setSort(s.key)}>
-              {s.label}
-            </button>
-          ))}
-        </div>
-        <div className="filter-group right">
-          <div className="view-toggle">
-            <button
-              type="button"
-              className="chip view-chip"
-              disabled
-              aria-disabled="true"
-              title="Card view coming soon"
-            >
-              Cards
-            </button>
-            <button
-              type="button"
-              className={`chip view-chip${view === "table" ? " active" : ""}`}
-              onClick={() => setView("table")}
-            >
-              Table
-            </button>
-          </div>
-          <select value={cat} onChange={(e) => setCat(e.target.value as Category | "all")}>
-            <option value="all">All categories</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <select value={kind} onChange={(e) => setKind(e.target.value as RiskOrOpportunity | "all")}>
-            <option value="all">Risk + Opportunity</option>
-            <option value="risk">Risks</option>
-            <option value="opportunity">Opportunities</option>
-          </select>
-          <select value={vis} onChange={(e) => setVis(e.target.value as "all" | Visibility)}>
-            <option value="all">All visibility</option>
-            {visibilityOrder.map((v) => (
-              <option key={v} value={v}>
-                {visibilityConfig[v].label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <QuestionFilters
+        search={search}
+        onSearchChange={setSearch}
+        cat={cat}
+        onCatChange={setCat}
+        categories={categories}
+        owner={owner}
+        onOwnerChange={setOwner}
+        owners={owners}
+        vis={vis}
+        onVisChange={setVis}
+        sort={sort}
+        onSortChange={setSort}
+        horizon={horizon}
+        onHorizonChange={setHorizon}
+      />
 
       {view === "cards" ? (
         <div className="qgrid">

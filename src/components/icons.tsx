@@ -73,6 +73,33 @@ export function IconPlus() {
   );
 }
 
+export function IconSearch() {
+  return (
+    <svg {...svgProps} width={16} height={16}>
+      <circle cx="11" cy="11" r="7" />
+      <line x1="16.5" y1="16.5" x2="21" y2="21" />
+    </svg>
+  );
+}
+
+export function IconFilter() {
+  return (
+    <svg {...svgProps} width={14} height={14}>
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+    </svg>
+  );
+}
+
+export function IconSort() {
+  return (
+    <svg {...svgProps} width={14} height={14}>
+      <path d="M8 4v16" />
+      <polyline points="4 8 8 4 12 8" />
+      <polyline points="4 16 8 20 12 16" />
+    </svg>
+  );
+}
+
 export function TouchpointIcon({ kind }: { kind: TouchpointKind }) {
   return <BrandIcon kind={kind} />;
 }

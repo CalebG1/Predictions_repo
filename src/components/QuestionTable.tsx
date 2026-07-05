@@ -4,12 +4,13 @@ import type { ForecastQuestion } from "../domain/types";
 import TouchpointIcons from "./TouchpointIcons";
 import QuestionOverflowMenu from "./QuestionOverflowMenu";
 import VisibilityBadge from "./VisibilityBadge";
+import QuestionTags from "./QuestionTags";
 import { IconPin } from "./icons";
 import { pct, signedPct } from "./ui";
 
 function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean }) {
   const navigate = useNavigate();
-  const { yesOutcome, historyFor, touchpointSignalsFor, addTouchpoint } = useStore();
+  const { yesOutcome, historyFor, touchpointSignalsFor, addTouchpoint, togglePin } = useStore();
   const yes = yesOutcome(q.id);
   const p = yes?.currentProbability ?? q.priorBaseRate;
   const d1 = yes ? probabilityDelta(historyFor(yes.id), 1) : null;
@@ -32,13 +33,26 @@ function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean 
     >
       <td className="qt-pin-col" aria-hidden={!pinned}>
         {pinned && (
-          <span className="qt-pin" title="Pinned">
+          <button
+            type="button"
+            className="qt-pin"
+            title="Unpin"
+            aria-label="Unpin"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              togglePin(q.id);
+            }}
+          >
             <IconPin filled />
-          </span>
+          </button>
         )}
       </td>
       <td className="qt-question-col">
-        <span className="qt-title">{q.title}</span>
+        <div className="qt-question-cell">
+          <span className="qt-title">{q.title}</span>
+          <QuestionTags q={q} />
+        </div>
       </td>
       <td className="qt-prob">
         <div className="qt-prob-inner">
