@@ -390,6 +390,7 @@ export function ProbChart({
   const plotRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
+  const pendingDismissRef = useRef(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const brushRef = useRef<BrushBox | null>(null);
@@ -482,6 +483,23 @@ export function ProbChart({
     setExpanded(false);
   }, [tf, baseVisible.length]);
 
+  const dismissAll = useCallback(() => {
+    if (expanded) {
+      pendingDismissRef.current = true;
+      setExpanded(false);
+      return;
+    }
+    pendingDismissRef.current = false;
+    setSelectedDot(null);
+  }, [expanded]);
+
+  const handleDrawerTransitionEnd = useCallback((e: React.TransitionEvent<HTMLElement>) => {
+    if (e.target !== e.currentTarget || e.propertyName !== "width") return;
+    if (!pendingDismissRef.current) return;
+    pendingDismissRef.current = false;
+    setSelectedDot(null);
+  }, []);
+
   useEffect(() => {
     setSelectedDot(null);
     setHoverX(null);
@@ -492,13 +510,12 @@ export function ProbChart({
     if (selectedDot === null) return;
     const onDocClick = (e: MouseEvent) => {
       if (!plotRef.current?.contains(e.target as Node)) {
-        setSelectedDot(null);
-        setExpanded(false);
+        dismissAll();
       }
     };
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
-  }, [selectedDot]);
+  }, [selectedDot, dismissAll]);
 
   const chartHeight = height;
   const chartViewW = 760;
@@ -521,13 +538,13 @@ export function ProbChart({
 
   useLayoutEffect(() => {
     const updateInset = () => {
-      if (!expanded || !drawerRef.current || !chartRef.current) {
+      if (!drawerRef.current || !chartRef.current) {
         setDrawerInsetSvg(0);
         return;
       }
       const drawerW = drawerRef.current.getBoundingClientRect().width;
       const chartW = chartRef.current.getBoundingClientRect().width;
-      if (chartW <= 0 || drawerW <= 0) {
+      if (chartW <= 0 || drawerW <= 1) {
         setDrawerInsetSvg(0);
         return;
       }
@@ -539,7 +556,7 @@ export function ProbChart({
     if (drawerRef.current) ro.observe(drawerRef.current);
     if (chartRef.current) ro.observe(chartRef.current);
     return () => ro.disconnect();
-  }, [expanded, chartViewW]);
+  }, [chartViewW, selectedDot, expanded]);
 
   useLayoutEffect(() => {
     const selectedProb = selectedDot
@@ -672,7 +689,6 @@ export function ProbChart({
     brushRef.current = next;
     setBrush(next);
     setSelectedDot(null);
-    setHoverX(null);
     setExpanded(false);
   };
 
@@ -733,7 +749,7 @@ export function ProbChart({
   const pinnedIdx = selectedDot?.idx ?? null;
   const effFrac =
     pinnedIdx ?? (hoverX !== null ? absIFromX(hoverX, padL, plotInnerW, displayRange, xSpan) : lastIdx);
-  const crosshairActive = (pinnedIdx !== null || hoverX !== null) && !brushing && !isAnimating;
+  const crosshairActive = (pinnedIdx !== null || hoverX !== null) && !isAnimating;
   const crosshairX = pinnedIdx !== null ? xAt(pinnedIdx) : hoverX ?? xAt(lastIdx);
   const crosshairDate = fmtCrosshairDate(timeAtAbsI(effFrac, baseVisible));
   const primaryAtCrosshair = valueAtAbsI(effFrac, primaryValues);
@@ -813,6 +829,7 @@ export function ProbChart({
   const dotR = 1.75;
   const dotHitR = 10;
   const dotHistOpacity = 0.62;
+  const clipBleed = dotLastR + 1.5;
 
   return (
     <div className="prob-chart-wrap">
@@ -889,7 +906,12 @@ export function ProbChart({
         >
           <defs>
             <clipPath id="pc-clip">
-              <rect x={padL} y={padT} width={plotInnerW} height={innerH} />
+              <rect
+                x={padL}
+                y={padT - clipBleed}
+                width={plotInnerW + clipBleed}
+                height={innerH + clipBleed * 2}
+              />
             </clipPath>
           </defs>
 
@@ -1210,10 +1232,7 @@ export function ProbChart({
               type="button"
               className="pc-popup-close"
               aria-label="Close"
-              onClick={() => {
-                setSelectedDot(null);
-                setExpanded(false);
-              }}
+              onClick={() => dismissAll()}
             >
               ×
             </button>
@@ -1235,6 +1254,7 @@ export function ProbChart({
             ref={drawerRef}
             className={`pc-evidence-drawer${drawerOpen ? " open" : ""}`}
             aria-hidden={!drawerOpen}
+            onTransitionEnd={handleDrawerTransitionEnd}
             onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="pc-evidence-drawer-head">
@@ -1243,10 +1263,7 @@ export function ProbChart({
                 type="button"
                 className="pc-evidence-drawer-close"
                 aria-label="Close evidence panel"
-                onClick={() => {
-                  setExpanded(false);
-                  setSelectedDot(null);
-                }}
+                onClick={() => dismissAll()}
               >
                 ×
               </button>
