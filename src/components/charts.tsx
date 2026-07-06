@@ -265,13 +265,13 @@ function canZoomIn(current: ViewRange): boolean {
 
 /** Stable colors for common categorical option labels. */
 const OPTION_COLORS: Record<string, string> = {
-  OpenAI: "#00b888",
-  Google: "#2f6df6",
-  Anthropic: "#f0a500",
-  Meta: "#8b5cf6",
+  OpenAI: "#5a9a87",
+  Google: "#6889b8",
+  Anthropic: "#c08a4a",
+  Meta: "#8f7aab",
 };
 
-const OPTION_FALLBACK = ["#00b888", "#2f6df6", "#f0a500", "#8b5cf6"];
+const OPTION_FALLBACK = ["#5a9a87", "#6889b8", "#c08a4a", "#8f7aab"];
 
 export function colorForOption(label: string, index: number): string {
   return OPTION_COLORS[label] ?? OPTION_FALLBACK[index % OPTION_FALLBACK.length];
@@ -349,7 +349,7 @@ export function ProbChart({
   }, [companionSeries, baseVisible, points]);
 
   const hasCompanions = alignedCompanions.length > 0;
-  const primaryColor = primaryLineColor ?? (hasCompanions ? "#00b888" : CHART_LINE);
+  const primaryColor = primaryLineColor ?? (hasCompanions ? OPTION_FALLBACK[0] : CHART_LINE);
 
   const animateRange = useCallback((target: ViewRange) => {
     if (animRef.current) cancelAnimationFrame(animRef.current);
@@ -625,6 +625,7 @@ export function ProbChart({
   const dotLastR = 3.5;
   const dotSoftR = 2.25;
   const dotR = 1.75;
+  const dotHitR = 10;
   const dotHistOpacity = 0.62;
 
   return (
@@ -797,10 +798,22 @@ export function ProbChart({
                 const r = isLast ? dotLastR : isSoft ? dotSoftR : dotR;
                 const faded = hovering && i > effIdx;
                 const dotOpacity = faded ? 0.25 : isLast ? 1 : dotHistOpacity;
+                const handleSoftClick =
+                  isSoft && !isAnimating
+                    ? (e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        if (isSelected) {
+                          setSelectedDot(null);
+                          setExpanded(false);
+                        } else {
+                          setSelectedDot({ seriesId: series.id, idx: i });
+                          setExpanded(false);
+                        }
+                      }
+                    : undefined;
 
-                return (
+                const visibleDot = (
                   <circle
-                    key={`${series.id}-${p.id ?? i}`}
                     cx={cx}
                     cy={ys(prob)}
                     r={isSelected ? r + 0.75 : r}
@@ -808,29 +821,34 @@ export function ProbChart({
                     stroke="#fff"
                     strokeWidth={isSelected ? 1.25 : isLast ? 0.85 : 0.5}
                     opacity={dotOpacity}
-                    className={isSoft ? "pc-dot-soft" : undefined}
-                    style={{ cursor: isSoft && !isAnimating ? "pointer" : "default" }}
-                    onClick={
-                      isSoft && !isAnimating
-                        ? (e) => {
-                            e.stopPropagation();
-                            if (isSelected) {
-                              setSelectedDot(null);
-                              setExpanded(false);
-                            } else {
-                              setSelectedDot({ seriesId: series.id, idx: i });
-                              setExpanded(false);
-                            }
-                          }
-                        : undefined
-                    }
-                  >
-                    {!isSoft && (
-                      <title>{`${fmtDate(p.timestamp)} · ${(prob * 100).toFixed(0)}%${
-                        p.trigger ? ` · ${p.trigger}` : ""
-                      }`}</title>
-                    )}
-                  </circle>
+                    pointerEvents="none"
+                  />
+                );
+
+                if (isSoft) {
+                  return (
+                    <g key={`${series.id}-${p.id ?? i}`}>
+                      <circle
+                        cx={cx}
+                        cy={ys(prob)}
+                        r={dotHitR}
+                        fill="transparent"
+                        className="pc-dot-soft"
+                        style={{ cursor: !isAnimating ? "pointer" : "default" }}
+                        onClick={handleSoftClick}
+                      />
+                      {visibleDot}
+                    </g>
+                  );
+                }
+
+                return (
+                  <g key={`${series.id}-${p.id ?? i}`}>
+                    {visibleDot}
+                    <title>{`${fmtDate(p.timestamp)} · ${(prob * 100).toFixed(0)}%${
+                      p.trigger ? ` · ${p.trigger}` : ""
+                    }`}</title>
+                  </g>
                 );
               })
             )}
