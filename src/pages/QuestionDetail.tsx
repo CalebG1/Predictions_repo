@@ -1,8 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useStore } from "../store";
 import { runForecast } from "../domain/engine";
-import AgentPanel from "../components/AgentPanel";
 import QuestionComments from "../components/QuestionComments";
 import QuestionQaChat from "../components/QuestionQaChat";
 import { buildProbPoints, colorForOption, ProbChart, type CompanionSeries } from "../components/charts";
@@ -16,6 +15,7 @@ export default function QuestionDetail() {
 
   const forecast = useMemo(() => (q ? runForecast(q) : null), [q]);
   const evidence = useMemo(() => (q ? evidenceFor(q.id) : []), [q, evidenceFor]);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const chartConfig = useMemo(() => {
     if (!q) return null;
@@ -136,14 +136,6 @@ export default function QuestionDetail() {
 
       <div className="detail-grid">
         <div className="detail-main">
-          <div className="panel">
-            <div className="panel-head">
-              <span>Agent panel (dragonfly eye)</span>
-              <span className="muted">confidence in estimate: {pct(forecast!.confidenceInEstimateQuality)}</span>
-            </div>
-            <AgentPanel panel={forecast!.agentPanel} />
-          </div>
-
           <div className="panel two-col">
             <div>
               <h4 className="up">Drivers up</h4>
@@ -163,52 +155,50 @@ export default function QuestionDetail() {
             </div>
           </div>
 
-          <div className="panel">
-            <div className="panel-head">
-              <span>Forecast history</span>
-              <span className="muted">immutable once locked for resolution</span>
-            </div>
-            <table className="hist-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Prob.</th>
-                  <th>Source</th>
-                  <th>What changed (trigger)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...chartConfig.history].reverse().map((h) => (
-                  <tr key={h.id}>
-                    <td>{h.timestamp}</td>
-                    <td>{pct(h.probability)}</td>
-                    <td>{h.source}</td>
-                    <td>{h.updateTrigger}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="panel panel-collapse">
+            <button
+              type="button"
+              className="panel-collapse-trigger"
+              aria-expanded={historyOpen}
+              onClick={() => setHistoryOpen((open) => !open)}
+            >
+              <span className="panel-collapse-label">
+                <span>Forecast history</span>
+                <span className="muted">{chartConfig.history.length} updates</span>
+              </span>
+              <span className={`panel-collapse-chevron${historyOpen ? " open" : ""}`} aria-hidden="true" />
+            </button>
+            {historyOpen && (
+              <div className="panel-collapse-body">
+                <p className="muted small panel-collapse-note">Immutable once locked for resolution.</p>
+                <table className="hist-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Prob.</th>
+                      <th>Source</th>
+                      <th>What changed (trigger)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...chartConfig.history].reverse().map((h) => (
+                      <tr key={h.id}>
+                        <td>{h.timestamp}</td>
+                        <td>{pct(h.probability)}</td>
+                        <td>{h.source}</td>
+                        <td>{h.updateTrigger}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <QuestionComments q={q} />
         </div>
 
         <aside className="detail-side">
-          <div className="panel kv">
-            <h4>Resolution</h4>
-            <div className="kv-row"><span>Criteria</span><b>{q.resolutionCriteria}</b></div>
-            <div className="kv-row"><span>Source</span><b>{q.resolutionSource}</b></div>
-            <div className="kv-row"><span>Resolves</span><b>{q.resolutionDate}</b></div>
-            <div className="kv-row"><span>Impact</span><b>{q.impactEstimate}</b></div>
-          </div>
-
-          <div className="panel kv">
-            <h4>Outside vs inside view</h4>
-            <div className="kv-row"><span>Base rate</span><b>{pct(forecast!.priorBaseRate)}</b></div>
-            <p className="muted small">{forecast!.outsideView}</p>
-            <p className="muted small">{forecast!.insideView}</p>
-          </div>
-
           <div className="panel kv">
             <h4>Horizon sensitivity</h4>
             {Object.entries(forecast!.horizonSensitivity).map(([k, v]) => (

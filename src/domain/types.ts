@@ -267,6 +267,10 @@ export interface QuestionComment {
   authorTeam: string;
   body: string;
   createdAt: string; // ISO
+  /** Set when this comment is a reply to a top-level comment. */
+  parentId?: string;
+  /** Set when the author edits the comment after posting. */
+  editedAt?: string;
 }
 
 /** A message in the per-question Q&A assistant (user question or assistant reply). */

@@ -442,6 +442,16 @@ export const seedComments = [
     createdAt: "2026-07-01T09:15:00.000Z",
   },
   {
+    id: "cmt-q-regulation-2-reply",
+    questionId: "q-regulation",
+    parentId: "cmt-q-regulation-2",
+    authorId: "u-analyst",
+    authorName: "K. Sato (Analyst)",
+    authorTeam: "Strategy",
+    body: "Agreed — I'll pull the latest vendor exposure numbers before our Tuesday staff meeting.",
+    createdAt: "2026-07-01T11:02:00.000Z",
+  },
+  {
     id: "cmt-q-cyber-1",
     questionId: "q-cyber-breach",
     authorId: "u-risk",

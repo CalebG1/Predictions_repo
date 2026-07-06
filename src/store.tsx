@@ -152,7 +152,9 @@ interface StoreCtx {
   hideQuestion: (questionId: string) => void;
   deleteQuestion: (questionId: string) => void;
   commentsFor: (questionId: string) => QuestionComment[];
-  addComment: (questionId: string, body: string) => void;
+  addComment: (questionId: string, body: string, parentId?: string) => void;
+  editComment: (commentId: string, body: string) => void;
+  deleteComment: (commentId: string) => void;
   qaMessagesFor: (questionId: string) => QaMessage[];
   askQa: (questionId: string, prompt: string) => void;
   resetQa: (questionId: string) => void;
@@ -515,23 +517,56 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const addComment = useCallback(
-    (questionId: string, body: string) => {
+    (questionId: string, body: string, parentId?: string) => {
       const trimmed = body.trim();
       if (!trimmed) return;
-      persistComments((prev) => [
-        ...prev,
-        {
-          id: `cmt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          questionId,
-          authorId: user.id,
-          authorName: user.name,
-          authorTeam: user.team,
-          body: trimmed,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      persistComments((prev) => {
+        if (parentId) {
+          const parent = prev.find((c) => c.id === parentId && c.questionId === questionId);
+          if (!parent || parent.parentId) return prev;
+        }
+        return [
+          ...prev,
+          {
+            id: `cmt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            questionId,
+            authorId: user.id,
+            authorName: user.name,
+            authorTeam: user.team,
+            body: trimmed,
+            createdAt: new Date().toISOString(),
+            ...(parentId ? { parentId } : {}),
+          },
+        ];
+      });
     },
     [user, persistComments]
+  );
+
+  const editComment = useCallback(
+    (commentId: string, body: string) => {
+      const trimmed = body.trim();
+      if (!trimmed) return;
+      persistComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId && c.authorId === user.id
+            ? { ...c, body: trimmed, editedAt: new Date().toISOString() }
+            : c
+        )
+      );
+    },
+    [user.id, persistComments]
+  );
+
+  const deleteComment = useCallback(
+    (commentId: string) => {
+      persistComments((prev) => {
+        const target = prev.find((c) => c.id === commentId);
+        if (!target || target.authorId !== user.id) return prev;
+        return prev.filter((c) => c.id !== commentId);
+      });
+    },
+    [user.id, persistComments]
   );
 
   const qaMessagesFor = useCallback(
@@ -609,6 +644,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       deleteQuestion,
       commentsFor,
       addComment,
+      editComment,
+      deleteComment,
       qaMessagesFor,
       askQa,
       resetQa,
@@ -623,7 +660,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return list.reduce((best, o) => (o.currentProbability > best.currentProbability ? o : best));
       },
     };
-  }, [user, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addSource, addUpload, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, hideQuestion, deleteQuestion, commentsFor, addComment, qaMessagesFor, askQa, resetQa]);
+  }, [user, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addSource, addUpload, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, hideQuestion, deleteQuestion, commentsFor, addComment, editComment, deleteComment, qaMessagesFor, askQa, resetQa]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -1648,6 +1648,10 @@ input {
 }
 
 /* ---------- Detail page ---------- */
+body:has(.dash-page.detail) {
+  background: var(--bg);
+}
+
 .detail {
   background: var(--bg);
 }
@@ -1655,6 +1659,7 @@ input {
 .dash-page.detail {
   padding-top: 14px;
   padding-bottom: 88px;
+  min-height: calc(100vh - 104px);
 }
 
 .detail-hero {
@@ -2296,6 +2301,65 @@ ul.tight li {
 .hist-table td.down {
   color: var(--red);
   font-weight: 600;
+}
+
+.panel-collapse {
+  padding: 0;
+  overflow: hidden;
+}
+
+.panel-collapse-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px;
+  text-align: left;
+}
+
+.panel-collapse-trigger:hover {
+  background: var(--bg-soft);
+}
+
+.panel-collapse-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.panel-collapse-label .muted {
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.panel-collapse-chevron {
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-3);
+  border-bottom: 2px solid var(--text-3);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  margin-top: -4px;
+}
+
+.panel-collapse-chevron.open {
+  transform: rotate(-135deg);
+  margin-top: 2px;
+}
+
+.panel-collapse-body {
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--line);
+}
+
+.panel-collapse-note {
+  margin: 14px 0 12px;
 }
 
 /* key-value side panels */
@@ -3745,7 +3809,20 @@ ul.tight li {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
+}
+
+.qcomment-thread {
+  list-style: none;
+}
+
+.qcomment-thread-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .qcomments-empty {
@@ -3756,6 +3833,12 @@ ul.tight li {
   display: flex;
   gap: 10px;
   align-items: flex-start;
+}
+
+.qcomment-reply {
+  margin-left: 42px;
+  padding-left: 12px;
+  border-left: 2px solid var(--line);
 }
 
 .qcomment-avatar {
@@ -3784,9 +3867,22 @@ ul.tight li {
 .qcomment-meta {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
   margin-bottom: 4px;
+}
+
+.qcomment-delete {
+  color: var(--text-3);
+  border-radius: 6px;
+  padding: 4px;
+  display: inline-flex;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+
+.qcomment-delete:hover {
+  color: var(--red);
+  background: var(--red-soft);
 }
 
 .qcomment-author {
@@ -3795,9 +3891,14 @@ ul.tight li {
 }
 
 .qcomment-team,
-.qcomment-time {
+.qcomment-time,
+.qcomment-edited {
   font-size: 12px;
   color: var(--text-3);
+}
+
+.qcomment-edited {
+  font-style: italic;
 }
 
 .qcomment-text {
@@ -3806,6 +3907,40 @@ ul.tight li {
   line-height: 1.5;
   color: var(--text);
   white-space: pre-wrap;
+}
+
+.qcomment-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.qcomment-action {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  padding: 0;
+}
+
+.qcomment-action:hover {
+  color: var(--text);
+}
+
+.qcomment-inline-form {
+  margin-top: 6px;
+}
+
+.qcomment-reply-form {
+  margin-top: 10px;
+}
+
+.qcomment-inline-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .qcomments-compose {
