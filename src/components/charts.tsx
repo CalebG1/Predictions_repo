@@ -111,10 +111,48 @@ function fmtDate(ts: string): string {
   return `${MONTHS[d.getMonth()]} ${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function fmtDateUpper(ts: string): string {
-  const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return ts.slice(5).toUpperCase();
-  return `${MONTHS[d.getMonth()].toUpperCase()} ${d.getDate()}`;
+function fmtCrosshairDate(d: Date): string {
+  if (Number.isNaN(d.getTime())) return "";
+  const rounded = new Date(d);
+  rounded.setMinutes(0, 0, 0);
+  if (d.getMinutes() >= 30) rounded.setHours(rounded.getHours() + 1);
+  const hour = rounded.getHours();
+  const h12 = hour % 12 || 12;
+  const ampm = hour < 12 ? "AM" : "PM";
+  return `${MONTHS[rounded.getMonth()]} ${rounded.getDate()} · ${h12} ${ampm}`;
+}
+
+function absIFromX(
+  x: number,
+  padL: number,
+  plotInnerW: number,
+  range: ViewRange,
+  xSpan: number
+): number {
+  const frac = Math.max(0, Math.min(1, (x - padL) / (plotInnerW || 1)));
+  return range.i0 + frac * xSpan;
+}
+
+function valueAtAbsI(absI: number, values: number[]): number {
+  const i0 = Math.max(0, Math.min(values.length - 1, Math.floor(absI)));
+  const i1 = Math.min(values.length - 1, i0 + 1);
+  const t = absI - i0;
+  return values[i0] + t * (values[i1] - values[i0]);
+}
+
+function timeAtAbsI(absI: number, visible: ProbPoint[]): Date {
+  const i0 = Math.max(0, Math.min(visible.length - 1, Math.floor(absI)));
+  const i1 = Math.min(visible.length - 1, i0 + 1);
+  const t = absI - i0;
+  const ms0 = new Date(visible[i0].timestamp).getTime();
+  const ms1 = new Date(visible[i1].timestamp).getTime();
+  if (ms0 === ms1) {
+    const start = new Date(visible[0].timestamp).getTime();
+    const end = new Date(visible[visible.length - 1].timestamp).getTime();
+    const span = (end - start) / Math.max(1, visible.length - 1);
+    return new Date(ms0 + (absI - i0) * span);
+  }
+  return new Date(ms0 + t * (ms1 - ms0));
 }
 
 /** Spread label anchors so text blocks (above + below anchor) never overlap. */
@@ -345,7 +383,7 @@ export function ProbChart({
   const [brushing, setBrushing] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [selectedDot, setSelectedDot] = useState<SelectedDot | null>(null);
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [hoverX, setHoverX] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [popupAnchor, setPopupAnchor] = useState<PopupAnchor | null>(null);
   const [drawerInsetSvg, setDrawerInsetSvg] = useState(0);
@@ -440,13 +478,13 @@ export function ProbChart({
     setBrushing(false);
     setIsAnimating(false);
     setSelectedDot(null);
-    setHoverIdx(null);
+    setHoverX(null);
     setExpanded(false);
   }, [tf, baseVisible.length]);
 
   useEffect(() => {
     setSelectedDot(null);
-    setHoverIdx(null);
+    setHoverX(null);
     setExpanded(false);
   }, [displayRange]);
 
@@ -568,12 +606,6 @@ export function ProbChart({
     hi,
   ]);
 
-  const indexFromX = (x: number) => {
-    const frac = (x - padL) / (plotInnerW || 1);
-    const absI = displayRange.i0 + frac * xSpan;
-    return Math.max(0, Math.min(baseVisible.length - 1, Math.round(absI)));
-  };
-
   const toSvgCoords = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
@@ -640,7 +672,7 @@ export function ProbChart({
     brushRef.current = next;
     setBrush(next);
     setSelectedDot(null);
-    setHoverIdx(null);
+    setHoverX(null);
     setExpanded(false);
   };
 
@@ -648,10 +680,10 @@ export function ProbChart({
     if (brushing || isAnimating || selectedDot) return;
     const { x } = toSvgCoords(clientX, 0);
     if (x < padL - 4 || x > padL + plotInnerW + 4) {
-      setHoverIdx(null);
+      setHoverX(null);
       return;
     }
-    setHoverIdx(indexFromX(x));
+    setHoverX(Math.max(padL, Math.min(padL + plotInnerW, x)));
   };
 
   const onPlotPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -685,12 +717,26 @@ export function ProbChart({
       .map((v, k) => `${k === 0 ? "M" : "L"}${xAt(from + k).toFixed(1)},${ys(v).toFixed(1)}`)
       .join(" ");
 
+  const pathToFrac = (values: number[], from: number, toFrac: number) => {
+    const iEnd = Math.floor(toFrac);
+    let path = pathFromValues(values, from, iEnd);
+    const t = toFrac - iEnd;
+    if (t > 0.001 && iEnd + 1 < values.length) {
+      const y = valueAtAbsI(toFrac, values);
+      path += ` L${xAt(toFrac).toFixed(1)},${ys(y).toFixed(1)}`;
+    }
+    return path;
+  };
+
   const primaryValues = baseVisible.map((p) => p.probability);
   const lastIdx = baseVisible.length - 1;
   const pinnedIdx = selectedDot?.idx ?? null;
-  const effIdx = pinnedIdx ?? hoverIdx ?? lastIdx;
-  const crosshairActive = (pinnedIdx !== null || hoverIdx !== null) && !brushing && !isAnimating;
-  const crosshairX = xAt(effIdx);
+  const effFrac =
+    pinnedIdx ?? (hoverX !== null ? absIFromX(hoverX, padL, plotInnerW, displayRange, xSpan) : lastIdx);
+  const crosshairActive = (pinnedIdx !== null || hoverX !== null) && !brushing && !isAnimating;
+  const crosshairX = pinnedIdx !== null ? xAt(pinnedIdx) : hoverX ?? xAt(lastIdx);
+  const crosshairDate = fmtCrosshairDate(timeAtAbsI(effFrac, baseVisible));
+  const primaryAtCrosshair = valueAtAbsI(effFrac, primaryValues);
 
   const selectedPoint: ProbPoint | null = selectedDot
     ? selectedDot.seriesId === "primary"
@@ -725,13 +771,13 @@ export function ProbChart({
       id: "primary",
       label: endpointTag,
       color: primaryColor,
-      value: primaryValues[effIdx],
+      value: primaryAtCrosshair,
     },
     ...(alignedCompanions.map((s) => ({
       id: s.id,
       label: s.label,
       color: s.color,
-      value: s.values[effIdx] ?? 0,
+      value: valueAtAbsI(effFrac, s.values),
     }))),
   ];
 
@@ -838,7 +884,7 @@ export function ProbChart({
           onPointerMove={onPlotPointerMove}
           onPointerUp={onPlotPointerUp}
           onPointerCancel={onPlotPointerUp}
-          onPointerLeave={() => setHoverIdx(null)}
+          onPointerLeave={() => setHoverX(null)}
           onDoubleClick={resetView}
         >
           <defs>
@@ -880,7 +926,7 @@ export function ProbChart({
                   />
                 )}
                 <path
-                  d={pathFromValues(s.values, 0, crosshairActive ? effIdx : lastIdx)}
+                  d={pathToFrac(s.values, 0, crosshairActive ? effFrac : lastIdx)}
                   fill="none"
                   stroke={s.color}
                   strokeWidth={lineW}
@@ -907,7 +953,7 @@ export function ProbChart({
                     />
                   )}
                   <path
-                    d={pathFromValues(primaryValues, 0, crosshairActive ? effIdx : lastIdx)}
+                    d={pathToFrac(primaryValues, 0, crosshairActive ? effFrac : lastIdx)}
                     fill="none"
                     stroke={color}
                     strokeWidth={lineWPrimary}
@@ -939,7 +985,7 @@ export function ProbChart({
                 const isSelected =
                   selectedDot?.seriesId === series.id && selectedDot?.idx === i;
                 const r = isLast ? dotLastR : isSoft ? dotSoftR : dotR;
-                const faded = crosshairActive && i > effIdx;
+                const faded = crosshairActive && i > effFrac;
                 const dotOpacity = faded ? 0.25 : isLast ? 1 : dotHistOpacity;
                 const handleSoftClick =
                   isSoft && !isAnimating
@@ -1058,7 +1104,7 @@ export function ProbChart({
               />
               <circle
                 cx={crosshairX}
-                cy={ys(primaryValues[effIdx])}
+                cy={ys(primaryAtCrosshair)}
                 r={3}
                 fill={hasCompanions ? primaryColor : CHART_LINE}
                 stroke="#fff"
@@ -1068,7 +1114,7 @@ export function ProbChart({
                 <circle
                   key={`hc-${s.id}`}
                   cx={crosshairX}
-                  cy={ys(s.values[effIdx] ?? 0)}
+                  cy={ys(valueAtAbsI(effFrac, s.values))}
                   r={3}
                   fill={s.color}
                   stroke="#fff"
@@ -1102,22 +1148,23 @@ export function ProbChart({
               ))}
 
               <g
+                className="pc-crosshair-date"
                 transform={`translate(${Math.max(
-                  padL + 36,
-                  Math.min(padL + plotInnerW - 36, crosshairX)
-                )}, ${padT - 14})`}
+                  padL + 52,
+                  Math.min(padL + plotInnerW - 52, crosshairX)
+                )}, ${padT - 13})`}
               >
-                <rect x={-40} y={-11} width={80} height={18} rx={4} fill="#3c4650" />
+                <rect x={-52} y={-10} width={104} height={16} rx={3} fill="#f4f6f5" stroke="#dde2df" strokeWidth="0.75" />
                 <text
                   x={0}
-                  y={2}
+                  y={1.5}
                   textAnchor="middle"
-                  fontSize="10.5"
-                  fontWeight="700"
-                  fill="#fff"
-                  letterSpacing="0.4"
+                  fontSize="10"
+                  fontWeight="600"
+                  fill={CHART_AXIS}
+                  letterSpacing="0.1"
                 >
-                  {fmtDateUpper(baseVisible[effIdx].timestamp)}
+                  {crosshairDate}
                 </text>
               </g>
             </g>
