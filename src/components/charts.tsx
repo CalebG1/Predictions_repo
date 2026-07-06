@@ -1,5 +1,5 @@
 // Lightweight dependency-free SVG charts used across the dashboard.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ProbabilityPoint } from "../domain/types";
 
 export interface ProbPoint {
@@ -170,6 +170,40 @@ function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
 
+function svgRenderMetrics(svg: SVGSVGElement, viewW: number, viewH: number) {
+  const rect = svg.getBoundingClientRect();
+  const scale = Math.min(rect.width / viewW, rect.height / viewH);
+  return { rect, scale, offsetX: 0, offsetY: 0 };
+}
+
+function clientToSvgPoint(
+  svg: SVGSVGElement,
+  viewW: number,
+  viewH: number,
+  clientX: number,
+  clientY: number
+) {
+  const { rect, scale, offsetX, offsetY } = svgRenderMetrics(svg, viewW, viewH);
+  return {
+    x: (clientX - rect.left - offsetX) / scale,
+    y: (clientY - rect.top - offsetY) / scale,
+  };
+}
+
+function svgPointToClient(
+  svg: SVGSVGElement,
+  viewW: number,
+  viewH: number,
+  svgX: number,
+  svgY: number
+) {
+  const { rect, scale, offsetX, offsetY } = svgRenderMetrics(svg, viewW, viewH);
+  return {
+    x: rect.left + offsetX + svgX * scale,
+    y: rect.top + offsetY + svgY * scale,
+  };
+}
+
 function computeFullRange(base: ProbPoint[], zoomLevel: number): ViewRange {
   if (base.length < 2) return { i0: 0, i1: 1, yLo: 0, yHi: 1 };
   const min = Math.min(...base.map((p) => p.probability));
@@ -277,6 +311,18 @@ export function colorForOption(label: string, index: number): string {
   return OPTION_COLORS[label] ?? OPTION_FALLBACK[index % OPTION_FALLBACK.length];
 }
 
+type SelectedDot = {
+  seriesId: string;
+  idx: number;
+};
+
+type PopupAnchor = {
+  x: number;
+  y: number;
+  placeBelow: boolean;
+  arrowShift: number;
+};
+
 export function ProbChart({
   points,
   height = 300,
@@ -298,11 +344,16 @@ export function ProbChart({
   const [brush, setBrush] = useState<BrushBox | null>(null);
   const [brushing, setBrushing] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [selectedDot, setSelectedDot] = useState<{ seriesId: string; idx: number } | null>(null);
+  const [selectedDot, setSelectedDot] = useState<SelectedDot | null>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [popupAnchor, setPopupAnchor] = useState<PopupAnchor | null>(null);
+  const [drawerInsetSvg, setDrawerInsetSvg] = useState(0);
   const plotRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
   const brushRef = useRef<BrushBox | null>(null);
   const displayRangeRef = useRef(displayRange);
   const animRef = useRef<number | null>(null);
@@ -411,8 +462,11 @@ export function ProbChart({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [selectedDot]);
 
-  const W = 760;
-  const H = height;
+  const chartHeight = height;
+  const chartViewW = 760;
+
+  const W = chartViewW;
+  const H = chartHeight;
   const padL = 44;
   const padR = hasCompanions ? 120 : endpointLabel ? 54 : 24;
   const labelOffset = 10;
@@ -420,14 +474,102 @@ export function ProbChart({
   const padT = 34;
   const innerW = W - padL - padR;
   const innerH = H - padB - padT;
+  const plotInnerW = Math.max(120, innerW - drawerInsetSvg);
 
   const { lo, hi } = yDomainFromRange(displayRange);
   const xSpan = displayRange.i1 - displayRange.i0 || 1;
-  const xAt = (i: number) => padL + ((i - displayRange.i0) / xSpan) * innerW;
+  const xAt = (i: number) => padL + ((i - displayRange.i0) / xSpan) * plotInnerW;
   const ys = (p: number) => padT + (1 - (p - lo) / (hi - lo || 1)) * innerH;
 
+  useLayoutEffect(() => {
+    const updateInset = () => {
+      if (!expanded || !drawerRef.current || !chartRef.current) {
+        setDrawerInsetSvg(0);
+        return;
+      }
+      const drawerW = drawerRef.current.getBoundingClientRect().width;
+      const chartW = chartRef.current.getBoundingClientRect().width;
+      if (chartW <= 0 || drawerW <= 0) {
+        setDrawerInsetSvg(0);
+        return;
+      }
+      setDrawerInsetSvg((drawerW / chartW) * chartViewW);
+    };
+
+    updateInset();
+    const ro = new ResizeObserver(updateInset);
+    if (drawerRef.current) ro.observe(drawerRef.current);
+    if (chartRef.current) ro.observe(chartRef.current);
+    return () => ro.disconnect();
+  }, [expanded, chartViewW]);
+
+  useLayoutEffect(() => {
+    const selectedProb = selectedDot
+      ? selectedDot.seriesId === "primary"
+        ? baseVisible[selectedDot.idx]?.probability ?? null
+        : alignedCompanions.find((s) => s.id === selectedDot.seriesId)?.values[selectedDot.idx] ?? null
+      : null;
+
+    const updateAnchor = () => {
+      if (!selectedDot || selectedProb === null || !svgRef.current || !chartRef.current) {
+        setPopupAnchor(null);
+        return;
+      }
+
+      const svg = svgRef.current;
+      const chart = chartRef.current;
+      const chartRect = chart.getBoundingClientRect();
+      const anchorX = xAt(selectedDot.idx);
+      const anchorY = ys(selectedProb);
+      const point = svgPointToClient(svg, chartViewW, chartHeight, anchorX, anchorY);
+      const x = point.x - chartRect.left;
+      const y = point.y - chartRect.top;
+
+      const popupEl = popupRef.current;
+      const popupH = popupEl?.offsetHeight ?? 100;
+      const popupW = popupEl?.offsetWidth ?? 260;
+      const pad = 8;
+      const gap = 10;
+
+      const clampedX = Math.max(
+        popupW / 2 + pad,
+        Math.min(chartRect.width - popupW / 2 - pad, x)
+      );
+      const placeBelow = y - popupH - gap < pad;
+
+      setPopupAnchor({ x: clampedX, y, placeBelow, arrowShift: x - clampedX });
+    };
+
+    updateAnchor();
+    const raf = requestAnimationFrame(updateAnchor);
+
+    const svg = svgRef.current;
+    const chart = chartRef.current;
+    if (!svg || !chart) return () => cancelAnimationFrame(raf);
+
+    const ro = new ResizeObserver(updateAnchor);
+    ro.observe(svg);
+    ro.observe(chart);
+    if (popupRef.current) ro.observe(popupRef.current);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [
+    selectedDot,
+    chartHeight,
+    expanded,
+    drawerInsetSvg,
+    displayRange,
+    baseVisible,
+    alignedCompanions,
+    plotInnerW,
+    lo,
+    hi,
+  ]);
+
   const indexFromX = (x: number) => {
-    const frac = (x - padL) / (innerW || 1);
+    const frac = (x - padL) / (plotInnerW || 1);
     const absI = displayRange.i0 + frac * xSpan;
     return Math.max(0, Math.min(baseVisible.length - 1, Math.round(absI)));
   };
@@ -435,21 +577,17 @@ export function ProbChart({
   const toSvgCoords = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
-    const rect = svg.getBoundingClientRect();
-    return {
-      x: ((clientX - rect.left) / rect.width) * W,
-      y: ((clientY - rect.top) / rect.height) * H,
-    };
+    return clientToSvgPoint(svg, W, H, clientX, clientY);
   };
 
   const clampToPlot = (x: number, y: number) => ({
-    x: Math.max(padL, Math.min(padL + innerW, x)),
+    x: Math.max(padL, Math.min(padL + plotInnerW, x)),
     y: Math.max(padT, Math.min(padT + innerH, y)),
   });
 
   const applyBrush = (box: BrushBox) => {
     const left = Math.max(padL, Math.min(box.x0, box.x1));
-    const right = Math.min(padL + innerW, Math.max(box.x0, box.x1));
+    const right = Math.min(padL + plotInnerW, Math.max(box.x0, box.x1));
     const top = Math.max(padT, Math.min(box.y0, box.y1));
     const bottom = Math.min(padT + innerH, Math.max(box.y0, box.y1));
 
@@ -457,8 +595,8 @@ export function ProbChart({
 
     const range = displayRangeRef.current;
     const relSpan = range.i1 - range.i0 || 1;
-    const i0rel = ((left - padL) / innerW) * relSpan;
-    const i1rel = ((right - padL) / innerW) * relSpan;
+    const i0rel = ((left - padL) / plotInnerW) * relSpan;
+    const i1rel = ((right - padL) / plotInnerW) * relSpan;
     const absI0 = range.i0 + Math.min(i0rel, i1rel);
     const absI1 = range.i0 + Math.max(i0rel, i1rel);
 
@@ -491,10 +629,10 @@ export function ProbChart({
   const onPlotPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (isAnimating) return;
     const target = e.target as Element;
-    if (target.closest(".pc-dot-soft") || target.closest(".pc-popup")) return;
+    if (target.closest(".pc-dot-soft") || target.closest(".pc-popup") || target.closest(".pc-evidence-drawer")) return;
 
     const { x, y } = toSvgCoords(e.clientX, e.clientY);
-    if (x < padL || x > padL + innerW || y < padT || y > padT + innerH) return;
+    if (x < padL || x > padL + plotInnerW || y < padT || y > padT + innerH) return;
 
     e.currentTarget.setPointerCapture(e.pointerId);
     setBrushing(true);
@@ -507,9 +645,9 @@ export function ProbChart({
   };
 
   const updateHover = (clientX: number) => {
-    if (brushing || isAnimating) return;
+    if (brushing || isAnimating || selectedDot) return;
     const { x } = toSvgCoords(clientX, 0);
-    if (x < padL - 4 || x > padL + innerW + 4) {
+    if (x < padL - 4 || x > padL + plotInnerW + 4) {
       setHoverIdx(null);
       return;
     }
@@ -549,8 +687,9 @@ export function ProbChart({
 
   const primaryValues = baseVisible.map((p) => p.probability);
   const lastIdx = baseVisible.length - 1;
-  const effIdx = hoverIdx ?? lastIdx;
-  const hovering = hoverIdx !== null && !brushing && !isAnimating;
+  const pinnedIdx = selectedDot?.idx ?? null;
+  const effIdx = pinnedIdx ?? hoverIdx ?? lastIdx;
+  const crosshairActive = (pinnedIdx !== null || hoverIdx !== null) && !brushing && !isAnimating;
   const crosshairX = xAt(effIdx);
 
   const selectedPoint: ProbPoint | null = selectedDot
@@ -566,6 +705,7 @@ export function ProbChart({
     : null;
 
   const selectedKind = selectedPoint ? kindFor(selectedPoint.trigger) : null;
+  const drawerOpen = expanded && !!selectedPoint?.detail;
 
   const ticks = 5;
   const gridY = Array.from({ length: ticks }, (_, i) => lo + ((hi - lo) * i) / (ticks - 1));
@@ -609,7 +749,7 @@ export function ProbChart({
       )
     : null;
 
-  const trackLabelYs = hovering
+  const trackLabelYs = crosshairActive
     ? declutterLabelYs(
         readoutSeries.map((s) => ys(s.value)),
         14,
@@ -679,12 +819,15 @@ export function ProbChart({
         </div>
       </div>
 
-      <div className="pc-plot" ref={plotRef}>
+      <div className={`pc-plot${drawerOpen ? " pc-drawer-open" : ""}`} ref={plotRef}>
+        <div className="pc-plot-chart" ref={chartRef} style={{ aspectRatio: `${W} / ${H}` }}>
         <svg
           ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}
           width="100%"
-          className={`prob-chart${brushing ? " pc-brushing" : hovering ? " pc-hovering" : ""}${isAnimating ? " pc-animating" : ""}`}
+          height="100%"
+          preserveAspectRatio="xMinYMin meet"
+          className={`prob-chart${brushing ? " pc-brushing" : crosshairActive ? " pc-hovering" : ""}${isAnimating ? " pc-animating" : ""}`}
           role="img"
           aria-label={
             endpointPct
@@ -700,7 +843,7 @@ export function ProbChart({
         >
           <defs>
             <clipPath id="pc-clip">
-              <rect x={padL} y={padT} width={innerW} height={innerH} />
+              <rect x={padL} y={padT} width={plotInnerW} height={innerH} />
             </clipPath>
           </defs>
 
@@ -708,7 +851,7 @@ export function ProbChart({
             <g key={i}>
               <line
                 x1={padL}
-                x2={padL + innerW}
+                x2={padL + plotInnerW}
                 y1={ys(g)}
                 y2={ys(g)}
                 stroke="#d8dce0"
@@ -725,7 +868,7 @@ export function ProbChart({
             {/* companion lines (faded future + solid past on hover) */}
             {(alignedCompanions).map((s) => (
               <g key={s.id}>
-                {hovering && (
+                {crosshairActive && (
                   <path
                     d={pathFromValues(s.values, 0, lastIdx)}
                     fill="none"
@@ -737,7 +880,7 @@ export function ProbChart({
                   />
                 )}
                 <path
-                  d={pathFromValues(s.values, 0, hovering ? effIdx : lastIdx)}
+                  d={pathFromValues(s.values, 0, crosshairActive ? effIdx : lastIdx)}
                   fill="none"
                   stroke={s.color}
                   strokeWidth={lineW}
@@ -752,7 +895,7 @@ export function ProbChart({
               const color = primaryColor;
               return (
                 <g>
-                  {hovering && (
+                  {crosshairActive && (
                     <path
                       d={pathFromValues(primaryValues, 0, lastIdx)}
                       fill="none"
@@ -764,7 +907,7 @@ export function ProbChart({
                     />
                   )}
                   <path
-                    d={pathFromValues(primaryValues, 0, hovering ? effIdx : lastIdx)}
+                    d={pathFromValues(primaryValues, 0, crosshairActive ? effIdx : lastIdx)}
                     fill="none"
                     stroke={color}
                     strokeWidth={lineWPrimary}
@@ -786,7 +929,7 @@ export function ProbChart({
             ].flatMap((series) =>
               baseVisible.map((_, i) => {
                 const cx = xAt(i);
-                if (cx < padL - 8 || cx > padL + innerW + 8) return null;
+                if (cx < padL - 8 || cx > padL + plotInnerW + 8) return null;
 
                 const p = series.meta[i];
                 const prob = series.values[i] ?? 0;
@@ -796,7 +939,7 @@ export function ProbChart({
                 const isSelected =
                   selectedDot?.seriesId === series.id && selectedDot?.idx === i;
                 const r = isLast ? dotLastR : isSoft ? dotSoftR : dotR;
-                const faded = hovering && i > effIdx;
+                const faded = crosshairActive && i > effIdx;
                 const dotOpacity = faded ? 0.25 : isLast ? 1 : dotHistOpacity;
                 const handleSoftClick =
                   isSoft && !isAnimating
@@ -855,7 +998,7 @@ export function ProbChart({
           </g>
 
           {/* endpoint labels at line ends (hidden while crosshair is active) */}
-          {!hovering && hasCompanions && endLabelYs ? (
+          {!crosshairActive && hasCompanions && endLabelYs ? (
             <>
               <text
                 x={endX + labelOffset}
@@ -880,7 +1023,7 @@ export function ProbChart({
               ))}
             </>
           ) : (
-            !hovering &&
+            !crosshairActive &&
             endpointLabel &&
             endpointPct && (
               <g className="pc-endpoint-label" aria-hidden="true">
@@ -903,7 +1046,7 @@ export function ProbChart({
           )}
 
           {/* hover crosshair + date pill + inline tracking labels */}
-          {hovering && trackLabelYs && (
+          {crosshairActive && trackLabelYs && (
             <g className="pc-cross" pointerEvents="none">
               <line
                 x1={crosshairX}
@@ -961,7 +1104,7 @@ export function ProbChart({
               <g
                 transform={`translate(${Math.max(
                   padL + 36,
-                  Math.min(padL + innerW - 36, crosshairX)
+                  Math.min(padL + plotInnerW - 36, crosshairX)
                 )}, ${padT - 14})`}
               >
                 <rect x={-40} y={-11} width={80} height={18} rx={4} fill="#3c4650" />
@@ -1006,10 +1149,13 @@ export function ProbChart({
 
         {selectedPoint && selectedKind === "soft" && selectedDot !== null && selectedProb !== null && (
           <div
-            className="pc-popup"
+            ref={popupRef}
+            className={`pc-popup${popupAnchor?.placeBelow ? " pc-popup--below" : ""}`}
             style={{
-              left: `${(xAt(selectedDot.idx) / W) * 100}%`,
-              top: `${(ys(selectedProb) / H) * 100}%`,
+              left: popupAnchor?.x ?? 0,
+              top: popupAnchor?.y ?? 0,
+              visibility: popupAnchor ? "visible" : "hidden",
+              ["--pc-arrow-shift" as string]: popupAnchor ? `${popupAnchor.arrowShift}px` : "0px",
             }}
             onMouseDown={(e) => e.stopPropagation()}
           >
@@ -1028,13 +1174,46 @@ export function ProbChart({
               {fmtDate(selectedPoint.timestamp)} · {(selectedProb * 100).toFixed(0)}%
             </div>
             <p className="pc-popup-summary">{selectedPoint.summary}</p>
-            {expanded && selectedPoint.detail && <p className="pc-popup-detail">{selectedPoint.detail}</p>}
             {selectedPoint.detail && (
               <button type="button" className="pc-popup-toggle" onClick={() => setExpanded((v) => !v)}>
-                {expanded ? "Show less" : "Show more"}
+                {drawerOpen ? "Show less" : "Show more"}
               </button>
             )}
           </div>
+        )}
+        </div>
+
+        {selectedPoint?.detail && (
+          <aside
+            ref={drawerRef}
+            className={`pc-evidence-drawer${drawerOpen ? " open" : ""}`}
+            aria-hidden={!drawerOpen}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="pc-evidence-drawer-head">
+              <span className="pc-evidence-drawer-title">Evidence</span>
+              <button
+                type="button"
+                className="pc-evidence-drawer-close"
+                aria-label="Close evidence panel"
+                onClick={() => {
+                  setExpanded(false);
+                  setSelectedDot(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="pc-evidence-drawer-meta">
+              {fmtDate(selectedPoint.timestamp)}
+              {selectedProb !== null && ` · ${(selectedProb * 100).toFixed(0)}%`}
+            </div>
+            {selectedPoint.trigger && (
+              <div className="pc-evidence-drawer-trigger">{selectedPoint.trigger}</div>
+            )}
+            <p className="pc-evidence-drawer-summary">{selectedPoint.summary}</p>
+            <p className="pc-evidence-drawer-detail">{selectedPoint.detail}</p>
+          </aside>
         )}
       </div>
 

@@ -1770,12 +1770,17 @@ input {
 }
 
 .detail-chart .pc-plot {
-  overflow: hidden;
+  overflow: visible;
+}
+
+.detail-chart .pc-plot-chart {
+  overflow: visible;
 }
 
 .detail-chart .prob-chart {
   display: block;
   width: 100%;
+  height: 100%;
 }
 
 .detail-grid {
@@ -2005,10 +2010,101 @@ input {
 
 .pc-plot {
   position: relative;
+  overflow: visible;
+}
+
+.pc-plot-chart {
+  position: relative;
+  width: 100%;
+}
+
+.pc-evidence-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 12;
+  height: 100%;
+  width: 0;
+  overflow: hidden;
+  opacity: 0;
+  background: var(--bg);
+  border-left: 1px solid transparent;
+  box-shadow: -8px 0 24px rgba(16, 30, 24, 0.06);
+  transition:
+    width 0.28s ease,
+    opacity 0.22s ease,
+    border-color 0.28s ease;
+}
+
+.pc-evidence-drawer.open {
+  width: min(300px, 42%);
+  opacity: 1;
+  border-left-color: var(--line);
+  padding: 14px 16px 16px;
+  overflow-y: auto;
+}
+
+.pc-evidence-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pc-evidence-drawer-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.pc-evidence-drawer-close {
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.pc-evidence-drawer-close:hover {
+  color: var(--text);
+}
+
+.pc-evidence-drawer-meta {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+
+.pc-evidence-drawer-trigger {
+  font-size: 11px;
+  font-weight: 600;
+  color: #d97706;
+  margin-bottom: 10px;
+}
+
+.pc-evidence-drawer-summary {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.pc-evidence-drawer-detail {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-2);
 }
 
 .prob-chart {
   display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .prob-chart.pc-brushing {
@@ -2038,10 +2134,24 @@ input {
   pointer-events: auto;
 }
 
+.pc-popup--below {
+  transform: translate(-50%, 10px);
+}
+
+.pc-popup--below::after {
+  top: -6px;
+  bottom: auto;
+  left: calc(50% + var(--pc-arrow-shift, 0px));
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  border-right: none;
+  border-bottom: none;
+}
+
 .pc-popup::after {
   content: "";
   position: absolute;
-  left: 50%;
+  left: calc(50% + var(--pc-arrow-shift, 0px));
   bottom: -6px;
   width: 10px;
   height: 10px;
