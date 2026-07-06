@@ -9,6 +9,7 @@ import {
 } from "./domain/seed";
 import { seedTouchpointSignals, connectSignalFor, uploadSignalFor } from "./domain/touchpoints";
 import type { Connector } from "./domain/connectors";
+import { generateQuestionFromDraft } from "./domain/generateQuestion";
 import { runForecast } from "./domain/engine";
 import { canViewQuestion, visibleQuestions } from "./domain/access";
 import type { ForecastQuestion, Outcome, ProbabilityAlert, ProbabilityPoint, TouchpointSignal, User, Visibility, Category } from "./domain/types";
@@ -80,6 +81,9 @@ interface StoreCtx {
   markAlertRead: (alertId: string) => void;
   markAllAlertsRead: () => void;
   unreadAlertCount: number;
+  addQuestion: (input: { title: string; fromNews?: boolean }) => ForecastQuestion;
+  hideQuestion: (questionId: string) => void;
+  deleteQuestion: (questionId: string) => void;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -89,12 +93,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [visibilityOverrides, setVisibilityOverrides] = useState<Record<string, Visibility>>({});
   const [categoryOverrides, setCategoryOverrides] = useState<Record<string, Category>>({});
   const [probabilityOverrides, setProbabilityOverrides] = useState<Record<string, number>>({});
+  const [extraQuestions, setExtraQuestions] = useState<ForecastQuestion[]>([]);
+  const [extraOutcomes, setExtraOutcomes] = useState<Outcome[]>([]);
   const [extraHistory, setExtraHistory] = useState<ProbabilityPoint[]>([]);
   const [touchpointSignals, setTouchpointSignals] = useState<Record<string, TouchpointSignal[]>>(() => ({
     ...seedTouchpointSignals,
   }));
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const [alerts, setAlerts] = useState<ProbabilityAlert[]>(() => loadAlerts());
+  const [hiddenByUser, setHiddenByUser] = useState<Record<string, string[]>>({});
+  const [deletedQuestionIds, setDeletedQuestionIds] = useState<string[]>([]);
 
   const persistAlerts = useCallback((updater: ProbabilityAlert[] | ((prev: ProbabilityAlert[]) => ProbabilityAlert[])) => {
     setAlerts((prev) => {
@@ -126,12 +134,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const mergedQuestions = useMemo(
     () =>
-      seedQuestions.map((q) => ({
-        ...q,
-        ...(visibilityOverrides[q.id] ? { visibility: visibilityOverrides[q.id] } : {}),
-        ...(categoryOverrides[q.id] ? { category: categoryOverrides[q.id] } : {}),
-      })),
-    [visibilityOverrides, categoryOverrides]
+      [...seedQuestions, ...extraQuestions]
+        .filter((q) => !deletedQuestionIds.includes(q.id))
+        .map((q) => ({
+          ...q,
+          ...(visibilityOverrides[q.id] ? { visibility: visibilityOverrides[q.id] } : {}),
+          ...(categoryOverrides[q.id] ? { category: categoryOverrides[q.id] } : {}),
+        })),
+    [extraQuestions, deletedQuestionIds, visibilityOverrides, categoryOverrides]
   );
 
   const applyOutcomeOverrides = useCallback(
@@ -150,16 +160,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [extraHistory]
   );
 
+  const allOutcomes = useMemo(
+    () => [...seedOutcomes, ...extraOutcomes],
+    [extraOutcomes]
+  );
+
   const refreshForecast = useCallback(
     (questionId: string) => {
       const q = mergedQuestions.find((item) => item.id === questionId);
-      const yes = seedOutcomes.find((o) => o.questionId === questionId && o.id.endsWith("-yes"));
+      const yes = allOutcomes.find((o) => o.questionId === questionId && o.id.endsWith("-yes"));
       if (!q || !yes) return;
 
       const prior = probabilityOverrides[yes.id] ?? yes.currentProbability;
       const forecast = runForecast(q, { anchor: prior, trigger: `refresh-${Date.now()}` });
       const newP = Number(forecast.currentProbability.toFixed(3));
-      const no = seedOutcomes.find((o) => o.questionId === questionId && o.id.endsWith("-no"));
+      const no = allOutcomes.find((o) => o.questionId === questionId && o.id.endsWith("-no"));
 
       evaluateAlertsForOutcome(yes.id, prior, newP);
 
@@ -181,7 +196,55 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         },
       ]);
     },
-    [mergedQuestions, probabilityOverrides, evaluateAlertsForOutcome]
+    [mergedQuestions, allOutcomes, probabilityOverrides, evaluateAlertsForOutcome]
+  );
+
+  const addQuestion = useCallback(
+    (input: { title: string; fromNews?: boolean }) => {
+      const bundle = generateQuestionFromDraft(input.title, user, { fromNews: input.fromNews });
+      setExtraQuestions((prev) => [...prev, bundle.question]);
+      setExtraOutcomes((prev) => [...prev, ...bundle.outcomes]);
+      setExtraHistory((prev) => [...prev, ...bundle.history]);
+      return bundle.question;
+    },
+    [user]
+  );
+
+  const hideQuestion = useCallback(
+    (questionId: string) => {
+      setHiddenByUser((prev) => {
+        const current = prev[user.id] ?? [];
+        if (current.includes(questionId)) return prev;
+        return { ...prev, [user.id]: [...current, questionId] };
+      });
+      setPinnedIds((prev) => prev.filter((id) => id !== questionId));
+    },
+    [user.id]
+  );
+
+  const deleteQuestion = useCallback(
+    (questionId: string) => {
+      setDeletedQuestionIds((prev) => (prev.includes(questionId) ? prev : [...prev, questionId]));
+      setExtraQuestions((prev) => prev.filter((q) => q.id !== questionId));
+      setExtraOutcomes((prev) => prev.filter((o) => o.questionId !== questionId));
+      setExtraHistory((prev) => prev.filter((h) => !h.outcomeId.startsWith(`${questionId}-`)));
+      setPinnedIds((prev) => prev.filter((id) => id !== questionId));
+      persistAlerts((prev) => prev.filter((a) => a.questionId !== questionId));
+      setTouchpointSignals((prev) => {
+        if (!(questionId in prev)) return prev;
+        const next = { ...prev };
+        delete next[questionId];
+        return next;
+      });
+      setHiddenByUser((prev) => {
+        const next = { ...prev };
+        for (const userId of Object.keys(next)) {
+          next[userId] = next[userId].filter((id) => id !== questionId);
+        }
+        return next;
+      });
+    },
+    [persistAlerts]
   );
 
   const touchpointSignalsFor = useCallback(
@@ -265,12 +328,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<StoreCtx>(() => {
     const visible = visibleQuestions(user, mergedQuestions, accessGrants);
+    const hidden = new Set(hiddenByUser[user.id] ?? []);
     return {
       org: organization,
       user,
       setUser,
       allUsers: users,
-      questions: visible,
+      questions: visible.filter((q) => !hidden.has(q.id)),
       canView: (q) => canViewQuestion(user, q, accessGrants),
       setVisibility: (questionId, visibility) =>
         setVisibilityOverrides((prev) => ({ ...prev, [questionId]: visibility })),
@@ -289,18 +353,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       markAlertRead,
       markAllAlertsRead,
       unreadAlertCount,
+      addQuestion,
+      hideQuestion,
+      deleteQuestion,
       outcomesFor: (questionId) =>
-        seedOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
+        allOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
       historyFor,
       yesOutcome: (questionId) => {
-        const list = seedOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides);
+        const list = allOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides);
         const yes = list.find((o) => o.id.endsWith("-yes"));
         if (yes) return yes;
         if (list.length === 0) return undefined;
         return list.reduce((best, o) => (o.currentProbability > best.currentProbability ? o : best));
       },
     };
-  }, [user, mergedQuestions, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addSource, addUpload, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount]);
+  }, [user, mergedQuestions, hiddenByUser, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addSource, addUpload, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, hideQuestion, deleteQuestion]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -4,6 +4,7 @@ import { useStore, probabilityDelta, riskWeighted, sortWithPins } from "../store
 import QuestionCard from "../components/QuestionCard";
 import QuestionFilters, { type HorizonKey, type SortKey, withinHorizon } from "../components/QuestionFilters";
 import QuestionTable from "../components/QuestionTable";
+import CreateQuestionModal, { AddQuestionButton } from "../components/CreateQuestionModal";
 import { isCategory } from "../components/ui";
 import type { Category, RiskOrOpportunity, Visibility } from "../domain/types";
 
@@ -20,6 +21,7 @@ export default function Overview() {
   const [vis, setVis] = useState<"all" | Visibility>("all");
   const [horizon, setHorizon] = useState<HorizonKey>("all");
   const [view] = useState<ViewMode>("table");
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     const catParam = searchParams.get("cat");
@@ -89,7 +91,10 @@ export default function Overview() {
           <div>
             <h1>Questions</h1>
           </div>
+          <AddQuestionButton onClick={() => setCreateOpen(true)} />
         </div>
+
+        <CreateQuestionModal open={createOpen} onClose={() => setCreateOpen(false)} />
 
         <QuestionFilters
           search={search}

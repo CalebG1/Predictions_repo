@@ -3,7 +3,8 @@ import type { ForecastQuestion } from "../domain/types";
 import { questionUrl, shareMessage } from "../domain/share";
 import { useStore } from "../store";
 import CreateAlertModal from "./CreateAlertModal";
-import { IconBell, IconDots, IconPin, IconRefresh, IconShare } from "./icons";
+import DeleteQuestionModal from "./DeleteQuestionModal";
+import { IconBell, IconDots, IconPin, IconRefresh, IconShare, IconTrash } from "./icons";
 
 async function copyText(text: string): Promise<boolean> {
   try {
@@ -26,6 +27,7 @@ export default function QuestionOverflowMenu({
   const { refreshForecast, togglePin, isPinned } = useStore();
   const [open, setOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const pinned = isPinned(q.id);
 
@@ -115,10 +117,24 @@ export default function QuestionOverflowMenu({
           >
             <IconRefresh />
           </button>
+          <button
+            type="button"
+            className="overflow-icon danger"
+            role="menuitem"
+            title="Delete"
+            aria-label="Delete"
+            onClick={() => {
+              setDeleteOpen(true);
+              closeMenu();
+            }}
+          >
+            <IconTrash />
+          </button>
         </div>
       )}
 
       <CreateAlertModal open={alertOpen} q={q} probability={probability} onClose={() => setAlertOpen(false)} />
+      <DeleteQuestionModal open={deleteOpen} q={q} onClose={() => setDeleteOpen(false)} />
     </div>
   );
 }
