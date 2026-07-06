@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   accessGrants,
   organization,
@@ -9,12 +9,36 @@ import {
 } from "./domain/seed";
 import { seedTouchpointSignals, connectSignalFor, uploadSignalFor } from "./domain/touchpoints";
 import type { Connector } from "./domain/connectors";
-import { generateQuestionFromDraft } from "./domain/generateQuestion";
+import { createQuestionFromInput, type CreateQuestionInput } from "./domain/generateQuestion";
+import { FORECAST_PROCESSING_MS, type ForecastJob } from "./domain/forecastJob";
 import { runForecast } from "./domain/engine";
+import { answerForecastQuestion } from "./domain/qaAnswer";
 import { canViewQuestion, visibleQuestions } from "./domain/access";
-import type { ForecastQuestion, Outcome, ProbabilityAlert, ProbabilityPoint, TouchpointSignal, User, Visibility, Category } from "./domain/types";
+import type { ForecastQuestion, Outcome, ProbabilityAlert, ProbabilityPoint, TouchpointSignal, User, Visibility, Category, EvidenceSource, QuestionComment, QaMessage } from "./domain/types";
+import { evidenceSources as seedEvidenceSources, seedComments } from "./domain/seed";
 
 const ALERTS_STORAGE_KEY = "foresight-probability-alerts";
+const FORECAST_JOBS_STORAGE_KEY = "foresight-forecast-jobs";
+const COMMENTS_STORAGE_KEY = "foresight-question-comments";
+const QA_STORAGE_KEY = "foresight-question-qa";
+
+function loadForecastJobs(): ForecastJob[] {
+  try {
+    const raw = sessionStorage.getItem(FORECAST_JOBS_STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as ForecastJob[];
+  } catch {
+    return [];
+  }
+}
+
+function saveForecastJobs(jobs: ForecastJob[]) {
+  try {
+    sessionStorage.setItem(FORECAST_JOBS_STORAGE_KEY, JSON.stringify(jobs));
+  } catch {
+    /* ignore quota errors */
+  }
+}
 
 function loadAlerts(): ProbabilityAlert[] {
   try {
@@ -29,6 +53,45 @@ function loadAlerts(): ProbabilityAlert[] {
 function saveAlerts(alerts: ProbabilityAlert[]) {
   try {
     localStorage.setItem(ALERTS_STORAGE_KEY, JSON.stringify(alerts));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+function loadComments(): QuestionComment[] {
+  try {
+    const raw = localStorage.getItem(COMMENTS_STORAGE_KEY);
+    if (!raw) return [...seedComments];
+    const stored = JSON.parse(raw) as QuestionComment[];
+    const ids = new Set(stored.map((c) => c.id));
+    const merged = [...seedComments.filter((c) => !ids.has(c.id)), ...stored];
+    return merged.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  } catch {
+    return [...seedComments];
+  }
+}
+
+function saveComments(comments: QuestionComment[]) {
+  try {
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(comments));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+function loadQaMessages(): QaMessage[] {
+  try {
+    const raw = localStorage.getItem(QA_STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as QaMessage[];
+  } catch {
+    return [];
+  }
+}
+
+function saveQaMessages(messages: QaMessage[]) {
+  try {
+    localStorage.setItem(QA_STORAGE_KEY, JSON.stringify(messages));
   } catch {
     /* ignore quota errors */
   }
@@ -81,9 +144,18 @@ interface StoreCtx {
   markAlertRead: (alertId: string) => void;
   markAllAlertsRead: () => void;
   unreadAlertCount: number;
-  addQuestion: (input: { title: string; fromNews?: boolean }) => ForecastQuestion;
+  addQuestion: (input: CreateQuestionInput) => ForecastQuestion;
+  startForecastJob: (input: CreateQuestionInput) => ForecastJob;
+  getForecastJob: (jobId: string) => ForecastJob | undefined;
+  finishForecastJob: (jobId: string) => ForecastQuestion | null;
+  evidenceFor: (questionId: string) => EvidenceSource[];
   hideQuestion: (questionId: string) => void;
   deleteQuestion: (questionId: string) => void;
+  commentsFor: (questionId: string) => QuestionComment[];
+  addComment: (questionId: string, body: string) => void;
+  qaMessagesFor: (questionId: string) => QaMessage[];
+  askQa: (questionId: string, prompt: string) => void;
+  resetQa: (questionId: string) => void;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -96,6 +168,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [extraQuestions, setExtraQuestions] = useState<ForecastQuestion[]>([]);
   const [extraOutcomes, setExtraOutcomes] = useState<Outcome[]>([]);
   const [extraHistory, setExtraHistory] = useState<ProbabilityPoint[]>([]);
+  const [extraEvidence, setExtraEvidence] = useState<Record<string, EvidenceSource[]>>({});
   const [touchpointSignals, setTouchpointSignals] = useState<Record<string, TouchpointSignal[]>>(() => ({
     ...seedTouchpointSignals,
   }));
@@ -103,11 +176,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [alerts, setAlerts] = useState<ProbabilityAlert[]>(() => loadAlerts());
   const [hiddenByUser, setHiddenByUser] = useState<Record<string, string[]>>({});
   const [deletedQuestionIds, setDeletedQuestionIds] = useState<string[]>([]);
+  const [forecastJobs, setForecastJobs] = useState<ForecastJob[]>(() => loadForecastJobs());
+  const [comments, setComments] = useState<QuestionComment[]>(() => loadComments());
+  const [qaMessages, setQaMessages] = useState<QaMessage[]>(() => loadQaMessages());
 
   const persistAlerts = useCallback((updater: ProbabilityAlert[] | ((prev: ProbabilityAlert[]) => ProbabilityAlert[])) => {
     setAlerts((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
       saveAlerts(next);
+      return next;
+    });
+  }, []);
+
+  const persistComments = useCallback((updater: QuestionComment[] | ((prev: QuestionComment[]) => QuestionComment[])) => {
+    setComments((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      saveComments(next);
+      return next;
+    });
+  }, []);
+
+  const persistQaMessages = useCallback((updater: QaMessage[] | ((prev: QaMessage[]) => QaMessage[])) => {
+    setQaMessages((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      saveQaMessages(next);
       return next;
     });
   }, []);
@@ -200,14 +292,97 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const addQuestion = useCallback(
-    (input: { title: string; fromNews?: boolean }) => {
-      const bundle = generateQuestionFromDraft(input.title, user, { fromNews: input.fromNews });
-      setExtraQuestions((prev) => [...prev, bundle.question]);
-      setExtraOutcomes((prev) => [...prev, ...bundle.outcomes]);
-      setExtraHistory((prev) => [...prev, ...bundle.history]);
+    (input: CreateQuestionInput, questionId?: string) => {
+      const bundle = createQuestionFromInput(input, user, questionId);
+      setExtraQuestions((prev) => {
+        if (prev.some((q) => q.id === bundle.question.id)) return prev;
+        return [...prev, bundle.question];
+      });
+      setExtraOutcomes((prev) => {
+        const ids = new Set(prev.map((o) => o.id));
+        const next = bundle.outcomes.filter((o) => !ids.has(o.id));
+        return next.length ? [...prev, ...next] : prev;
+      });
+      setExtraHistory((prev) => {
+        const ids = new Set(prev.map((h) => h.id));
+        const next = bundle.history.filter((h) => !ids.has(h.id));
+        return next.length ? [...prev, ...next] : prev;
+      });
+      if (bundle.evidence.length > 0) {
+        setExtraEvidence((prev) => ({ ...prev, [bundle.question.id]: bundle.evidence }));
+      }
       return bundle.question;
     },
     [user]
+  );
+
+  const persistForecastJobs = useCallback((updater: ForecastJob[] | ((prev: ForecastJob[]) => ForecastJob[])) => {
+    setForecastJobs((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      saveForecastJobs(next);
+      return next;
+    });
+  }, []);
+
+  const startForecastJob = useCallback(
+    (input: CreateQuestionInput) => {
+      const questionId = `q-user-${Date.now()}`;
+      const job: ForecastJob = {
+        id: `job-${Date.now()}`,
+        questionId,
+        title: input.title.trim(),
+        startedAt: Date.now(),
+        durationMs: FORECAST_PROCESSING_MS,
+        input,
+        complete: false,
+      };
+      persistForecastJobs((prev) => [...prev.filter((j) => j.complete), job]);
+      return job;
+    },
+    [persistForecastJobs]
+  );
+
+  const getForecastJob = useCallback(
+    (jobId: string) => forecastJobs.find((j) => j.id === jobId),
+    [forecastJobs]
+  );
+
+  const finishForecastJob = useCallback(
+    (jobId: string) => {
+      const job = forecastJobs.find((j) => j.id === jobId);
+      if (!job) return null;
+
+      const existing = extraQuestions.find((q) => q.id === job.questionId);
+      if (job.complete) return existing ?? null;
+
+      persistForecastJobs((prev) =>
+        prev.map((j) => (j.id === jobId ? { ...j, complete: true } : j))
+      );
+      return addQuestion(job.input, job.questionId);
+    },
+    [forecastJobs, extraQuestions, addQuestion, persistForecastJobs]
+  );
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      forecastJobs.forEach((job) => {
+        if (!job.complete && now - job.startedAt >= job.durationMs) {
+          finishForecastJob(job.id);
+        }
+      });
+    }, 2000);
+    return () => window.clearInterval(timer);
+  }, [forecastJobs, finishForecastJob]);
+
+  const evidenceFor = useCallback(
+    (questionId: string) => {
+      const custom = extraEvidence[questionId];
+      if (custom?.length) return custom;
+      if (questionId.startsWith("q-user-")) return [];
+      return seedEvidenceSources.slice(0, 5);
+    },
+    [extraEvidence]
   );
 
   const hideQuestion = useCallback(
@@ -228,6 +403,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setExtraQuestions((prev) => prev.filter((q) => q.id !== questionId));
       setExtraOutcomes((prev) => prev.filter((o) => o.questionId !== questionId));
       setExtraHistory((prev) => prev.filter((h) => !h.outcomeId.startsWith(`${questionId}-`)));
+      setExtraEvidence((prev) => {
+        if (!(questionId in prev)) return prev;
+        const next = { ...prev };
+        delete next[questionId];
+        return next;
+      });
       setPinnedIds((prev) => prev.filter((id) => id !== questionId));
       persistAlerts((prev) => prev.filter((a) => a.questionId !== questionId));
       setTouchpointSignals((prev) => {
@@ -243,8 +424,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         return next;
       });
+      persistComments((prev) => prev.filter((c) => c.questionId !== questionId));
+      persistQaMessages((prev) => prev.filter((m) => m.questionId !== questionId));
     },
-    [persistAlerts]
+    [persistAlerts, persistComments, persistQaMessages]
   );
 
   const touchpointSignalsFor = useCallback(
@@ -326,6 +509,70 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [alerts]
   );
 
+  const commentsFor = useCallback(
+    (questionId: string) => comments.filter((c) => c.questionId === questionId),
+    [comments]
+  );
+
+  const addComment = useCallback(
+    (questionId: string, body: string) => {
+      const trimmed = body.trim();
+      if (!trimmed) return;
+      persistComments((prev) => [
+        ...prev,
+        {
+          id: `cmt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          questionId,
+          authorId: user.id,
+          authorName: user.name,
+          authorTeam: user.team,
+          body: trimmed,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    },
+    [user, persistComments]
+  );
+
+  const qaMessagesFor = useCallback(
+    (questionId: string) => qaMessages.filter((m) => m.questionId === questionId),
+    [qaMessages]
+  );
+
+  const askQa = useCallback(
+    (questionId: string, prompt: string) => {
+      const trimmed = prompt.trim();
+      if (!trimmed) return;
+      const q = mergedQuestions.find((item) => item.id === questionId);
+      if (!q) return;
+      const forecast = runForecast(q);
+      const ts = Date.now();
+      const userMsg: QaMessage = {
+        id: `qa-${ts}-u`,
+        questionId,
+        role: "user",
+        body: trimmed,
+        createdAt: new Date().toISOString(),
+      };
+      const assistantMsg: QaMessage = {
+        id: `qa-${ts}-a`,
+        questionId,
+        role: "assistant",
+        body: answerForecastQuestion(trimmed, forecast, q),
+        createdAt: new Date(Date.now() + 1).toISOString(),
+      };
+      persistQaMessages((prev) => [...prev, userMsg, assistantMsg]);
+    },
+    [mergedQuestions, persistQaMessages]
+  );
+
+  const resetQa = useCallback(
+    (questionId: string) => {
+      persistQaMessages((prev) => prev.filter((m) => m.questionId !== questionId));
+    },
+    [persistQaMessages]
+  );
+
   const value = useMemo<StoreCtx>(() => {
     const visible = visibleQuestions(user, mergedQuestions, accessGrants);
     const hidden = new Set(hiddenByUser[user.id] ?? []);
@@ -354,8 +601,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       markAllAlertsRead,
       unreadAlertCount,
       addQuestion,
+      startForecastJob,
+      getForecastJob,
+      finishForecastJob,
+      evidenceFor,
       hideQuestion,
       deleteQuestion,
+      commentsFor,
+      addComment,
+      qaMessagesFor,
+      askQa,
+      resetQa,
       outcomesFor: (questionId) =>
         allOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
       historyFor,
@@ -367,7 +623,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return list.reduce((best, o) => (o.currentProbability > best.currentProbability ? o : best));
       },
     };
-  }, [user, mergedQuestions, hiddenByUser, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addSource, addUpload, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, hideQuestion, deleteQuestion]);
+  }, [user, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addSource, addUpload, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, hideQuestion, deleteQuestion, commentsFor, addComment, qaMessagesFor, askQa, resetQa]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

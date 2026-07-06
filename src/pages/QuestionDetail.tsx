@@ -2,18 +2,20 @@ import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useStore } from "../store";
 import { runForecast } from "../domain/engine";
-import { evidenceSources } from "../domain/seed";
 import AgentPanel from "../components/AgentPanel";
+import QuestionComments from "../components/QuestionComments";
+import QuestionQaChat from "../components/QuestionQaChat";
 import { buildProbPoints, colorForOption, ProbChart, type CompanionSeries } from "../components/charts";
 import VisibilityPicker from "../components/VisibilityPicker";
 import { overviewHref, pct } from "../components/ui";
 
 export default function QuestionDetail() {
   const { id } = useParams();
-  const { questions, yesOutcome, historyFor, outcomesFor, setVisibility } = useStore();
+  const { questions, yesOutcome, historyFor, outcomesFor, setVisibility, evidenceFor } = useStore();
   const q = questions.find((x) => x.id === id);
 
   const forecast = useMemo(() => (q ? runForecast(q) : null), [q]);
+  const evidence = useMemo(() => (q ? evidenceFor(q.id) : []), [q, evidenceFor]);
 
   const chartConfig = useMemo(() => {
     if (!q) return null;
@@ -84,8 +86,6 @@ export default function QuestionDetail() {
       </div>
     );
   }
-
-  const evidence = evidenceSources.slice(0, 5);
 
   return (
     <div className="dash-page detail">
@@ -189,6 +189,8 @@ export default function QuestionDetail() {
               </tbody>
             </table>
           </div>
+
+          <QuestionComments q={q} />
         </div>
 
         <aside className="detail-side">
@@ -240,18 +242,24 @@ export default function QuestionDetail() {
 
           <div className="panel kv">
             <h4>Evidence sources</h4>
-            {evidence.map((e) => (
-              <div key={e.id} className="ev-row">
-                <span className="ev-class">{e.sourceClass.replace("_", " ")}</span>
-                <span className="ev-title">{e.title}</span>
-                {e.disconfirming && <span className="ev-dis" title="Deliberately disconfirming">⚖︎</span>}
-                <span className="ev-cred">{pct(e.credibilityScore)}</span>
-              </div>
-            ))}
+            {evidence.length === 0 ? (
+              <p className="muted">No evidence sources added yet.</p>
+            ) : (
+              evidence.map((e) => (
+                <div key={e.id} className="ev-row">
+                  <span className="ev-class">{e.sourceClass.replace("_", " ")}</span>
+                  <span className="ev-title">{e.title}</span>
+                  {e.disconfirming && <span className="ev-dis" title="Deliberately disconfirming">⚖︎</span>}
+                  <span className="ev-cred">{pct(e.credibilityScore)}</span>
+                </div>
+              ))
+            )}
           </div>
 
         </aside>
       </div>
+
+      <QuestionQaChat q={q} />
     </div>
   );
 }

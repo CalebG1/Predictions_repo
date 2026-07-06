@@ -1,27 +1,74 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { findSimilarQuestions } from "../domain/generateQuestion";
+import type { Category, SourceClass, Visibility } from "../domain/types";
+import { findSimilarQuestions, type EvidenceDraft } from "../domain/generateQuestion";
 import { questions as seedQuestions } from "../domain/seed";
 import { useStore } from "../store";
+import CategoryPicker from "./CategoryPicker";
+import VisibilityPicker from "./VisibilityPicker";
 import { IconPlus } from "./icons";
 
-function IconSparkle() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-      <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
-      <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75L19 15z" />
-    </svg>
-  );
+const SOURCE_CLASSES: { value: SourceClass; label: string }[] = [
+  { value: "org_internal", label: "Internal" },
+  { value: "gov_stats", label: "Government stats" },
+  { value: "central_bank", label: "Central bank" },
+  { value: "market_data", label: "Market data" },
+  { value: "nowcasting", label: "Nowcasting" },
+  { value: "corporate_demand", label: "Corporate / primary" },
+  { value: "fast_feed", label: "News / fast feed" },
+];
+
+const STEPS = [
+  { title: "Question" },
+  { title: "Classification" },
+  { title: "Resolution & evidence" },
+] as const;
+
+const emptyEvidence = (): EvidenceDraft => ({
+  title: "",
+  url: "",
+  sourceClass: "org_internal",
+});
+
+interface FormState {
+  title: string;
+  description: string;
+  resolutionCriteria: string;
+  resolutionSource: string;
+  resolutionDate: string;
+  impactEstimate: string;
+  category: Category;
+  visibility: Visibility;
+  evidence: EvidenceDraft[];
 }
 
-function IconNews() {
+const defaultForm = (): FormState => ({
+  title: "",
+  description: "",
+  resolutionCriteria: "",
+  resolutionSource: "",
+  resolutionDate: "",
+  impactEstimate: "",
+  category: "Operational",
+  visibility: "public",
+  evidence: [emptyEvidence()],
+});
+
+function IconArrow({ direction }: { direction: "left" | "right" }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-      <line x1="8" y1="7" x2="16" y2="7" />
-      <line x1="8" y1="11" x2="16" y2="11" />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+      {direction === "left" ? (
+        <>
+          <line x1="19" y1="12" x2="5" y2="12" />
+          <polyline points="12 19 5 12 12 5" />
+        </>
+      ) : (
+        <>
+          <line x1="5" y1="12" x2="19" y2="12" />
+          <polyline points="12 5 19 12 12 19" />
+        </>
+      )}
     </svg>
   );
 }
@@ -34,21 +81,35 @@ export default function CreateQuestionModal({
   onClose: () => void;
 }) {
   const navigate = useNavigate();
-  const { addQuestion } = useStore();
-  const [draft, setDraft] = useState("");
-  const [generating, setGenerating] = useState<"none" | "standard" | "news">("none");
+  const { startForecastJob, user } = useStore();
+  const [form, setForm] = useState<FormState>(() => defaultForm());
+  const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [similarDismissed, setSimilarDismissed] = useState(false);
 
   const similar = useMemo(
-    () => findSimilarQuestions(draft, seedQuestions, 5),
-    [draft]
+    () => findSimilarQuestions(form.title, seedQuestions, 12),
+    [form.title]
   );
+
+  const showSimilar =
+    step === 0 &&
+    form.title.trim().length >= 3 &&
+    !similarDismissed &&
+    similar.length > 0;
 
   useEffect(() => {
     if (!open) {
-      setDraft("");
-      setGenerating("none");
+      setForm(defaultForm());
+      setStep(0);
+      setSubmitting(false);
+      setSimilarDismissed(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    setSimilarDismissed(false);
+  }, [form.title]);
 
   useEffect(() => {
     if (!open) return;
@@ -66,30 +127,77 @@ export default function CreateQuestionModal({
 
   if (!open) return null;
 
-  const canGenerate = draft.trim().length >= 8 && generating === "none";
+  const isFirst = step === 0;
+  const isLast = step === STEPS.length - 1;
+  const step0Complete = form.title.trim().length >= 5 && form.description.trim().length > 0;
+  const step1Complete = form.impactEstimate.trim().length > 0;
+  const step2Complete =
+    form.resolutionCriteria.trim().length > 0 &&
+    form.resolutionSource.trim().length > 0 &&
+    form.resolutionDate.trim().length > 0;
+  const stepComplete = [step0Complete, step1Complete, step2Complete][step];
+  const canSubmit = step0Complete && step1Complete && step2Complete && !submitting;
+  const canGoNext = stepComplete;
+  const showNav = step > 0 || step0Complete;
 
-  const handleGenerate = async (fromNews: boolean) => {
-    if (!canGenerate) return;
-    setGenerating(fromNews ? "news" : "standard");
-    await new Promise((r) => setTimeout(r, fromNews ? 900 : 600));
-    const created = addQuestion({ title: draft.trim(), fromNews });
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const updateEvidence = (index: number, patch: Partial<EvidenceDraft>) => {
+    setForm((prev) => ({
+      ...prev,
+      evidence: prev.evidence.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    }));
+  };
+
+  const addEvidenceRow = () => {
+    setForm((prev) => ({ ...prev, evidence: [...prev.evidence, emptyEvidence()] }));
+  };
+
+  const removeEvidenceRow = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      evidence: prev.evidence.length <= 1 ? [emptyEvidence()] : prev.evidence.filter((_, i) => i !== index),
+    }));
+  };
+
+  const goBack = () => setStep((s) => Math.max(0, s - 1));
+  const goNext = () => {
+    if (!canGoNext) return;
+    setStep((s) => Math.min(STEPS.length - 1, s + 1));
+  };
+
+  const handleSubmit = () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    const job = startForecastJob({
+      title: form.title.trim(),
+      description: form.description.trim() || undefined,
+      resolutionCriteria: form.resolutionCriteria.trim() || undefined,
+      resolutionSource: form.resolutionSource.trim() || undefined,
+      resolutionDate: form.resolutionDate.trim() || undefined,
+      impactEstimate: form.impactEstimate.trim() || undefined,
+      category: form.category,
+      visibility: form.visibility,
+      evidence: form.evidence.filter((e) => e.title.trim()),
+    });
     onClose();
-    navigate(`/q/${created.id}`);
+    navigate(`/forecast/${job.id}/processing`);
   };
 
   return createPortal(
     <div className="cq-overlay" onMouseDown={onClose}>
       <div
-        className="cq-modal"
+        className="cq-modal cq-modal-form"
         role="dialog"
         aria-modal="true"
-        aria-label="Create a question"
+        aria-label="Create a forecast"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <header className="cq-head">
           <div>
-            <h2 className="cq-title">Create a Question</h2>
-            <p className="cq-subtitle">Enter your question and we&apos;ll help you format it properly</p>
+            <h2 className="cq-title">Create a forecast</h2>
           </div>
           <button type="button" className="cq-close" aria-label="Close" onClick={onClose}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
@@ -99,73 +207,228 @@ export default function CreateQuestionModal({
           </button>
         </header>
 
-        <div className="cq-body">
-          <input
-            type="text"
-            className="cq-input"
-            placeholder="When will the conflict in Iran end?"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && canGenerate) handleGenerate(false);
-            }}
-          />
+        <div className="cq-progress" aria-hidden="true">
+          {STEPS.map((s, i) => (
+            <span key={s.title} className={`cq-progress-dot${i <= step ? " done" : ""}${i === step ? " active" : ""}`} />
+          ))}
+        </div>
 
-          {draft.trim().length >= 3 && (
-            <div className="cq-similar">
-              <span className="cq-similar-label">or view questions similar to this…</span>
-              <ul className="cq-similar-list">
-                {similar.map((q) => (
-                  <li key={q.id}>
+        <div className="cq-body cq-form">
+          {step === 0 && (
+            <>
+              <label className="cq-field">
+                <span className="cq-label">Question title</span>
+                <input
+                  type="text"
+                  className="cq-input"
+                  placeholder="Will the Fed cut rates at the September meeting?"
+                  value={form.title}
+                  onChange={(e) => update("title", e.target.value)}
+                  autoFocus
+                />
+              </label>
+
+              {showSimilar && (
+                <div className="cq-similar">
+                  <div className="cq-similar-head">
+                    <span className="cq-similar-label">Similar existing questions</span>
                     <button
                       type="button"
-                      className="cq-similar-item"
-                      onClick={() => navigate(`/q/${q.id}`)}
+                      className="cq-similar-close"
+                      aria-label="Dismiss similar questions"
+                      onClick={() => setSimilarDismissed(true)}
                     >
-                      <span className="cq-similar-text">{q.title}</span>
-                      <span className="cq-similar-chevron" aria-hidden="true">›</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                      </svg>
                     </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                  </div>
+                  <ul className="cq-similar-list">
+                    {similar.map((q) => (
+                      <li key={q.id}>
+                        <button
+                          type="button"
+                          className="cq-similar-item"
+                          onClick={() => navigate(`/q/${q.id}`)}
+                        >
+                          <span className="cq-similar-text">{q.title}</span>
+                          <span className="cq-similar-chevron" aria-hidden="true">›</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <label className="cq-field">
+                <span className="cq-label">Description</span>
+                <textarea
+                  className="cq-textarea"
+                  placeholder="What exactly must happen, by when, and under what conditions?"
+                  rows={4}
+                  value={form.description}
+                  onChange={(e) => update("description", e.target.value)}
+                />
+              </label>
+            </>
           )}
 
-          <div className="cq-actions">
-            <button
-              type="button"
-              className="cq-btn primary"
-              disabled={!canGenerate}
-              onClick={() => handleGenerate(false)}
-            >
-              {generating === "standard" ? (
-                <span className="cq-spinner" aria-hidden="true" />
-              ) : (
-                <IconSparkle />
-              )}
-              {generating === "standard" ? "Generating…" : "Generate"}
-            </button>
+          {step === 1 && (
+            <>
+              <div className="cq-row cq-row-pickers">
+                <div className="cq-field">
+                  <span className="cq-label">Category</span>
+                  <CategoryPicker value={form.category} onChange={(c) => update("category", c)} />
+                </div>
+                <div className="cq-field">
+                  <span className="cq-label">Visibility</span>
+                  <VisibilityPicker
+                    value={form.visibility}
+                    owningTeam={user.team}
+                    onChange={(v) => update("visibility", v)}
+                  />
+                </div>
+              </div>
 
-            <div className="cq-or">
-              <span>OR</span>
-            </div>
+              <label className="cq-field">
+                <span className="cq-label">Impact if true</span>
+                <input
+                  type="text"
+                  className="cq-input"
+                  placeholder="e.g. ~$30M revenue at risk"
+                  value={form.impactEstimate}
+                  onChange={(e) => update("impactEstimate", e.target.value)}
+                  autoFocus
+                />
+              </label>
+            </>
+          )}
 
-            <button
-              type="button"
-              className="cq-btn secondary"
-              disabled={!canGenerate}
-              onClick={() => handleGenerate(true)}
-            >
-              {generating === "news" ? (
-                <span className="cq-spinner dark" aria-hidden="true" />
-              ) : (
-                <IconNews />
-              )}
-              {generating === "news" ? "Pulling sources…" : "Generate from News Articles"}
-            </button>
-          </div>
+          {step === 2 && (
+            <>
+              <label className="cq-field">
+                <span className="cq-label">Resolution criteria</span>
+                <textarea
+                  className="cq-textarea"
+                  placeholder="How will this resolve YES or NO? Cite observable thresholds and authoritative sources."
+                  rows={3}
+                  value={form.resolutionCriteria}
+                  onChange={(e) => update("resolutionCriteria", e.target.value)}
+                  autoFocus
+                />
+              </label>
+
+              <div className="cq-row">
+                <label className="cq-field">
+                  <span className="cq-label">Resolution source</span>
+                  <input
+                    type="text"
+                    className="cq-input"
+                    placeholder="e.g. FOMC statement, SEC EDGAR"
+                    value={form.resolutionSource}
+                    onChange={(e) => update("resolutionSource", e.target.value)}
+                  />
+                </label>
+                <label className="cq-field">
+                  <span className="cq-label">Resolution date</span>
+                  <input
+                    type="date"
+                    className="cq-input"
+                    value={form.resolutionDate}
+                    onChange={(e) => update("resolutionDate", e.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div className="cq-evidence">
+                <div className="cq-evidence-head">
+                  <span className="cq-label">Evidence sources</span>
+                  <button type="button" className="cq-evidence-add" onClick={addEvidenceRow}>
+                    Add source
+                  </button>
+                </div>
+                <div className="cq-evidence-list">
+                  {form.evidence.map((row, index) => (
+                    <div key={index} className="cq-evidence-row">
+                      <input
+                        type="text"
+                        className="cq-input"
+                        placeholder="Source title"
+                        value={row.title}
+                        onChange={(e) => updateEvidence(index, { title: e.target.value })}
+                      />
+                      <input
+                        type="url"
+                        className="cq-input"
+                        placeholder="URL (optional)"
+                        value={row.url ?? ""}
+                        onChange={(e) => updateEvidence(index, { url: e.target.value })}
+                      />
+                      <select
+                        className="cq-select"
+                        value={row.sourceClass ?? "org_internal"}
+                        onChange={(e) => updateEvidence(index, { sourceClass: e.target.value as SourceClass })}
+                      >
+                        {SOURCE_CLASSES.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="cq-evidence-remove"
+                        aria-label="Remove evidence source"
+                        onClick={() => removeEvidenceRow(index)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
+
+        {showNav && (
+          <footer className={`cq-foot cq-foot-nav${isLast ? " cq-foot-last" : ""}`}>
+            {!isFirst ? (
+              <button
+                type="button"
+                className="cq-nav-btn"
+                aria-label="Previous step"
+                onClick={goBack}
+              >
+                <IconArrow direction="left" />
+              </button>
+            ) : (
+              <span className="cq-nav-spacer" aria-hidden="true" />
+            )}
+
+            {isLast ? (
+              <button
+                type="button"
+                className="alert-btn primary cq-submit cq-create-btn"
+                disabled={!canSubmit}
+                onClick={handleSubmit}
+              >
+                {submitting ? "Creating…" : "Create forecast"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="cq-nav-btn"
+                aria-label="Next step"
+                disabled={!canGoNext}
+                onClick={goNext}
+              >
+                <IconArrow direction="right" />
+              </button>
+            )}
+          </footer>
+        )}
       </div>
     </div>,
     document.body

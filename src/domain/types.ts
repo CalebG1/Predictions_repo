@@ -258,6 +258,26 @@ export interface BaselineComparison {
   model: number;
 }
 
+/** Team comment on a forecast question (discussion, not Q&A). */
+export interface QuestionComment {
+  id: string;
+  questionId: string;
+  authorId: string;
+  authorName: string;
+  authorTeam: string;
+  body: string;
+  createdAt: string; // ISO
+}
+
+/** A message in the per-question Q&A assistant (user question or assistant reply). */
+export interface QaMessage {
+  id: string;
+  questionId: string;
+  role: "user" | "assistant";
+  body: string;
+  createdAt: string; // ISO
+}
+
 /** User-defined alert when a probability crosses a threshold (stock-style price alert). */
 export interface ProbabilityAlert {
   id: string;

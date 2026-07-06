@@ -420,3 +420,34 @@ export const brierOverTime = (() => {
   }
   return out;
 })();
+
+/** Seed team comments shown on question detail pages. */
+export const seedComments = [
+  {
+    id: "cmt-q-regulation-1",
+    questionId: "q-regulation",
+    authorId: "u-analyst",
+    authorName: "K. Sato (Analyst)",
+    authorTeam: "Strategy",
+    body: "The latest trade-policy signals moved this up — worth watching the next Commerce Dept readout.",
+    createdAt: "2026-06-28T14:22:00.000Z",
+  },
+  {
+    id: "cmt-q-regulation-2",
+    questionId: "q-regulation",
+    authorId: "u-exec",
+    authorName: "D. Alvarez (CFO)",
+    authorTeam: "Executive",
+    body: "If this crosses 60% we should revisit the hedging plan we discussed in Q1.",
+    createdAt: "2026-07-01T09:15:00.000Z",
+  },
+  {
+    id: "cmt-q-cyber-1",
+    questionId: "q-cyber-breach",
+    authorId: "u-risk",
+    authorName: "R. Mensah (Risk Manager)",
+    authorTeam: "Risk",
+    body: "Red-team agent is pulling this down but our internal audit findings aren't reflected yet — expect a refresh after the pen test report lands.",
+    createdAt: "2026-07-02T16:40:00.000Z",
+  },
+];

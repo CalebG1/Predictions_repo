@@ -8,6 +8,7 @@ import Movers from "./pages/Movers";
 import Settings from "./pages/Settings";
 import Methodology from "./pages/settings/Methodology";
 import Context from "./pages/settings/Context";
+import ForecastProcessing from "./pages/ForecastProcessing";
 
 function AppShell() {
   return (
@@ -16,6 +17,7 @@ function AppShell() {
       <CategoryNav />
       <Routes>
         <Route path="/" element={<Overview />} />
+        <Route path="/forecast/:jobId/processing" element={<ForecastProcessing />} />
         <Route path="/q/:id" element={<QuestionDetail />} />
         <Route path="/movers" element={<Movers />} />
         <Route path="/settings" element={<Settings />}>

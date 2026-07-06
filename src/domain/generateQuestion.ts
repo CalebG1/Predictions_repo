@@ -1,6 +1,15 @@
 import { runForecast } from "./engine";
-import { evidenceSources } from "./seed";
-import type { Category, ForecastQuestion, Outcome, ProbabilityPoint, RiskOrOpportunity, User } from "./types";
+import type {
+  Category,
+  EvidenceSource,
+  ForecastQuestion,
+  Outcome,
+  ProbabilityPoint,
+  RiskOrOpportunity,
+  SourceClass,
+  User,
+  Visibility,
+} from "./types";
 
 function seeded(seed: string): () => number {
   let h = 2166136261;
@@ -52,7 +61,7 @@ function formatTitle(raw: string): string {
   if (!trimmed) return "";
   const lower = trimmed.toLowerCase();
   if (/^(will|does|is|are|when|which|what|how)\b/.test(lower)) {
-    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1) + "?";
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1) + (trimmed.endsWith("?") ? "" : "?");
   }
   return `Will ${trimmed.charAt(0).toLowerCase() + trimmed.slice(1)}?`;
 }
@@ -71,6 +80,25 @@ function tokenize(text: string): Set<string> {
       .split(/\s+/)
       .filter((w) => w.length > 2)
   );
+}
+
+export interface EvidenceDraft {
+  title: string;
+  url?: string;
+  sourceClass?: SourceClass;
+}
+
+export interface CreateQuestionInput {
+  title: string;
+  description?: string;
+  resolutionCriteria?: string;
+  resolutionSource?: string;
+  resolutionDate?: string;
+  impactEstimate?: string;
+  category?: Category;
+  visibility?: Visibility;
+  riskOrOpportunity?: RiskOrOpportunity;
+  evidence?: EvidenceDraft[];
 }
 
 /** Rank existing questions by lexical overlap with the draft query. */
@@ -100,55 +128,35 @@ export function findSimilarQuestions(
   return scored.slice(0, limit).map(({ q }) => q);
 }
 
-function pickNewsSource(title: string) {
-  const lower = title.toLowerCase();
-  const ranked = evidenceSources
-    .map((src) => {
-      const srcTokens = tokenize(src.title);
-      const queryTokens = tokenize(title);
-      let overlap = 0;
-      queryTokens.forEach((t) => {
-        if (srcTokens.has(t)) overlap += 1;
-      });
-      if (src.sourceClass === "fast_feed" && (lower.includes("conflict") || lower.includes("geopolit"))) overlap += 2;
-      if (src.sourceClass === "central_bank" && lower.includes("rate")) overlap += 2;
-      if (src.sourceClass === "gov_stats" && (lower.includes("cpi") || lower.includes("inflation"))) overlap += 2;
-      return { src, overlap };
-    })
-    .sort((a, b) => b.overlap - a.overlap);
-  return ranked[0]?.src ?? evidenceSources[0];
-}
-
 export interface GeneratedQuestionBundle {
   question: ForecastQuestion;
   outcomes: Outcome[];
   history: ProbabilityPoint[];
+  evidence: EvidenceSource[];
 }
 
-export function generateQuestionFromDraft(
-  rawTitle: string,
+export function createQuestionFromInput(
+  input: CreateQuestionInput,
   user: User,
-  opts: { fromNews?: boolean } = {}
+  questionId?: string
 ): GeneratedQuestionBundle {
-  const title = formatTitle(rawTitle);
-  const id = `q-user-${Date.now()}`;
-  const rng = seeded(id + rawTitle);
-  const category = inferCategory(rawTitle);
-  const riskOrOpportunity = inferRiskOrOpportunity(rawTitle);
-  const monthsOut = 6 + Math.floor(rng() * 7);
-  const resolutionDate = resolutionDateFromNow(monthsOut);
+  const title = formatTitle(input.title);
+  const id = questionId ?? `q-user-${Date.now()}`;
+  const rng = seeded(id + input.title);
+  const category = input.category ?? inferCategory(input.title);
+  const riskOrOpportunity = input.riskOrOpportunity ?? inferRiskOrOpportunity(input.title);
+  const resolutionDate = input.resolutionDate?.trim() || resolutionDateFromNow(6 + Math.floor(rng() * 6));
   const openDate = new Date().toISOString().slice(0, 10);
-  const newsSource = opts.fromNews ? pickNewsSource(rawTitle) : null;
 
-  const preciseDefinition = opts.fromNews
-    ? `${title.replace(/\?$/, "")} — operationalized per ${newsSource!.title} and corroborating primary sources before ${resolutionDate}.`
-    : `${title.replace(/\?$/, "")} — resolvable per documented criteria before ${resolutionDate}.`;
+  const preciseDefinition =
+    input.description?.trim() ||
+    `${title.replace(/\?$/, "")} — resolvable per documented criteria before ${resolutionDate}.`;
 
-  const resolutionCriteria = opts.fromNews
-    ? `Resolves YES if corroborated by ${newsSource!.title} and aligned primary reporting before the resolution date.`
-    : `Resolves YES when the stated condition in the question is met before ${resolutionDate}.`;
+  const resolutionCriteria =
+    input.resolutionCriteria?.trim() ||
+    `Resolves YES when the stated condition in the question is met before ${resolutionDate}.`;
 
-  const resolutionSource = newsSource?.title ?? "Primary source verification + internal review";
+  const resolutionSource = input.resolutionSource?.trim() || "Primary source verification + internal review";
 
   const priorBaseRate = Number((0.25 + rng() * 0.35).toFixed(2));
   const impactScore = Number((0.35 + rng() * 0.45).toFixed(2));
@@ -162,7 +170,9 @@ export function generateQuestionFromDraft(
     category,
     type: "binary",
     riskOrOpportunity,
-    impactEstimate: riskOrOpportunity === "risk" ? "Material operational or financial exposure" : "Meaningful upside to plan",
+    impactEstimate:
+      input.impactEstimate?.trim() ||
+      (riskOrOpportunity === "risk" ? "Material operational or financial exposure" : "Meaningful upside to plan"),
     impactLevel,
     impactScore,
     resolutionCriteria,
@@ -170,13 +180,24 @@ export function generateQuestionFromDraft(
     openDate,
     resolutionDate,
     status: "open",
-    visibility: "public",
+    visibility: input.visibility ?? "public",
     owningTeam: user.team,
     createdBy: user.id,
     priorBaseRate,
   };
 
-  const forecast = runForecast(question, { trigger: opts.fromNews ? "news-ingest" : "question-framer" });
+  const evidence: EvidenceSource[] = (input.evidence ?? [])
+    .filter((e) => e.title.trim())
+    .map((e, i) => ({
+      id: `${id}-ev-${i}`,
+      title: e.title.trim(),
+      url: e.url?.trim() || undefined,
+      sourceClass: e.sourceClass ?? "org_internal",
+      credibilityScore: 0.75,
+      retrievedAt: openDate,
+    }));
+
+  const forecast = runForecast(question, { trigger: "question-create" });
   const yesProb = Number(forecast.currentProbability.toFixed(3));
   const noProb = Number((1 - yesProb).toFixed(3));
 
@@ -204,17 +225,22 @@ export function generateQuestionFromDraft(
       probability: priorBaseRate,
       timestamp: openDate,
       source: "agent-ensemble",
-      updateTrigger: opts.fromNews ? `Framed from ${newsSource!.title}` : "Initial base-rate anchor",
+      updateTrigger: "Initial base-rate anchor",
     },
     {
       id: `${id}-ph-1`,
       outcomeId: `${id}-yes`,
       probability: yesProb,
-      timestamp: new Date().toISOString().slice(0, 10),
+      timestamp: openDate,
       source: "agent-ensemble",
-      updateTrigger: opts.fromNews ? "News-driven ensemble forecast" : "Question-framer synthesis",
+      updateTrigger: evidence.length > 0 ? "Initial forecast with submitted evidence" : "Question created",
     },
   ];
 
-  return { question, outcomes, history };
+  return { question, outcomes, history, evidence };
+}
+
+/** @deprecated Use createQuestionFromInput */
+export function generateQuestionFromDraft(rawTitle: string, user: User): GeneratedQuestionBundle {
+  return createQuestionFromInput({ title: rawTitle }, user);
 }
