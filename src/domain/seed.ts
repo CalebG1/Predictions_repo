@@ -64,7 +64,7 @@ export const evidenceSources: EvidenceSource[] = [
   { id: "ev-8", title: "Opposing think-tank brief", sourceClass: "fast_feed", ideologyTag: "contrarian", credibilityScore: 0.55, retrievedAt: "2026-06-25", disconfirming: true },
 ];
 
-type QSeed = Omit<ForecastQuestion, "id"> & { id: string; initial: number };
+type QSeed = Omit<ForecastQuestion, "id"> & { id: string; initial: number; options?: string[] };
 
 const Q: QSeed[] = [
   {
@@ -217,10 +217,35 @@ const Q: QSeed[] = [
     resolutionSource: "ATS", openDate: "2026-05-10", resolutionDate: "2026-10-01",
     status: "open", visibility: "public", owningTeam: "People", createdBy: "u-risk", priorBaseRate: 0.55, initial: 0.5,
   },
+  {
+    id: "q-best-ai-model",
+    title: "Which AI model leads by end of 2026?",
+    preciseDefinition:
+      "Resolves to the provider whose flagship model holds #1 on the LMSYS Chatbot Arena leaderboard (by Elo) at 2026-12-31.",
+    category: "Product",
+    type: "categorical",
+    riskOrOpportunity: "opportunity",
+    impactEstimate: "Guides $12M annual AI vendor spend",
+    impactLevel: "medium",
+    impactScore: 0.55,
+    resolutionCriteria:
+      "Provider with the highest Chatbot Arena Elo at year-end; ties broken by public API availability.",
+    resolutionSource: "LMSYS Chatbot Arena leaderboard",
+    openDate: "2026-01-15",
+    resolutionDate: "2026-12-31",
+    status: "open",
+    visibility: "public",
+    owningTeam: "Platform",
+    createdBy: "u-analyst",
+    priorBaseRate: 0.45,
+    initial: 0.45,
+    options: ["OpenAI", "Google", "Anthropic", "Meta"],
+  },
 ];
 
-export const questions: ForecastQuestion[] = Q.map(({ initial, ...q }) => {
+export const questions: ForecastQuestion[] = Q.map(({ initial, options, ...q }) => {
   void initial;
+  void options;
   return q;
 });
 
@@ -265,6 +290,46 @@ Q.forEach((q) => {
   const points = 40;
   const start = new Date(q.openDate);
   const totalMs = NOW.getTime() - start.getTime();
+
+  if (q.type === "categorical" && q.options?.length) {
+    let weights = q.options.map((_, i) => {
+      const base = [0.46, 0.28, 0.18, 0.08];
+      return base[i] ?? 0.25 / q.options!.length;
+    });
+    const sum0 = weights.reduce((a, b) => a + b, 0);
+    weights = weights.map((w) => w / sum0);
+
+    for (let i = 0; i < points; i++) {
+      const t = new Date(start.getTime() + (totalMs * i) / (points - 1));
+      weights = weights.map((w) => Math.max(0.02, w + (rng() - 0.48) * 0.055));
+      const sum = weights.reduce((a, b) => a + b, 0);
+      weights = weights.map((w) => w / sum);
+
+      q.options!.forEach((_, idx) => {
+        probabilityHistory.push({
+          id: `${q.id}-ph-${idx}-${i}`,
+          outcomeId: `${q.id}-opt-${idx}`,
+          probability: Number(weights[idx].toFixed(3)),
+          timestamp: t.toISOString().slice(0, 10),
+          source: idx === 0 && i % 3 === 0 ? "human-risk" : "agent-ensemble",
+          updateTrigger: pickTrigger(rng),
+          rationaleId: `${q.id}-r-${idx}-${i}`,
+        });
+      });
+    }
+
+    q.options!.forEach((label, idx) => {
+      outcomes.push({
+        id: `${q.id}-opt-${idx}`,
+        questionId: q.id,
+        label,
+        currentProbability: Number(weights[idx].toFixed(3)),
+        isResolved: false,
+      });
+    });
+    return;
+  }
+
   let p = q.initial;
   for (let i = 0; i < points; i++) {
     const t = new Date(start.getTime() + (totalMs * i) / (points - 1));

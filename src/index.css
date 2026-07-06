@@ -1764,8 +1764,7 @@ input {
   width: 100%;
 }
 
-.detail-chart .pc-toolbar,
-.detail-chart .pc-legend {
+.detail-chart .pc-toolbar {
   padding-left: 0;
   padding-right: 0;
 }
@@ -1875,11 +1874,18 @@ input {
 
 .pc-toolbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 8px;
+}
+
+.pc-toolbar-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .pc-timeframes {
@@ -1979,7 +1985,6 @@ input {
   flex-wrap: wrap;
   align-items: center;
   gap: 14px;
-  margin-bottom: 6px;
   padding-left: 4px;
 }
 
@@ -2010,6 +2015,10 @@ input {
   cursor: crosshair;
   touch-action: none;
   user-select: none;
+}
+
+.prob-chart.pc-hovering {
+  cursor: crosshair;
 }
 
 .pc-brush-rect {

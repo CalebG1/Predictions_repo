@@ -293,8 +293,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         seedOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
       historyFor,
       yesOutcome: (questionId) => {
-        const outcome = seedOutcomes.find((o) => o.questionId === questionId && o.id.endsWith("-yes"));
-        return outcome ? applyOutcomeOverrides(outcome) : undefined;
+        const list = seedOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides);
+        const yes = list.find((o) => o.id.endsWith("-yes"));
+        if (yes) return yes;
+        if (list.length === 0) return undefined;
+        return list.reduce((best, o) => (o.currentProbability > best.currentProbability ? o : best));
       },
     };
   }, [user, mergedQuestions, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addSource, addUpload, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount]);
