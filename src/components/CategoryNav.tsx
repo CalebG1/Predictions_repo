@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 const tabs = [
   { label: "Overview", path: "/" },
   { label: "Movers", path: "/movers" },
+  { label: "Cybersecurity", path: "/cybersecurity" },
 ];
 
 export default function CategoryNav() {

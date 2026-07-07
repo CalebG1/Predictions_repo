@@ -3,32 +3,16 @@ import NotificationPanel from "./NotificationPanel";
 import { useStore } from "../store";
 
 export default function Header() {
-  const { org, user, setUser, allUsers } = useStore();
+  const { org } = useStore();
   return (
     <header className="header">
       <div className="header-inner">
         <Link to="/" className="logo">
-          Foresight
+          Signal Ridge
         </Link>
         <span className="org-chip">{org.name}</span>
 
         <div className="header-right">
-          <div className="role-switch">
-            <span className="rs-label">Viewing as</span>
-            <select
-              value={user.id}
-              onChange={(e) => {
-                const next = allUsers.find((u) => u.id === e.target.value);
-                if (next) setUser(next);
-              }}
-            >
-              {allUsers.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-          </div>
           <Link to="/settings" className="icon-btn" title="Settings">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="3" />

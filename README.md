@@ -1,4 +1,4 @@
-# Foresight — Organizational Risk & Opportunity Forecasting Dashboard
+# Signal Ridge — Organizational Risk & Opportunity Forecasting Dashboard
 
 An internal decision-intelligence dashboard built on top of a Kalshi-style
 prediction-market surface. Every "market" becomes a **risk or opportunity
@@ -23,7 +23,7 @@ npm run build     # type-check + production build
 npm test          # run unit tests
 ```
 
-Use the **"Viewing as"** switcher in the header to change role
+Use the **"Viewing as"** switcher under **Settings → Profile** to change role
 (Risk Manager / CFO / Analyst) and watch private questions appear/disappear per
 the access-control boundary.
 

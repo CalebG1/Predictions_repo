@@ -4,6 +4,9 @@ import { useStore } from "../store";
 import { runForecast } from "../domain/engine";
 import QuestionComments from "../components/QuestionComments";
 import QuestionQaChat from "../components/QuestionQaChat";
+import ReasoningThread from "../components/ReasoningThread";
+import CyberQuestionInsights from "../components/CyberQuestionInsights";
+import { buildForecastReasoning } from "../domain/reasoning";
 import { buildProbPoints, colorForOption, ProbChart, type CompanionSeries } from "../components/charts";
 import VisibilityPicker from "../components/VisibilityPicker";
 import { overviewHref, pct } from "../components/ui";
@@ -70,7 +73,12 @@ export default function QuestionDetail() {
     };
   }, [q, outcomesFor, historyFor, yesOutcome]);
 
-  if (!q || !chartConfig) {
+  const reasoning = useMemo(() => {
+    if (!q || !forecast || !chartConfig) return null;
+    return buildForecastReasoning(q, forecast, chartConfig.history, evidence);
+  }, [q, forecast, chartConfig, evidence]);
+
+  if (!q || !chartConfig || !reasoning) {
     return (
       <div className="dash-page">
         <div className="locked-card">
@@ -133,6 +141,10 @@ export default function QuestionDetail() {
           primaryLineColor={chartConfig.primaryLineColor}
         />
       </div>
+
+      <ReasoningThread reasoning={reasoning} />
+
+      {q.category === "Security/Cyber" && <CyberQuestionInsights q={q} />}
 
       <div className="detail-grid">
         <div className="detail-main">

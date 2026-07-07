@@ -23,6 +23,9 @@ export type QuestionStatus = "open" | "resolved" | "void";
 
 export type ImpactLevel = "low" | "medium" | "high" | "critical";
 
+/** Model confidence in a forecast or an alert's forecast impact (distinct from event probability). */
+export type Confidence = "high" | "medium" | "low";
+
 /**
  * Real-world data sources that can feed a forecast (interviews, apps, polls).
  * `upload` = files imported directly; `custom` = any connector from the gallery

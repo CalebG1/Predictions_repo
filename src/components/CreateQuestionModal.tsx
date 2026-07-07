@@ -43,14 +43,14 @@ interface FormState {
   evidence: EvidenceDraft[];
 }
 
-const defaultForm = (): FormState => ({
+const defaultForm = (category: Category = "Operational"): FormState => ({
   title: "",
   description: "",
   resolutionCriteria: "",
   resolutionSource: "",
   resolutionDate: "",
   impactEstimate: "",
-  category: "Operational",
+  category,
   visibility: "public",
   evidence: [emptyEvidence()],
 });
@@ -76,9 +76,11 @@ function IconArrow({ direction }: { direction: "left" | "right" }) {
 export default function CreateQuestionModal({
   open,
   onClose,
+  defaultCategory,
 }: {
   open: boolean;
   onClose: () => void;
+  defaultCategory?: Category;
 }) {
   const navigate = useNavigate();
   const { startForecastJob, user } = useStore();
@@ -99,13 +101,12 @@ export default function CreateQuestionModal({
     similar.length > 0;
 
   useEffect(() => {
-    if (!open) {
-      setForm(defaultForm());
-      setStep(0);
-      setSubmitting(false);
-      setSimilarDismissed(false);
-    }
-  }, [open]);
+    if (!open) return;
+    setForm(defaultForm(defaultCategory));
+    setStep(0);
+    setSubmitting(false);
+    setSimilarDismissed(false);
+  }, [open, defaultCategory]);
 
   useEffect(() => {
     setSimilarDismissed(false);

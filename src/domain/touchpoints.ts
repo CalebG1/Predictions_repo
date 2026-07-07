@@ -97,6 +97,114 @@ export const seedTouchpointSignals: Record<string, TouchpointSignal[]> = {
       updatedAt: "2026-06-26",
     },
   ],
+  "q-cyber-ransomware": [
+    {
+      kind: "slack",
+      summary: "#secops: 3 endpoints flagged for suspicious encryption activity",
+      updatedAt: "2026-06-27",
+    },
+    {
+      kind: "teams",
+      summary: "Backup drill results: RTO exceeds 8hr target on 2 systems",
+      updatedAt: "2026-06-25",
+    },
+  ],
+  "q-cyber-phishing": [
+    {
+      kind: "slack",
+      summary: "#security-awareness: 12 users clicked simulated BEC link",
+      updatedAt: "2026-06-26",
+    },
+    {
+      kind: "teams",
+      summary: "Finance desk: wire transfer approval process bypass attempt flagged",
+      updatedAt: "2026-06-24",
+    },
+  ],
+  "q-cyber-vendor": [
+    {
+      kind: "excel",
+      summary: "Vendor risk scorecard: 2 Tier-1 vendors overdue on SOC 2",
+      updatedAt: "2026-06-26",
+    },
+    {
+      kind: "slack",
+      summary: "#vendor-risk: SaaS provider disclosed security incident (under review)",
+      updatedAt: "2026-06-27",
+    },
+  ],
+  "q-cyber-iam": [
+    {
+      kind: "teams",
+      summary: "IAM review: 4 dormant admin accounts still active",
+      updatedAt: "2026-06-25",
+    },
+    {
+      kind: "slack",
+      summary: "#identity: impossible travel alert on service account",
+      updatedAt: "2026-06-27",
+    },
+  ],
+  "q-cyber-cloud": [
+    {
+      kind: "slack",
+      summary: "#cloud-security: CSPM flagged 7 public S3 buckets",
+      updatedAt: "2026-06-27",
+    },
+    {
+      kind: "excel",
+      summary: "Cloud posture workbook: IAM over-permission count up 14%",
+      updatedAt: "2026-06-23",
+    },
+  ],
+  "q-cyber-ddos": [
+    {
+      kind: "teams",
+      summary: "SRE war room: DDoS mitigation vendor contract renewal pending",
+      updatedAt: "2026-06-22",
+    },
+    {
+      kind: "slack",
+      summary: "#sre: traffic spike on edge — ruled benign, playbook updated",
+      updatedAt: "2026-06-26",
+    },
+  ],
+  "q-cyber-compliance": [
+    {
+      kind: "excel",
+      summary: "SOC 2 tracker: 3 control gaps open, 2 overdue remediation",
+      updatedAt: "2026-06-27",
+    },
+    {
+      kind: "survey",
+      summary: "GRC pulse: audit readiness self-assessment at 68%",
+      updatedAt: "2026-06-24",
+    },
+  ],
+  "q-cyber-zero-day": [
+    {
+      kind: "slack",
+      summary: "#vuln-mgmt: CVE-2026-XXXX critical — patch available, 40% deployed",
+      updatedAt: "2026-06-27",
+    },
+    {
+      kind: "teams",
+      summary: "Jira: 12 critical vulns past SLA, 3 internet-facing",
+      updatedAt: "2026-06-26",
+    },
+  ],
+  "q-cyber-zero-trust": [
+    {
+      kind: "survey",
+      summary: "Program review: Phase 2 milestones 78% complete",
+      updatedAt: "2026-06-25",
+    },
+    {
+      kind: "teams",
+      summary: "Architecture review: device trust rollout on track for Q3",
+      updatedAt: "2026-06-27",
+    },
+  ],
   "q-fed-cut": [
     {
       kind: "excel",

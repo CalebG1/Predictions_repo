@@ -1372,3 +1372,93 @@ export function MiniBars({ data }: { data: { date: string; brier: number }[] }) 
     </svg>
   );
 }
+
+export interface RiskMatrixDot {
+  id: string;
+  title: string;
+  x: number;
+  y: number;
+}
+
+export function RiskMatrixScatter({
+  points,
+  color = "#0e1a16",
+  onSelect,
+}: {
+  points: RiskMatrixDot[];
+  color?: string;
+  onSelect?: (id: string) => void;
+}) {
+  const W = 420;
+  const H = 360;
+  const pad = { left: 48, right: 16, top: 16, bottom: 44 };
+  const innerW = W - pad.left - pad.right;
+  const innerH = H - pad.top - pad.bottom;
+  const px = (x: number) => pad.left + x * innerW;
+  const py = (y: number) => H - pad.bottom - y * innerH;
+  const midX = px(0.5);
+  const midY = py(0.5);
+
+  return (
+    <div className="risk-matrix">
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Risk matrix: probability vs impact">
+        <rect x={pad.left} y={pad.top} width={innerW / 2} height={innerH / 2} fill="#f8faf9" />
+        <rect x={midX} y={pad.top} width={innerW / 2} height={innerH / 2} fill="#fef9f0" />
+        <rect x={pad.left} y={midY} width={innerW / 2} height={innerH / 2} fill="#f5f8ff" />
+        <rect x={midX} y={midY} width={innerW / 2} height={innerH / 2} fill="#fef2f2" />
+
+        {[0, 0.25, 0.5, 0.75, 1].map((g) => (
+          <g key={g}>
+            <line x1={px(g)} x2={px(g)} y1={pad.top} y2={H - pad.bottom} stroke="#eef1ef" />
+            <line x1={pad.left} x2={W - pad.right} y1={py(g)} y2={py(g)} stroke="#eef1ef" />
+          </g>
+        ))}
+
+        <line x1={midX} x2={midX} y1={pad.top} y2={H - pad.bottom} stroke="#d4ddd8" strokeDasharray="4 4" />
+        <line x1={pad.left} x2={W - pad.right} y1={midY} y2={midY} stroke="#d4ddd8" strokeDasharray="4 4" />
+
+        {[0, 0.5, 1].map((g) => (
+          <text key={`x-${g}`} x={px(g)} y={H - 8} textAnchor="middle" fontSize="10" fill="#8a978f">
+            {(g * 100).toFixed(0)}%
+          </text>
+        ))}
+        {[0, 0.5, 1].map((g) => (
+          <text key={`y-${g}`} x={pad.left - 8} y={py(g) + 3} textAnchor="end" fontSize="10" fill="#8a978f">
+            {g.toFixed(1)}
+          </text>
+        ))}
+
+        <text x={W / 2} y={H - 26} textAnchor="middle" fontSize="11" fill="#5b6b66">
+          Probability
+        </text>
+        <text x={14} y={H / 2} textAnchor="middle" fontSize="11" fill="#5b6b66" transform={`rotate(-90 14 ${H / 2})`}>
+          Impact
+        </text>
+
+        {points.map((pt) => (
+          <circle
+            key={pt.id}
+            cx={px(pt.x)}
+            cy={py(pt.y)}
+            r={7}
+            fill={color}
+            fillOpacity={0.85}
+            stroke="#fff"
+            strokeWidth={2}
+            style={{ cursor: onSelect ? "pointer" : undefined }}
+            onClick={() => onSelect?.(pt.id)}
+          >
+            <title>{`${pt.title}: ${(pt.x * 100).toFixed(0)}% prob, ${pt.y.toFixed(2)} impact`}</title>
+          </circle>
+        ))}
+      </svg>
+
+      <div className="risk-matrix-quadrants" aria-hidden="true">
+        <span className="risk-matrix-q q-monitor">Monitor</span>
+        <span className="risk-matrix-q q-watch">Watch</span>
+        <span className="risk-matrix-q q-mitigate">Mitigate</span>
+        <span className="risk-matrix-q q-critical">Critical</span>
+      </div>
+    </div>
+  );
+}

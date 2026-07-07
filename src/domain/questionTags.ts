@@ -1,6 +1,15 @@
 /** Supplemental topic/region tags shown under question titles. */
 export const questionTags: Record<string, string[]> = {
   "q-cyber-breach": ["United States", "Data Privacy"],
+  "q-cyber-ransomware": ["Ransomware", "Production Systems"],
+  "q-cyber-phishing": ["BEC", "Finance"],
+  "q-cyber-vendor": ["Third-Party Risk", "Data Privacy"],
+  "q-cyber-iam": ["Privileged Access", "Identity"],
+  "q-cyber-cloud": ["AWS", "Misconfiguration"],
+  "q-cyber-ddos": ["Availability", "Customer-Facing"],
+  "q-cyber-compliance": ["SOC 2", "GRC"],
+  "q-cyber-zero-day": ["Vulnerability Management", "Patching"],
+  "q-cyber-zero-trust": ["Zero Trust", "Architecture"],
   "q-supplier-default": ["Asia Pacific", "Manufacturing"],
   "q-fed-cut": ["United States", "Monetary Policy"],
   "q-product-launch": ["Product Launch"],
