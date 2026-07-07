@@ -1,123 +1,166 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { RiskMatrixScatter } from "../components/charts";
+import { probabilityDelta, riskWeighted, useStore } from "../store";
 import CreateQuestionModal, { AddQuestionButton } from "../components/CreateQuestionModal";
 import CyberForecastTable from "../components/CyberForecastTable";
-import { touchpointMeta } from "../domain/touchpoints";
-import {
-  aggregatedSignals,
-  cyberExposure,
-  cyberQuestions,
-  riskMatrixPoints,
-  threatCoverage,
-} from "../domain/cyberDashboard";
-import {
-  enterpriseRiskMap,
-  enterpriseSummary,
-  CONFIDENCE_LABEL,
-  TREND_GLYPH,
-} from "../domain/cyberForecast";
+import CyberFilters from "../components/CyberFilters";
+import { withinHorizon, type HorizonKey, type SortKey } from "../components/QuestionFilters";
+import { cyberQuestions } from "../domain/cyberDashboard";
+import { enterpriseRiskMap, CONFIDENCE_LABEL, TREND_GLYPH } from "../domain/cyberForecast";
 import {
   alertConversionStats,
   alertImpactFeed,
-  ALERT_STATUS_LABEL,
   type AlertSeverity,
+  type AlertSource,
 } from "../domain/alerts";
-import { peerMatrix, PEER_MATRIX_MODES, PEER_CAVEAT } from "../domain/peers";
-import { riskWeighted, useStore } from "../store";
-import { categoryColors, pct, signedPct, impactLevelLabel } from "../components/ui";
+import { topRiskMovers } from "../domain/movers";
+import { peerMatrix, PEER_MATRIX_MODES } from "../domain/peers";
+import {
+  QUESTION_TO_DOMAIN,
+  securityDomainRows,
+  PEER_POSITION_LABEL,
+  type SecurityDomain,
+} from "../domain/securityDomains";
+import { pct, signedPct, impactLevelLabel } from "../components/ui";
+import type { RiskOrOpportunity, Visibility } from "../domain/types";
 
 function severityClass(sev: AlertSeverity): string {
   return `sev-chip sev-${sev}`;
 }
 
+function formatTs(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="panel cyber-section">
+      <div className="panel-head">
+        <span>{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 export default function Cybersecurity() {
   const navigate = useNavigate();
-  const { questions, yesOutcome, historyFor, touchpointSignalsFor } = useStore();
+  const { questions, yesOutcome, historyFor } = useStore();
   const [createOpen, setCreateOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [domain, setDomain] = useState<SecurityDomain | "all">("all");
+  const [alertSource, setAlertSource] = useState<AlertSource | "all">("all");
+  const [riskType, setRiskType] = useState<RiskOrOpportunity | "all">("all");
+  const [vis, setVis] = useState<"all" | Visibility>("all");
+  const [sort, setSort] = useState<SortKey | null>(null);
+  const [horizon, setHorizon] = useState<HorizonKey>("all");
 
   const cyber = useMemo(() => cyberQuestions(questions), [questions]);
-  const visibleIds = useMemo(() => new Set(questions.map((q) => q.id)), [questions]);
+  const visibleIds = useMemo(() => new Set(cyber.map((q) => q.id)), [cyber]);
   const titleFor = useMemo(() => {
-    const map = new Map(questions.map((q) => [q.id, q.title]));
+    const map = new Map(cyber.map((q) => [q.id, q.title]));
     return (id: string) => map.get(id);
-  }, [questions]);
+  }, [cyber]);
 
-  const metrics = useMemo(
-    () => cyberExposure(questions, yesOutcome, historyFor),
+  const movers = useMemo(
+    () => topRiskMovers(questions, yesOutcome, historyFor),
     [questions, yesOutcome, historyFor]
   );
 
-  const riskMap = useMemo(
-    () => enterpriseRiskMap(questions, yesOutcome, historyFor),
-    [questions, yesOutcome, historyFor]
-  );
+  const filteredForecasts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    let list = cyber.filter((q) => {
+      if (query && !q.title.toLowerCase().includes(query)) return false;
+      if (domain !== "all" && QUESTION_TO_DOMAIN[q.id] !== domain) return false;
+      if (riskType !== "all" && q.riskOrOpportunity !== riskType) return false;
+      if (vis !== "all" && q.visibility !== vis) return false;
+      if (!withinHorizon(q.resolutionDate, horizon)) return false;
+      return true;
+    });
 
-  const matrixPoints = useMemo(() => riskMatrixPoints(questions, yesOutcome), [questions, yesOutcome]);
-  const coverage = useMemo(() => threatCoverage(questions, yesOutcome), [questions, yesOutcome]);
-  const signals = useMemo(
-    () => aggregatedSignals(questions, touchpointSignalsFor),
-    [questions, touchpointSignalsFor]
-  );
+    const score = (qId: string) => {
+      const yes = yesOutcome(qId);
+      const h = yes ? historyFor(yes.id) : [];
+      const p = yes?.currentProbability ?? 0.5;
+      return { p, d7: probabilityDelta(h, 7) ?? 0 };
+    };
 
-  const feed = useMemo(() => alertImpactFeed(titleFor, visibleIds), [titleFor, visibleIds]);
-  const conversion = useMemo(() => alertConversionStats(visibleIds), [visibleIds]);
-  const matrix = useMemo(() => peerMatrix(visibleIds), [visibleIds]);
-
-  const summary = useMemo(() => {
-    const upCount = riskMap.filter((r) => r.trend === "up").length;
-    const downCount = riskMap.filter((r) => r.trend === "down").length;
-    const netDirection =
-      upCount > downCount ? "increased" : downCount > upCount ? "decreased" : "held steady";
-
-    const topDrivers = feed
-      .filter((f) => f.impacts[0]?.direction === "increase")
-      .slice(0, 3)
-      .map((f) => f.alert.title);
-
-    const our = matrix.find((r) => r.label === "Our company");
-    const median = matrix.find((r) => r.label === "Industry median");
-    const aboveMedianModes: string[] = [];
-    const belowMedianModes: string[] = [];
-    if (our && median) {
-      for (const mode of PEER_MATRIX_MODES) {
-        const o = our.values[mode];
-        const m = median.values[mode];
-        if (o === undefined || m === undefined) continue;
-        if (o > m + 0.01) aboveMedianModes.push(mode);
-        else if (o < m - 0.01) belowMedianModes.push(mode);
-      }
+    if (sort) {
+      list = [...list].sort((a, b) => {
+        const sa = score(a.id);
+        const sb = score(b.id);
+        switch (sort) {
+          case "movers":
+            return Math.abs(sb.d7) - Math.abs(sa.d7);
+          case "risk_weighted":
+            return riskWeighted(b, sb.p) - riskWeighted(a, sb.p);
+          case "resolving_soon":
+            return a.resolutionDate.localeCompare(b.resolutionDate);
+          case "most_uncertain":
+            return Math.abs(0.5 - sa.p) - Math.abs(0.5 - sb.p);
+        }
+      });
+    } else {
+      list = [...list].sort((a, b) => {
+        const pa = yesOutcome(a.id)?.currentProbability ?? a.priorBaseRate;
+        const pb = yesOutcome(b.id)?.currentProbability ?? b.priorBaseRate;
+        return riskWeighted(b, pb) - riskWeighted(a, pa);
+      });
     }
 
-    return enterpriseSummary({
-      netDirection,
-      topDrivers,
-      elevatedCount: metrics.elevatedCount,
-      aboveMedianModes: aboveMedianModes.slice(0, 2),
-      belowMedianModes: belowMedianModes.slice(0, 2),
-    });
-  }, [riskMap, feed, matrix, metrics.elevatedCount]);
+    return list;
+  }, [cyber, search, domain, riskType, vis, horizon, sort, yesOutcome, historyFor]);
 
-  const sortedQuestions = useMemo(() => {
-    return [...cyber].sort((a, b) => {
-      const pa = yesOutcome(a.id)?.currentProbability ?? a.priorBaseRate;
-      const pb = yesOutcome(b.id)?.currentProbability ?? b.priorBaseRate;
-      return riskWeighted(b, pb) - riskWeighted(a, pa);
-    });
-  }, [cyber, yesOutcome]);
+  const riskMap = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return enterpriseRiskMap(questions, yesOutcome, historyFor).filter(
+      (r) => !query || r.failureMode.toLowerCase().includes(query)
+    );
+  }, [questions, yesOutcome, historyFor, search]);
 
-  const gapCount = coverage.filter((c) => !c.covered).length;
+  const domains = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return securityDomainRows(questions, yesOutcome, historyFor).filter((d) => {
+      if (domain !== "all" && d.domain !== domain) return false;
+      if (query && !d.domain.toLowerCase().includes(query)) return false;
+      return true;
+    });
+  }, [questions, yesOutcome, historyFor, domain, search]);
+
+  const feed = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return alertImpactFeed(titleFor, visibleIds).filter((item) => {
+      if (alertSource !== "all" && item.alert.source !== alertSource) return false;
+      if (query && !item.alert.title.toLowerCase().includes(query)) return false;
+      return true;
+    });
+  }, [titleFor, visibleIds, alertSource, search]);
+
+  const conversion = useMemo(() => {
+    let rows = alertConversionStats(visibleIds);
+    if (alertSource !== "all") rows = rows.filter((r) => r.source === alertSource);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      rows = rows.filter((r) => r.source.toLowerCase().includes(q));
+    }
+    return rows;
+  }, [visibleIds, alertSource, search]);
+
+  const peerMatrixRows = useMemo(() => peerMatrix(visibleIds), [visibleIds]);
+
+  const goQuestion = (id?: string) => id && navigate(`/q/${id}`);
 
   return (
-    <div className="dash-page cyber-page">
+    <div className="dash-page cyber-page dash-page-questions">
       <div className="dash-page-top">
         <div className="dash-head">
           <div>
             <h1>Cybersecurity</h1>
-            <p className="dash-sub">
-              CISO command center — forecasts first, alerts second. What is most likely to go wrong next, why, and how we
-              compare to peers.
-            </p>
           </div>
           <AddQuestionButton onClick={() => setCreateOpen(true)} />
         </div>
@@ -127,76 +170,127 @@ export default function Cybersecurity() {
           onClose={() => setCreateOpen(false)}
           defaultCategory="Security/Cyber"
         />
+
+        <CyberFilters
+          search={search}
+          onSearchChange={setSearch}
+          domain={domain}
+          onDomainChange={setDomain}
+          alertSource={alertSource}
+          onAlertSourceChange={setAlertSource}
+          riskType={riskType}
+          onRiskTypeChange={setRiskType}
+          vis={vis}
+          onVisChange={setVis}
+          sort={sort}
+          onSortChange={setSort}
+          horizon={horizon}
+          onHorizonChange={setHorizon}
+        />
       </div>
 
-      <div className="panel cyber-exec">
-        <div className="panel-head">
-          <span>Executive summary</span>
-          <span className="muted">Auto-generated from this week&apos;s movers and peer position</span>
+      <div className="dash-page-body cyber-dashboard-body">
+        <div className="overview-modules">
+        <div className="panel">
+          <div className="panel-head">
+            <span>Top risk movers</span>
+          </div>
+          <div className="top-movers">
+            <div className="top-movers-col">
+              <h4 className="up">Upward</h4>
+              {movers.upward.length === 0 ? (
+                <p className="muted small">—</p>
+              ) : (
+                <ol className="mover-list">
+                  {movers.upward.map((m, i) => (
+                    <li key={m.questionId}>
+                      <Link to={`/q/${m.questionId}`}>
+                        {i + 1}. {m.title}: <strong className="up">{signedPct(m.change)}%</strong>
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+            <div className="top-movers-col">
+              <h4 className="down">Downward</h4>
+              {movers.downward.length === 0 ? (
+                <p className="muted small">—</p>
+              ) : (
+                <ol className="mover-list">
+                  {movers.downward.map((m, i) => (
+                    <li key={m.questionId}>
+                      <Link to={`/q/${m.questionId}`}>
+                        {i + 1}. {m.title}: <strong className="down">{signedPct(m.change)}%</strong>
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </div>
         </div>
-        <p className="cyber-exec-body">{summary}</p>
-      </div>
 
-      <div className="metric-row">
-        <div className="metric">
-          <div className="metric-num">{(metrics.aggregateExposure * 100).toFixed(0)}%</div>
-          <div className="metric-lbl">Aggregate exposure (risk-weighted)</div>
+        <div className="panel">
+          <div className="panel-head">
+            <span>Alert impact feed</span>
+          </div>
+          <div className="alert-feed compact">
+            {feed.length === 0 ? (
+              <p className="muted small">—</p>
+            ) : (
+              feed.slice(0, 8).map((item) => (
+                <div className="alert-feed-item" key={item.alert.id}>
+                  <div className="alert-feed-head">
+                    <span className={severityClass(item.alert.severity)}>{item.alert.severity}</span>
+                    <span className="alert-feed-title">{item.alert.title}</span>
+                  </div>
+                  <div className="alert-feed-affected">
+                    {item.impacts.map((imp) => (
+                      <Link key={imp.questionId} to={`/q/${imp.questionId}`} className="affected-q">
+                        <span className="affected-title">{imp.questionTitle}</span>
+                        <span className={`affected-delta ${imp.direction === "increase" ? "up" : "down"}`}>
+                          {signedPct(imp.probabilityDelta)}%
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-        <div className="metric">
-          <div className="metric-num">{metrics.elevatedCount}</div>
-          <div className="metric-lbl">Elevated this week (&gt;3pp)</div>
         </div>
-        <div className="metric">
-          <div className="metric-num">{metrics.resolvingSoonCount}</div>
-          <div className="metric-lbl">Resolving within 30 days</div>
-        </div>
-        <div className="metric">
-          <div className="metric-num">{metrics.activeForecasts}</div>
-          <div className="metric-lbl">Active cyber forecasts</div>
-        </div>
-        <div className="metric">
-          <div className="metric-num">{gapCount}</div>
-          <div className="metric-lbl">Threat vector gaps</div>
-        </div>
-      </div>
 
-      {/* Enterprise cyber risk map */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Enterprise cyber risk map</span>
-          <span className="muted">Forecasted failure landscape by type</span>
-        </div>
-        <div className="qtable-wrap">
-          <table className="qtable risk-map-table">
-            <thead>
-              <tr>
-                <th>Failure type</th>
-                <th className="num">Probability</th>
-                <th>Trend</th>
-                <th>Impact</th>
-                <th>Confidence</th>
-              </tr>
-            </thead>
-            <tbody>
-              {riskMap.map((row) => {
-                const clickable = !!row.questionId;
-                return (
+        <CyberForecastTable questions={filteredForecasts} />
+
+        <div className="cyber-sections">
+        <Section title="Enterprise cyber risk map">
+          <div className="qtable-wrap">
+            <table className="qtable risk-map-table">
+              <thead>
+                <tr>
+                  <th>Failure type</th>
+                  <th className="num">Probability</th>
+                  <th>Trend</th>
+                  <th>Impact</th>
+                  <th>Confidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {riskMap.map((row) => (
                   <tr
                     key={row.failureMode}
-                    className={clickable ? "qt-row" : ""}
-                    role={clickable ? "link" : undefined}
-                    tabIndex={clickable ? 0 : undefined}
-                    onClick={clickable ? () => navigate(`/q/${row.questionId}`) : undefined}
-                    onKeyDown={
-                      clickable
-                        ? (e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              navigate(`/q/${row.questionId}`);
-                            }
-                          }
-                        : undefined
-                    }
+                    className={row.questionId ? "qt-row" : ""}
+                    role={row.questionId ? "link" : undefined}
+                    tabIndex={row.questionId ? 0 : undefined}
+                    onClick={() => goQuestion(row.questionId)}
+                    onKeyDown={(e) => {
+                      if (row.questionId && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        goQuestion(row.questionId);
+                      }
+                    }}
                   >
                     <td className="rmt-mode">{row.failureMode}</td>
                     <td className="num rmt-prob">{pct(row.probability)}</td>
@@ -209,154 +303,141 @@ export default function Cybersecurity() {
                       {CONFIDENCE_LABEL[row.confidence]}
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="cyber-grid">
-        <div className="panel">
-          <div className="panel-head">
-            <span>Risk matrix</span>
-            <span className="muted">Probability × impact · click a dot for detail</span>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <RiskMatrixScatter
-            points={matrixPoints}
-            color={categoryColors["Security/Cyber"]}
-            onSelect={(id) => navigate(`/q/${id}`)}
-          />
-        </div>
+        </Section>
 
-        <div className="panel">
-          <div className="panel-head">
-            <span>Threat coverage</span>
-            <span className="muted">
-              {coverage.filter((c) => c.covered).length} of {coverage.length} vectors covered
-            </span>
-          </div>
-          <div className="threat-coverage-grid">
-            {coverage.map((item) => (
-              <div key={item.vector} className={`threat-chip ${item.covered ? "covered" : "gap"}`}>
-                <span className="threat-chip-label">{item.vector}</span>
-                {item.covered ? (
-                  <span className="threat-chip-prob">{pct(item.maxProbability!)}</span>
-                ) : (
-                  <button type="button" className="threat-chip-cta" onClick={() => setCreateOpen(true)}>
-                    Add forecast
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Alert-to-risk conversion */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Alert-to-risk conversion</span>
-          <span className="muted">How raw alerts become forecast movements</span>
-        </div>
-        <div className="qtable-wrap">
-          <table className="qtable conversion-table">
-            <thead>
-              <tr>
-                <th>Alert source</th>
-                <th className="num">Received</th>
-                <th className="num">Forecast-relevant</th>
-                <th className="num">Material movers</th>
-              </tr>
-            </thead>
-            <tbody>
-              {conversion.map((row) => (
-                <tr key={row.source}>
-                  <td>{row.source}</td>
-                  <td className="num muted">{row.received}</td>
-                  <td className="num">{row.forecastRelevant}</td>
-                  <td className="num conv-material">{row.materialMovers}</td>
+        <Section title="Risk by security domain">
+          <div className="qtable-wrap">
+            <table className="qtable domain-table">
+              <thead>
+                <tr>
+                  <th>Domain</th>
+                  <th className="num">Risk score</th>
+                  <th className="num">Failure prob.</th>
+                  <th>Top alerts</th>
+                  <th className="num">Open items</th>
+                  <th>Peer</th>
+                  <th className="num">Controls</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="muted small conversion-note">
-          The product reasons about which alerts matter: most raw alerts never move a forecast. Only material movers
-          (≥1pp, a critical business service, or a new failure path) change the probabilities above.
-        </p>
-      </div>
-
-      {/* Alert impact feed */}
-      <div className="panel">
-        <div className="panel-head">
-          <span>Alert impact feed</span>
-          <span className="muted">Alerts that changed one or more forecasts</span>
-        </div>
-        <div className="alert-feed">
-          {feed.length === 0 ? (
-            <p className="muted">No forecast-relevant alerts in view.</p>
-          ) : (
-            feed.slice(0, 10).map((item) => (
-              <div className="alert-feed-item" key={item.alert.id}>
-                <div className="alert-feed-head">
-                  <span className={severityClass(item.alert.severity)}>{item.alert.severity}</span>
-                  <span className="alert-feed-title">{item.alert.title}</span>
-                  <span className="alert-feed-source">
-                    {item.alert.source} · {ALERT_STATUS_LABEL[item.alert.status]}
-                  </span>
-                </div>
-                <div className="alert-feed-affected">
-                  {item.impacts.map((imp) => (
-                    <Link key={imp.questionId} to={`/q/${imp.questionId}`} className="affected-q">
-                      <span className="affected-title">{imp.questionTitle}</span>
-                      <span className={`affected-delta ${imp.direction === "increase" ? "up" : "down"}`}>
-                        {signedPct(imp.probabilityDelta)}%
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      <div className="cyber-lower-grid">
-        <div className="panel">
-          <div className="panel-head">
-            <span>Internal signals</span>
-            <span className="muted">Aggregated touchpoints across cyber forecasts</span>
+              </thead>
+              <tbody>
+                {domains.map((d) => (
+                  <tr
+                    key={d.domain}
+                    className={d.questionId ? "qt-row" : ""}
+                    role={d.questionId ? "link" : undefined}
+                    tabIndex={d.questionId ? 0 : undefined}
+                    onClick={() => goQuestion(d.questionId)}
+                    onKeyDown={(e) => {
+                      if (d.questionId && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        goQuestion(d.questionId);
+                      }
+                    }}
+                  >
+                    <td className="domain-name">{d.domain}</td>
+                    <td className="num domain-score">{d.riskScore}</td>
+                    <td className="num">{pct(d.failureProbability)}</td>
+                    <td className="domain-alerts">
+                      {d.topAlerts.length === 0 ? (
+                        <span className="muted">—</span>
+                      ) : (
+                        d.topAlerts.map((a) => (
+                          <span className="domain-alert-chip" key={a}>
+                            {a}
+                          </span>
+                        ))
+                      )}
+                    </td>
+                    <td className="num">{d.openRemediation}</td>
+                    <td className={`domain-peer peer-${d.peerComparison}`}>
+                      {PEER_POSITION_LABEL[d.peerComparison]}
+                    </td>
+                    <td className="num">{d.controlCoverage}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <div className="signals-feed">
-            {signals.length === 0 ? (
-              <p className="muted">No internal signals connected yet.</p>
-            ) : (
-              signals.slice(0, 12).map((row, i) => {
-                const meta = touchpointMeta(row.signal.kind);
-                return (
-                  <Link to={`/q/${row.questionId}`} key={i} className="feed-row signals-feed-row">
-                    <span
-                      className="signals-feed-icon"
-                      style={{ background: meta?.brandColor ?? "#5b6b66" }}
-                      title={meta?.label}
-                    />
-                    <span className="feed-date">{row.signal.updatedAt}</span>
-                    <span className="feed-title">{row.questionTitle}</span>
-                    <span className="feed-trigger">{row.signal.summary}</span>
-                  </Link>
-                );
-              })
-            )}
-          </div>
-        </div>
+        </Section>
 
-        {/* Peer comparison matrix */}
-        <div className="panel">
-          <div className="panel-head">
-            <span>Peer &amp; industry comparison</span>
-            <span className="muted">Public and third-party signals</span>
+        <Section title="Alert impact">
+          <div className="qtable-wrap">
+            <table className="qtable alert-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Alert</th>
+                  <th>Source</th>
+                  <th>Severity</th>
+                  <th>Affected forecasts</th>
+                  <th className="num">Max impact</th>
+                </tr>
+              </thead>
+              <tbody>
+                {feed.map((item) => {
+                  const maxImpact = Math.max(...item.impacts.map((i) => Math.abs(i.probabilityDelta)));
+                  const topImpact = item.impacts.find((i) => Math.abs(i.probabilityDelta) === maxImpact)!;
+                  return (
+                    <tr key={item.alert.id}>
+                      <td className="alert-time">{formatTs(item.alert.timestamp)}</td>
+                      <td className="alert-title-cell">{item.alert.title}</td>
+                      <td>{item.alert.source}</td>
+                      <td>
+                        <span className={severityClass(item.alert.severity)}>{item.alert.severity}</span>
+                      </td>
+                      <td>
+                        <div className="alert-feed-affected inline">
+                          {item.impacts.map((imp) => (
+                            <Link key={imp.questionId} to={`/q/${imp.questionId}`} className="affected-q">
+                              <span className="affected-title">{imp.questionTitle}</span>
+                              <span className={`affected-delta ${imp.direction === "increase" ? "up" : "down"}`}>
+                                {signedPct(imp.probabilityDelta)}%
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                      </td>
+                      <td className={`num alert-impact ${topImpact.direction === "increase" ? "up" : "down"}`}>
+                        {signedPct(topImpact.probabilityDelta)}%
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
+        </Section>
+
+        <Section title="Alert-to-risk conversion">
+          <div className="qtable-wrap">
+            <table className="qtable conversion-table">
+              <thead>
+                <tr>
+                  <th>Alert source</th>
+                  <th className="num">Received</th>
+                  <th className="num">Forecast-relevant</th>
+                  <th className="num">Material movers</th>
+                </tr>
+              </thead>
+              <tbody>
+                {conversion.map((row) => (
+                  <tr key={row.source}>
+                    <td>{row.source}</td>
+                    <td className="num muted">{row.received}</td>
+                    <td className="num">{row.forecastRelevant}</td>
+                    <td className="num conv-material">{row.materialMovers}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
+        <Section title="Peer comparison">
           <div className="qtable-wrap">
             <table className="qtable peer-matrix-table">
               <thead>
@@ -370,7 +451,7 @@ export default function Cybersecurity() {
                 </tr>
               </thead>
               <tbody>
-                {matrix.map((row) => (
+                {peerMatrixRows.map((row) => (
                   <tr key={row.label} className={row.label === "Our company" ? "peer-us" : ""}>
                     <td>{row.label}</td>
                     {PEER_MATRIX_MODES.map((m) => (
@@ -383,22 +464,7 @@ export default function Cybersecurity() {
               </tbody>
             </table>
           </div>
-          <p className="peer-caveat small">
-            <span className="peer-caveat-mark" aria-hidden="true">
-              ⓘ
-            </span>
-            {PEER_CAVEAT}
-          </p>
-        </div>
-      </div>
-
-      <div className="dash-page-body">
-        <div className="panel">
-          <div className="panel-head">
-            <span>Active cyber forecasts</span>
-            <span className="muted">Sorted by risk-weighted exposure</span>
-          </div>
-          <CyberForecastTable questions={sortedQuestions} />
+        </Section>
         </div>
       </div>
     </div>

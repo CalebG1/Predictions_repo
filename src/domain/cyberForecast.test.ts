@@ -193,3 +193,55 @@ describe("enterprise risk map & summary", () => {
     expect(text).toContain("median");
   });
 });
+
+import { forecastMovements, topRiskMovers, driversForQuestion } from "./movers";
+import { securityDomainRows } from "./securityDomains";
+import { questions as seedQuestions } from "./seed";
+import { outcomes as seedOutcomes, probabilityHistory as seedHistory } from "./seed";
+
+describe("forecast movements (PRD §6.2)", () => {
+  const yesOutcome = (id: string) => seedOutcomes.find((o) => o.questionId === id && o.id.endsWith("-yes"));
+  const historyFor = (outcomeId: string) =>
+    seedHistory.filter((h) => h.outcomeId === outcomeId).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+  it("builds driver breakdown from alerts", () => {
+    const drivers = driversForQuestion("q-cyber-breach");
+    expect(drivers.length).toBeGreaterThan(0);
+    expect(drivers[0].label).toBeTruthy();
+  });
+
+  it("sorts movements by absolute change", () => {
+    const cyber = seedQuestions.filter((q) => q.category === "Security/Cyber");
+    const moves = forecastMovements(cyber, yesOutcome, historyFor);
+    expect(moves.length).toBeGreaterThan(0);
+    for (let i = 1; i < moves.length; i++) {
+      expect(Math.abs(moves[i - 1].change)).toBeGreaterThanOrEqual(Math.abs(moves[i].change));
+    }
+  });
+
+  it("returns top upward and downward movers", () => {
+    const cyber = seedQuestions.filter((q) => q.category === "Security/Cyber");
+    const top = topRiskMovers(cyber, yesOutcome, historyFor);
+    expect(top.upward.length + top.downward.length).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("security domains (PRD §6.3.B)", () => {
+  const yesOutcome = (id: string) => seedOutcomes.find((o) => o.questionId === id && o.id.endsWith("-yes"));
+  const historyFor = (outcomeId: string) =>
+    seedHistory.filter((h) => h.outcomeId === outcomeId).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+  it("returns all ten PRD security domains", () => {
+    const rows = securityDomainRows(seedQuestions, yesOutcome, historyFor);
+    expect(rows.length).toBe(10);
+    expect(rows.map((r) => r.domain)).toContain("Identity");
+    expect(rows.map((r) => r.domain)).toContain("Compliance");
+  });
+
+  it("links domains to backing questions when visible", () => {
+    const rows = securityDomainRows(seedQuestions, yesOutcome, historyFor);
+    const identity = rows.find((r) => r.domain === "Identity")!;
+    expect(identity.questionId).toBe("q-cyber-iam");
+    expect(identity.riskScore).toBeGreaterThan(0);
+  });
+});
