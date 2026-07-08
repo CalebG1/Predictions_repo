@@ -11,6 +11,7 @@ import Context from "./pages/settings/Context";
 import Profile from "./pages/settings/Profile";
 import ForecastProcessing from "./pages/ForecastProcessing";
 import Cybersecurity from "./pages/Cybersecurity";
+import Cybersecurity2 from "./pages/Cybersecurity2";
 
 function AppShell() {
   return (
@@ -23,6 +24,7 @@ function AppShell() {
         <Route path="/q/:id" element={<QuestionDetail />} />
         <Route path="/movers" element={<Movers />} />
         <Route path="/cybersecurity" element={<Cybersecurity />} />
+        <Route path="/cybersecurity-2" element={<Cybersecurity2 />} />
         <Route path="/settings" element={<Settings />}>
           <Route index element={<Navigate to="methodology" replace />} />
           <Route path="methodology" element={<Methodology />} />

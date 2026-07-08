@@ -5302,6 +5302,60 @@ ul.tight li {
   margin-bottom: 0;
 }
 
+/* --- Cyber question table: indented child rows --- */
+
+.qt-expand-col {
+  width: 36px;
+  padding: 0 4px 0 12px !important;
+  vertical-align: middle;
+}
+
+.qt-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.qt-expand-btn:hover {
+  background: #eef2ef;
+  color: var(--ink);
+}
+
+.qtable tbody tr.qt-child-row {
+  cursor: default;
+}
+
+.qtable tbody tr.qt-child-row:hover {
+  background: #f8faf9;
+}
+
+.qtable tbody tr.qt-child-row td {
+  background: #f8faf9;
+  border-top: none;
+}
+
+.qtable tbody tr.qt-child-row + tr.qt-child-row td,
+.qtable tbody tr.qt-row.expanded + tr.qt-child-row td {
+  border-top: none;
+}
+
+.qt-child-cell {
+  padding-left: 24px;
+}
+
+.qt-child-source {
+  font-size: 13px;
+  color: var(--ink);
+}
+
 .peer-inline-row.highlight { font-weight: 700; }
 
 .alert-feed-affected.inline {
