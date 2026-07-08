@@ -1,6 +1,8 @@
 // Lightweight dependency-free SVG charts used across the dashboard.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ProbabilityPoint } from "../domain/types";
+import { buildEvidenceItems, type EvidenceItem } from "../domain/evidenceItems";
+import EvidenceCarousel from "./EvidenceCarousel";
 
 export interface ProbPoint {
   id?: string;
@@ -12,6 +14,8 @@ export interface ProbPoint {
   summary?: string;
   /** Longer copy revealed when the popup is expanded. */
   detail?: string;
+  /** Individual pieces of evidence ("what happened") behind this refresh. */
+  evidenceItems?: EvidenceItem[];
 }
 
 // --- Refresh-kind classification (drives scatter colors + legend) ---
@@ -57,8 +61,14 @@ const KIND_META: Record<RefreshKind, { label: string; color: string }> = {
 const CHART_AXIS = "#5b6672";
 const CHART_LINE = "#16345c";
 
+export interface ProbPointContext {
+  /** Label for this series, e.g. "OpenAI" or "Yes" — used to make evidence copy specific. */
+  subject: string;
+  questionTitle: string;
+}
+
 /** Map probability history into chart-ready points with soft-refresh popup copy. */
-export function buildProbPoints(history: ProbabilityPoint[]): ProbPoint[] {
+export function buildProbPoints(history: ProbabilityPoint[], context?: ProbPointContext): ProbPoint[] {
   return history.map((h, i) => {
     const prev = i > 0 ? history[i - 1].probability : h.probability;
     const delta = h.probability - prev;
@@ -68,6 +78,19 @@ export function buildProbPoints(history: ProbabilityPoint[]): ProbPoint[] {
       detail: `Source: ${h.source}. Prior estimate was ${(prev * 100).toFixed(0)}%; new inputs shifted the pooled probability by ${Math.abs(delta * 100).toFixed(1)} points.`,
     };
 
+    const evidenceItems =
+      kind === "soft" && context
+        ? buildEvidenceItems({
+            pointId: h.id,
+            timestamp: h.timestamp,
+            trigger: h.updateTrigger,
+            subject: context.subject,
+            questionTitle: context.questionTitle,
+            probability: h.probability,
+            delta,
+          })
+        : undefined;
+
     return {
       id: h.id,
       timestamp: h.timestamp,
@@ -76,6 +99,7 @@ export function buildProbPoints(history: ProbabilityPoint[]): ProbPoint[] {
       source: h.source,
       summary: kind === "soft" ? snippet.summary : undefined,
       detail: kind === "soft" ? snippet.detail : undefined,
+      evidenceItems,
     };
   });
 }
@@ -385,6 +409,7 @@ export function ProbChart({
   const [selectedDot, setSelectedDot] = useState<SelectedDot | null>(null);
   const [hoverX, setHoverX] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [evidenceIndex, setEvidenceIndex] = useState(0);
   const [popupAnchor, setPopupAnchor] = useState<PopupAnchor | null>(null);
   const [drawerInsetSvg, setDrawerInsetSvg] = useState(0);
   const plotRef = useRef<HTMLDivElement>(null);
@@ -505,6 +530,10 @@ export function ProbChart({
     setHoverX(null);
     setExpanded(false);
   }, [displayRange]);
+
+  useEffect(() => {
+    setEvidenceIndex(0);
+  }, [selectedDot]);
 
   useEffect(() => {
     if (selectedDot === null) return;
@@ -1275,8 +1304,21 @@ export function ProbChart({
             {selectedPoint.trigger && (
               <div className="pc-evidence-drawer-trigger">{selectedPoint.trigger}</div>
             )}
-            <p className="pc-evidence-drawer-summary">{selectedPoint.summary}</p>
-            <p className="pc-evidence-drawer-detail">{selectedPoint.detail}</p>
+            {selectedPoint.evidenceItems && selectedPoint.evidenceItems.length > 0 ? (
+              <>
+                <p className="pc-evidence-drawer-summary">{selectedPoint.summary}</p>
+                <EvidenceCarousel
+                  items={selectedPoint.evidenceItems}
+                  index={evidenceIndex}
+                  onIndexChange={setEvidenceIndex}
+                />
+              </>
+            ) : (
+              <>
+                <p className="pc-evidence-drawer-summary">{selectedPoint.summary}</p>
+                <p className="pc-evidence-drawer-detail">{selectedPoint.detail}</p>
+              </>
+            )}
           </aside>
         )}
       </div>

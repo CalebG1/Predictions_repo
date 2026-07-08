@@ -27,10 +27,10 @@ export default function QuestionDetail() {
       const sorted = [...allOutcomes].sort((a, b) => b.currentProbability - a.currentProbability);
       const primary = sorted[0];
       const primaryHistory = historyFor(primary.id);
-      const points = buildProbPoints(primaryHistory);
+      const points = buildProbPoints(primaryHistory, { subject: primary.label, questionTitle: q.title });
 
       const companionSeries: CompanionSeries[] = sorted.slice(1).map((o, i) => {
-        const companionPoints = buildProbPoints(historyFor(o.id));
+        const companionPoints = buildProbPoints(historyFor(o.id), { subject: o.label, questionTitle: q.title });
         const byTs = new Map(companionPoints.map((p) => [p.timestamp, p]));
         return {
           id: o.id,
@@ -62,7 +62,10 @@ export default function QuestionDetail() {
     const yes = yesOutcome(q.id)!;
     const history = historyFor(yes.id);
     return {
-      points: buildProbPoints(history),
+      points: buildProbPoints(history, {
+        subject: q.type === "scalar" ? "Above consensus" : "Yes",
+        questionTitle: q.title,
+      }),
       companionSeries: undefined,
       primaryLineColor: undefined,
       endpointLabel: {
