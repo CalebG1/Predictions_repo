@@ -1,4 +1,5 @@
 import type { ContextItem, Role, User, Visibility } from "./types";
+import { userOnTeam } from "./teams";
 
 const LEADERSHIP_ROLES: Role[] = ["executive", "risk_manager", "admin"];
 const EDIT_ROLES: Role[] = ["analyst", "risk_manager", "admin"];
@@ -18,7 +19,7 @@ export function canViewContextItem(user: User, item: ContextItem): boolean {
     case "public":
       return true;
     case "team":
-      return user.team === item.owningTeam || user.role === "admin";
+      return userOnTeam(user, item.owningTeam);
     case "leadership":
     case "restricted":
       return leadershipCanView(item.visibility, user.role);
@@ -30,7 +31,7 @@ export function canEditContextItem(user: User, item: ContextItem): boolean {
   if (user.role === "admin") return true;
   if (item.createdBy === user.id) return true;
   if (!EDIT_ROLES.includes(user.role)) return false;
-  return user.team === item.owningTeam;
+  return userOnTeam(user, item.owningTeam);
 }
 
 export function canApproveContextItem(user: User): boolean {

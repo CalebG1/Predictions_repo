@@ -46,6 +46,17 @@ describe("access control", () => {
     expect(canViewQuestion(outsider, teamQ, [])).toBe(false);
   });
 
+  it("team questions are visible when user belongs via secondary team membership", () => {
+    const multiTeam: User = {
+      id: "u-multi",
+      name: "Multi",
+      role: "analyst",
+      team: "Operations",
+      teams: ["Operations", "Strategy"],
+    };
+    expect(canViewQuestion(multiTeam, teamQ, [])).toBe(true);
+  });
+
   it("leadership questions are visible to executives and risk managers", () => {
     expect(canViewQuestion(exec, leadQ, [])).toBe(true);
     expect(canViewQuestion(riskMgr, leadQ, [])).toBe(true);

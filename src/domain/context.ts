@@ -11,6 +11,7 @@ import type {
   EvidenceSource,
   ForecastQuestion,
   ModelContextBundle,
+  NotebookCell,
   User,
 } from "./types";
 
@@ -233,6 +234,21 @@ export function newId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+/** Flattens a notebook's cells + captured outputs into plain text for search, audit, and model-context assembly. */
+export function renderNotebookAsText(cells: NotebookCell[]): string {
+  return cells
+    .map((cell) => {
+      const source = cell.source.trim();
+      if (cell.kind === "markdown") return source;
+      const parts = [`\`\`\`python\n${source}\n\`\`\``];
+      if (cell.output?.trim()) parts.push(`Output:\n${cell.output.trim()}`);
+      if (cell.error?.trim()) parts.push(`Error:\n${cell.error.trim()}`);
+      return parts.join("\n\n");
+    })
+    .filter(Boolean)
+    .join("\n\n---\n\n");
+}
+
 export function initialStatus(input: CreateContextItemInput): ContextItem["status"] {
   if (requiresApproval({ visibility: input.visibility ?? "team", evidenceClass: input.evidenceClass })) {
     return "pending_approval";
@@ -270,6 +286,8 @@ export function createContextItemFromInput(
     evidenceClass: input.evidenceClass,
     evidenceUrl: input.evidenceUrl,
     credibilityScore: input.credibilityScore,
+    notebookCells: input.notebookCells,
+    runtime: input.runtime,
   };
 }
 

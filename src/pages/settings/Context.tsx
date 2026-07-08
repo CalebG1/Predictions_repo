@@ -12,12 +12,11 @@ import { users } from "../../domain/seed";
 const TABS = ["library", "bindings", "governance"] as const;
 type Tab = (typeof TABS)[number];
 
-const WORKFLOW = ["Outside view", "Inside view", "Bayesian updating"];
-
 function typeLabel(item: ContextItem): string {
   if (item.connectorId && item.type === "manual") return "App context";
   if (item.type === "manual") return "Notes";
   if (item.type === "instruction") return "Notes";
+  if (item.type === "analysis") return "Analysis";
   return item.type.charAt(0).toUpperCase() + item.type.slice(1);
 }
 
@@ -46,7 +45,6 @@ export default function Context() {
   const [typeFilter, setTypeFilter] = useState<ContextItemType | "all" | "app" | "notes">("all");
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<ContextItem | null>(null);
-  const [workflowOpen, setWorkflowOpen] = useState(false);
   const [bindingsSearch, setBindingsSearch] = useState("");
   const [newBindForecast, setNewBindForecast] = useState("");
   const [newBindItem, setNewBindItem] = useState("");
@@ -337,6 +335,7 @@ export default function Context() {
                 <option value="app">App context</option>
                 <option value="notes">Notes</option>
                 <option value="evidence">Evidence</option>
+                <option value="analysis">Analysis</option>
               </select>
               <button type="button" className="ctx-primary-btn" onClick={() => setAddModalOpen(true)}>
                 Add context
@@ -381,28 +380,6 @@ export default function Context() {
                 </tbody>
               </table>
             </div>
-          </div>
-
-          <div className="panel">
-            <button
-              type="button"
-              className="ctx-workflow-toggle"
-              onClick={() => setWorkflowOpen((v) => !v)}
-            >
-              How context feeds forecasts {workflowOpen ? "▾" : "▸"}
-            </button>
-            {workflowOpen && (
-              <div className="context-steps">
-                {WORKFLOW.map((step, i) => (
-                  <div key={step} className="context-step">
-                    <div className="context-step-num">{i + 1}</div>
-                    <div>
-                      <h4>{step}</h4>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </>
       )}
@@ -687,6 +664,16 @@ export default function Context() {
           addContextItem({ type: "document", title, fileNames: names, visibility: "team" });
         }}
         onNotes={(data) => addContextItem({ type: "manual", ...data })}
+        onAddAnalysis={(data) =>
+          addContextItem({
+            type: "analysis",
+            title: data.title,
+            body: data.body,
+            visibility: data.visibility,
+            notebookCells: data.notebookCells,
+            runtime: data.runtime,
+          })
+        }
       />
 
       {detailItem && (

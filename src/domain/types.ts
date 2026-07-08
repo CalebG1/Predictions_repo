@@ -58,11 +58,59 @@ export interface Organization {
   name: string;
 }
 
+export type SsoProvider = "okta" | "azure_ad" | "google";
+
 export interface User {
   id: string;
   name: string;
   role: Role;
   team: string;
+  teams?: string[];
+  department?: string;
+  email?: string;
+  title?: string;
+  phone?: string;
+  location?: string;
+  timezone?: string;
+  locale?: string;
+  joinedAt?: string;
+  lastLoginAt?: string;
+  mfaEnabled?: boolean;
+  ssoProvider?: SsoProvider;
+  managerId?: string;
+}
+
+export type EmailDigest = "daily" | "weekly" | "none";
+
+export interface UserPreferences {
+  emailDigest: EmailDigest;
+  probabilityAlerts: boolean;
+  commentMentions: boolean;
+  contextApprovalRequests: boolean;
+  weeklySummary: boolean;
+  productUpdates: boolean;
+  defaultVisibility: Visibility;
+  expertiseDomains: Category[];
+}
+
+export interface ConnectedIntegration {
+  id: string;
+  name: string;
+  description: string;
+  status: "connected" | "available" | "pending";
+  connectedAt?: string;
+}
+
+export type TeamJoinRequestStatus = "pending" | "approved" | "rejected";
+
+export interface TeamJoinRequest {
+  id: string;
+  userId: string;
+  team: string;
+  status: TeamJoinRequestStatus;
+  requestedAt: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
 }
 
 /** A precisely-worded, resolvable risk or opportunity event. (was: Market) */
@@ -302,8 +350,19 @@ export interface ProbabilityAlert {
 
 // --- Context registry (org-wide library + per-forecast bindings) ---
 
-export type ContextItemType = "connector" | "document" | "manual" | "evidence" | "instruction";
+export type ContextItemType = "connector" | "document" | "manual" | "evidence" | "instruction" | "analysis";
 export type ContextItemStatus = "active" | "pending_approval" | "archived" | "error";
+
+/** A single cell in a hosted-notebook "Add analysis" context item. */
+export interface NotebookCell {
+  id: string;
+  kind: "code" | "markdown";
+  source: string;
+  output?: string;
+  error?: string;
+  status: "idle" | "running" | "success" | "error";
+  durationMs?: number;
+}
 
 export interface ContextItem {
   id: string;
@@ -328,6 +387,10 @@ export interface ContextItem {
   /** For evidence-type items: link to EvidenceSource fields. */
   evidenceUrl?: string;
   credibilityScore?: number;
+  /** For analysis-type items: the notebook cells (code + rendered output) that produced the finding. */
+  notebookCells?: NotebookCell[];
+  /** For analysis-type items: label for the sandboxed runtime the notebook ran in. */
+  runtime?: string;
 }
 
 export interface ContextBinding {
@@ -392,4 +455,6 @@ export interface CreateContextItemInput {
   evidenceClass?: SourceClass;
   evidenceUrl?: string;
   credibilityScore?: number;
+  notebookCells?: NotebookCell[];
+  runtime?: string;
 }

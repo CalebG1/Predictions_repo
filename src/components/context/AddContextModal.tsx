@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Connector } from "../../domain/connectors";
-import type { Visibility } from "../../domain/types";
+import type { NotebookCell, Visibility } from "../../domain/types";
 import AddAppContextForm from "./AddAppContextForm";
+import AnalysisPanel from "./AnalysisPanel";
 import DocumentsAndNotesPanel from "./DocumentsAndNotesPanel";
 import OrgAppsPanel from "./OrgAppsPanel";
 
-type AddMode = "content" | "app";
+type AddMode = "content" | "app" | "analysis";
 
 export default function AddContextModal({
   open,
@@ -14,6 +15,7 @@ export default function AddContextModal({
   onAddAppContext,
   onImport,
   onNotes,
+  onAddAnalysis,
 }: {
   open: boolean;
   onClose: () => void;
@@ -23,6 +25,13 @@ export default function AddContextModal({
   ) => void;
   onImport: (fileNames: string[]) => void;
   onNotes: (data: { title: string; body: string; visibility: Visibility }) => void;
+  onAddAnalysis: (data: {
+    title: string;
+    body: string;
+    visibility: Visibility;
+    notebookCells: NotebookCell[];
+    runtime: string;
+  }) => void;
 }) {
   const [mode, setMode] = useState<AddMode>("content");
   const [selectedApp, setSelectedApp] = useState<Connector | null>(null);
@@ -94,9 +103,21 @@ export default function AddContextModal({
           >
             From org app
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "analysis"}
+            className={`ctx-mode-tab${mode === "analysis" ? " active" : ""}`}
+            onClick={() => {
+              setMode("analysis");
+              setSelectedApp(null);
+            }}
+          >
+            Analysis
+          </button>
         </div>
 
-        <div className="asrc-body">
+        <div className={`asrc-body${mode === "analysis" ? " ctx-analysis-body" : ""}`}>
           {mode === "content" ? (
             <DocumentsAndNotesPanel
               onImport={(names) => {
@@ -105,6 +126,13 @@ export default function AddContextModal({
               }}
               onNotes={(data) => {
                 onNotes(data);
+                onClose();
+              }}
+            />
+          ) : mode === "analysis" ? (
+            <AnalysisPanel
+              onSubmit={(data) => {
+                onAddAnalysis(data);
                 onClose();
               }}
             />

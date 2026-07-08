@@ -6,6 +6,7 @@ import {
   probabilityHistory as seedHistory,
   questions as seedQuestions,
   users,
+  seedTeamJoinRequests,
 } from "./domain/seed";
 import { seedTouchpointSignals } from "./domain/touchpoints";
 import { connectorById } from "./domain/connectors";
@@ -49,9 +50,13 @@ import type {
   QuestionComment,
   QaMessage,
   TouchpointSignal,
+  TeamJoinRequest,
   User,
+  UserPreferences,
   Visibility,
 } from "./domain/types";
+import { defaultUserPreferences, seedUserPreferences } from "./domain/profile";
+import { orgTeams, userTeams } from "./domain/teams";
 import { evidenceSources as seedEvidenceSources, seedComments } from "./domain/seed";
 
 const ALERTS_STORAGE_KEY = "foresight-probability-alerts";
@@ -62,6 +67,46 @@ const CONTEXT_AUDIT_KEY = "foresight-context-audit";
 const FORECAST_JOBS_STORAGE_KEY = "foresight-forecast-jobs";
 const COMMENTS_STORAGE_KEY = "foresight-question-comments";
 const QA_STORAGE_KEY = "foresight-question-qa";
+const USER_PREFERENCES_KEY = "foresight-user-preferences";
+const TEAM_JOIN_REQUESTS_KEY = "foresight-team-join-requests";
+
+function loadTeamJoinRequests(): TeamJoinRequest[] {
+  try {
+    const raw = localStorage.getItem(TEAM_JOIN_REQUESTS_KEY);
+    if (!raw) return [...seedTeamJoinRequests];
+    const stored = JSON.parse(raw) as TeamJoinRequest[];
+    const ids = new Set(stored.map((r) => r.id));
+    return [...seedTeamJoinRequests.filter((r) => !ids.has(r.id)), ...stored];
+  } catch {
+    return [...seedTeamJoinRequests];
+  }
+}
+
+function saveTeamJoinRequests(requests: TeamJoinRequest[]) {
+  try {
+    localStorage.setItem(TEAM_JOIN_REQUESTS_KEY, JSON.stringify(requests));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+function loadUserPreferences(): Record<string, UserPreferences> {
+  try {
+    const raw = localStorage.getItem(USER_PREFERENCES_KEY);
+    if (!raw) return { ...seedUserPreferences };
+    return { ...seedUserPreferences, ...(JSON.parse(raw) as Record<string, UserPreferences>) };
+  } catch {
+    return { ...seedUserPreferences };
+  }
+}
+
+function saveUserPreferences(prefs: Record<string, UserPreferences>) {
+  try {
+    localStorage.setItem(USER_PREFERENCES_KEY, JSON.stringify(prefs));
+  } catch {
+    /* ignore quota errors */
+  }
+}
 
 function loadForecastJobs(): ForecastJob[] {
   try {
@@ -244,7 +289,15 @@ interface StoreCtx {
   org: typeof organization;
   user: User;
   setUser: (u: User) => void;
+  updateUser: (patch: Partial<User>) => void;
   allUsers: User[];
+  userPreferences: UserPreferences;
+  updateUserPreferences: (patch: Partial<UserPreferences>) => void;
+  orgTeams: string[];
+  teamJoinRequests: TeamJoinRequest[];
+  requestTeamJoin: (team: string) => void;
+  approveTeamJoinRequest: (requestId: string) => void;
+  rejectTeamJoinRequest: (requestId: string) => void;
   /** Questions the current user is authorized to see. */
   questions: ForecastQuestion[];
   outcomesFor: (questionId: string) => Outcome[];
@@ -317,7 +370,11 @@ interface StoreCtx {
 const Ctx = createContext<StoreCtx | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User>(users[0]);
+  const [allUsers, setAllUsers] = useState<User[]>(users);
+  const [user, setUserState] = useState<User>(users[0]);
+  const [preferencesByUser, setPreferencesByUser] = useState<Record<string, UserPreferences>>(() =>
+    loadUserPreferences()
+  );
   const [visibilityOverrides, setVisibilityOverrides] = useState<Record<string, Visibility>>({});
   const [categoryOverrides, setCategoryOverrides] = useState<Record<string, Category>>({});
   const [probabilityOverrides, setProbabilityOverrides] = useState<Record<string, number>>({});
@@ -339,6 +396,129 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [contextBindings, setContextBindings] = useState<ContextBinding[]>(() => loadContextBindings());
   const [contextRevisions, setContextRevisions] = useState<ContextRevision[]>(() => loadContextRevisions());
   const [contextAuditLog, setContextAuditLog] = useState<ContextAuditEntry[]>(() => loadContextAudit());
+  const [teamJoinRequests, setTeamJoinRequests] = useState<TeamJoinRequest[]>(() => loadTeamJoinRequests());
+
+  const persistTeamJoinRequests = useCallback(
+    (updater: TeamJoinRequest[] | ((prev: TeamJoinRequest[]) => TeamJoinRequest[])) => {
+      setTeamJoinRequests((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveTeamJoinRequests(next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const addTeamToUser = useCallback((userId: string, team: string) => {
+    setAllUsers((list) =>
+      list.map((u) => {
+        if (u.id !== userId) return u;
+        const teams = userTeams(u);
+        if (teams.includes(team)) return u;
+        return { ...u, teams: [...teams, team] };
+      })
+    );
+    setUserState((prev) => {
+      if (prev.id !== userId) return prev;
+      const teams = userTeams(prev);
+      if (teams.includes(team)) return prev;
+      return { ...prev, teams: [...teams, team] };
+    });
+  }, []);
+
+  const requestTeamJoin = useCallback(
+    (team: string) => {
+      const trimmed = team.trim();
+      if (!trimmed || !orgTeams.includes(trimmed)) return;
+      if (userTeams(user).includes(trimmed)) return;
+      const duplicate = teamJoinRequests.some(
+        (r) => r.userId === user.id && r.team === trimmed && r.status === "pending"
+      );
+      if (duplicate) return;
+      persistTeamJoinRequests((prev) => [
+        ...prev,
+        {
+          id: newId("tjr"),
+          userId: user.id,
+          team: trimmed,
+          status: "pending",
+          requestedAt: new Date().toISOString(),
+        },
+      ]);
+    },
+    [persistTeamJoinRequests, teamJoinRequests, user]
+  );
+
+  const approveTeamJoinRequest = useCallback(
+    (requestId: string) => {
+      if (user.role !== "admin") return;
+      const target = teamJoinRequests.find((r) => r.id === requestId && r.status === "pending");
+      if (!target) return;
+      persistTeamJoinRequests((prev) =>
+        prev.map((r) =>
+          r.id === requestId
+            ? {
+                ...r,
+                status: "approved",
+                resolvedAt: new Date().toISOString(),
+                resolvedBy: user.id,
+              }
+            : r
+        )
+      );
+      addTeamToUser(target.userId, target.team);
+    },
+    [addTeamToUser, persistTeamJoinRequests, teamJoinRequests, user.id, user.role]
+  );
+
+  const rejectTeamJoinRequest = useCallback(
+    (requestId: string) => {
+      if (user.role !== "admin") return;
+      persistTeamJoinRequests((prev) =>
+        prev.map((r) =>
+          r.id === requestId && r.status === "pending"
+            ? {
+                ...r,
+                status: "rejected",
+                resolvedAt: new Date().toISOString(),
+                resolvedBy: user.id,
+              }
+            : r
+        )
+      );
+    },
+    [persistTeamJoinRequests, user.id, user.role]
+  );
+
+  const setUser = useCallback((next: User) => {
+    const merged = allUsers.find((u) => u.id === next.id) ?? next;
+    setUserState(merged);
+  }, [allUsers]);
+
+  const updateUser = useCallback((patch: Partial<User>) => {
+    setUserState((prev) => {
+      const next = { ...prev, ...patch };
+      setAllUsers((list) => list.map((u) => (u.id === next.id ? next : u)));
+      return next;
+    });
+  }, []);
+
+  const userPreferences = useMemo(
+    () => preferencesByUser[user.id] ?? defaultUserPreferences,
+    [preferencesByUser, user.id]
+  );
+
+  const updateUserPreferences = useCallback(
+    (patch: Partial<UserPreferences>) => {
+      setPreferencesByUser((prev) => {
+        const current = prev[user.id] ?? defaultUserPreferences;
+        const next = { ...prev, [user.id]: { ...current, ...patch } };
+        saveUserPreferences(next);
+        return next;
+      });
+    },
+    [user.id]
+  );
 
   const persistAlerts = useCallback((updater: ProbabilityAlert[] | ((prev: ProbabilityAlert[]) => ProbabilityAlert[])) => {
     setAlerts((prev) => {
@@ -1140,7 +1320,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       org: organization,
       user,
       setUser,
-      allUsers: users,
+      updateUser,
+      allUsers,
+      userPreferences,
+      updateUserPreferences,
+      orgTeams,
+      teamJoinRequests,
+      requestTeamJoin,
+      approveTeamJoinRequest,
+      rejectTeamJoinRequest,
       questions: visible.filter((q) => !hidden.has(q.id)),
       canView: (q) => canViewQuestion(user, q, accessGrants),
       setVisibility: (questionId, visibility) =>
@@ -1205,7 +1393,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return list.reduce((best, o) => (o.currentProbability > best.currentProbability ? o : best));
       },
     };
-  }, [user, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addAppContext, addUpload, visibleContextItemsList, contextItems, contextBindings, contextAuditLog, bindingsFor, boundContextFor, bindContext, restoreContextBinding, unbindContext, addContextItem, updateContextItem, approveContextItem, rejectContextItem, archiveContextItem, revisionsFor, assembleModelContextFor, canEditContext, canApproveContext, saveManualContextForQuestion, manualContextForQuestion, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, hideQuestion, deleteQuestion, commentsFor, addComment, editComment, deleteComment, qaMessagesFor, askQa, resetQa]);
+  }, [user, allUsers, setUser, userPreferences, updateUser, updateUserPreferences, teamJoinRequests, requestTeamJoin, approveTeamJoinRequest, rejectTeamJoinRequest, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addAppContext, addUpload, visibleContextItemsList, contextItems, contextBindings, contextAuditLog, bindingsFor, boundContextFor, bindContext, restoreContextBinding, unbindContext, addContextItem, updateContextItem, approveContextItem, rejectContextItem, archiveContextItem, revisionsFor, assembleModelContextFor, canEditContext, canApproveContext, saveManualContextForQuestion, manualContextForQuestion, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, hideQuestion, deleteQuestion, commentsFor, addComment, editComment, deleteComment, qaMessagesFor, askQa, resetQa]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

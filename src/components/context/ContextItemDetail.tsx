@@ -6,6 +6,7 @@ import VisibilityBadge from "../VisibilityBadge";
 function typeLabel(item: ContextItem): string {
   if (item.connectorId && item.type === "manual") return "App context";
   if (item.type === "manual" || item.type === "instruction") return "Notes";
+  if (item.type === "analysis") return "Analysis";
   return item.type.charAt(0).toUpperCase() + item.type.slice(1);
 }
 
@@ -57,11 +58,35 @@ export default function ContextItemDetail({
         </header>
 
         <div className="ctx-detail-body">
-          {item.body && (
+          {item.notebookCells && item.notebookCells.length > 0 ? (
             <div className="ctx-detail-card">
-              <span className="ctx-detail-card-label">Context</span>
-              <pre className="ctx-detail-pre">{item.body}</pre>
+              <span className="ctx-detail-card-label">Notebook</span>
+              <div className="ctx-detail-notebook">
+                {item.notebookCells.map((cell) => (
+                  <div key={cell.id} className="ctx-detail-nb-cell">
+                    {cell.kind === "markdown" ? (
+                      <p className="ctx-detail-nb-markdown">{cell.source}</p>
+                    ) : (
+                      <>
+                        <pre className="ctx-detail-nb-code">{cell.source}</pre>
+                        {(cell.output || cell.error) && (
+                          <pre className={`ctx-detail-nb-output${cell.error ? " error" : ""}`}>
+                            {cell.error ?? cell.output}
+                          </pre>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
+          ) : (
+            item.body && (
+              <div className="ctx-detail-card">
+                <span className="ctx-detail-card-label">Context</span>
+                <pre className="ctx-detail-pre">{item.body}</pre>
+              </div>
+            )
           )}
 
           {item.fileNames && item.fileNames.length > 0 && (

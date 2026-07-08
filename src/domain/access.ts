@@ -3,6 +3,7 @@
 // calibration views.
 
 import type { AccessGrant, ForecastQuestion, Role, User } from "./types";
+import { userOnTeam } from "./teams";
 
 const LEADERSHIP_ROLES: Role[] = ["executive", "risk_manager", "admin"];
 
@@ -23,7 +24,7 @@ export function canViewQuestion(
     case "public":
       return true;
     case "team":
-      return user.team === question.owningTeam || user.role === "admin" || hasGrant(user, question.id, grants);
+      return userOnTeam(user, question.owningTeam) || hasGrant(user, question.id, grants);
     case "leadership":
       return LEADERSHIP_ROLES.includes(user.role) || hasGrant(user, question.id, grants);
     case "restricted":
