@@ -10,7 +10,7 @@ import { pct, signedPct } from "./ui";
 
 function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean }) {
   const navigate = useNavigate();
-  const { yesOutcome, historyFor, touchpointSignalsFor, addSource, addUpload, togglePin } = useStore();
+  const { yesOutcome, historyFor, touchpointSignalsFor, togglePin } = useStore();
   const yes = yesOutcome(q.id);
   const p = yes?.currentProbability ?? q.priorBaseRate;
   const d1 = yes ? probabilityDelta(historyFor(yes.id), 1) : null;
@@ -62,12 +62,7 @@ function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean 
         </div>
       </td>
       <td className="qt-sources-col">
-        <TouchpointIcons
-          signals={signals}
-          maxVisible={3}
-          onConnect={(connector) => addSource(q.id, connector)}
-          onImport={(fileNames) => addUpload(q.id, fileNames)}
-        />
+        <TouchpointIcons questionId={q.id} signals={signals} maxVisible={3} />
       </td>
       <td className="qt-date-col">{q.resolutionDate}</td>
       <td className="qt-vis-col">

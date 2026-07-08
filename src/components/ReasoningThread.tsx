@@ -1,5 +1,7 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { formatModelContextPreview } from "../domain/context";
 import type { ForecastReasoning, ReasoningView } from "../domain/reasoning";
+import { useStore } from "../store";
 import { IconClock, IconDocument, IconExternalLink, IconLayers, IconRefresh } from "./icons";
 import { pct } from "./ui";
 
@@ -40,11 +42,23 @@ function AccordionSection({
   );
 }
 
-export default function ReasoningThread({ reasoning }: { reasoning: ForecastReasoning }) {
+export default function ReasoningThread({
+  reasoning,
+  questionId,
+}: {
+  reasoning: ForecastReasoning;
+  questionId: string;
+}) {
+  const { manualContextForQuestion, saveManualContextForQuestion, assembleModelContext } = useStore();
   const [view, setView] = useState<ReasoningView>("one-line");
   const [refreshFreq, setRefreshFreq] = useState("daily");
   const [refreshUntil, setRefreshUntil] = useState("2026-12-05");
-  const [extraContext, setExtraContext] = useState("");
+  const [extraContext, setExtraContext] = useState(() => manualContextForQuestion(questionId));
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  useEffect(() => {
+    setExtraContext(manualContextForQuestion(questionId));
+  }, [questionId, manualContextForQuestion]);
 
   const viewIndex = VIEWS.findIndex((v) => v.id === view);
 
@@ -245,8 +259,12 @@ export default function ReasoningThread({ reasoning }: { reasoning: ForecastReas
             <div className="fr-context-block">
               <div className="fr-context-head">
                 <span className="fr-config-label">Additional context (optional):</span>
-                <button type="button" className="fr-context-preview">
-                  Preview
+                <button
+                  type="button"
+                  className="fr-context-preview"
+                  onClick={() => setPreviewOpen((v) => !v)}
+                >
+                  {previewOpen ? "Hide preview" : "Preview"}
                 </button>
               </div>
               <textarea
@@ -255,7 +273,12 @@ export default function ReasoningThread({ reasoning }: { reasoning: ForecastReas
                 placeholder="Provide any additional information that should inform this forecast (e.g., private knowledge, specific assumptions, constraints)..."
                 value={extraContext}
                 onChange={(e) => setExtraContext(e.target.value)}
+                onBlur={() => saveManualContextForQuestion(questionId, extraContext)}
               />
+              {previewOpen && (
+                <pre className="ctx-preview-pre">{formatModelContextPreview(assembleModelContext(questionId))}</pre>
+              )}
+              <p className="muted small">Saved to the org context library on blur. Versioned for audit.</p>
             </div>
           </div>
         </>

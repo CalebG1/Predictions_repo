@@ -1,7 +1,7 @@
 import { useState, type CSSProperties, type MouseEvent } from "react";
-import type { TouchpointSignal } from "../domain/types";
-import type { Connector } from "../domain/connectors";
+import type { TouchpointSignal, Visibility } from "../domain/types";
 import { touchpointMeta } from "../domain/touchpoints";
+import { useStore } from "../store";
 import { IconPlus } from "./icons";
 import { SourceMark } from "./brandIcons";
 import AddSourceModal from "./AddSourceModal";
@@ -19,21 +19,20 @@ function signalKey(signal: TouchpointSignal): string {
 }
 
 export default function TouchpointIcons({
+  questionId,
   signals,
-  onConnect,
-  onImport,
   maxVisible,
 }: {
+  questionId: string;
   signals: TouchpointSignal[];
-  onConnect: (connector: Connector) => void;
-  onImport: (fileNames: string[]) => void;
-  /** When set, only the first N sources are shown; the rest collapse into a +N chip. */
   maxVisible?: number;
 }) {
+  const { contextItems, bindingsFor, bindContext, addAppContext, addUpload, addContextItem } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
   const overflow = maxVisible != null && signals.length > maxVisible ? signals.length - maxVisible : 0;
   const visible = overflow > 0 ? signals.slice(0, maxVisible) : signals;
   const hidden = overflow > 0 ? signals.slice(maxVisible) : [];
+  const boundItemIds = new Set(bindingsFor(questionId).map((b) => b.contextItemId));
 
   const stopNav = (e: MouseEvent) => {
     e.preventDefault();
@@ -50,7 +49,7 @@ export default function TouchpointIcons({
         return (
           <span
             key={signalKey(signal)}
-            className={`qc-tp connected`}
+            className="qc-tp connected"
             style={{ "--tp-color": color } as CSSProperties}
             title={`${label} · ${signal.summary}`}
             aria-label={`${label}: ${signal.summary}`}
@@ -79,8 +78,8 @@ export default function TouchpointIcons({
       <button
         type="button"
         className="qc-tp qc-tp-add-btn"
-        title="Add source"
-        aria-label="Add source"
+        title="Add context"
+        aria-label="Add context"
         onClick={openModal}
       >
         <IconPlus />
@@ -88,13 +87,28 @@ export default function TouchpointIcons({
 
       <AddSourceModal
         open={modalOpen}
-        signals={signals}
+        libraryItems={contextItems}
+        boundItemIds={boundItemIds}
         onClose={() => setModalOpen(false)}
-        onConnect={onConnect}
-        onImport={(fileNames) => {
-          onImport(fileNames);
-          setModalOpen(false);
+        onAddAppContext={(connector, data) => {
+          addAppContext(
+            {
+              connectorId: connector.id,
+              title: data.title,
+              body: data.body,
+              sourceRef: data.sourceRef,
+              visibility: data.visibility as Visibility,
+              tags: data.tags,
+            },
+            questionId
+          );
         }}
+        onImport={(fileNames) => addUpload(questionId, fileNames)}
+        onNotes={(data) => {
+          const item = addContextItem({ type: "manual", ...data });
+          bindContext(questionId, item.id);
+        }}
+        onBindFromLibrary={(itemId) => bindContext(questionId, itemId)}
       />
     </div>
   );

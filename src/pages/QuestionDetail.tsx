@@ -142,7 +142,7 @@ export default function QuestionDetail() {
         />
       </div>
 
-      <ReasoningThread reasoning={reasoning} />
+      <ReasoningThread reasoning={reasoning} questionId={q.id} />
 
       {q.category === "Security/Cyber" && <CyberQuestionInsights q={q} />}
 

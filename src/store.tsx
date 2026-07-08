@@ -7,17 +7,58 @@ import {
   questions as seedQuestions,
   users,
 } from "./domain/seed";
-import { seedTouchpointSignals, connectSignalFor, uploadSignalFor } from "./domain/touchpoints";
-import type { Connector } from "./domain/connectors";
+import { seedTouchpointSignals } from "./domain/touchpoints";
+import { connectorById } from "./domain/connectors";
 import { createQuestionFromInput, type CreateQuestionInput } from "./domain/generateQuestion";
 import { FORECAST_PROCESSING_MS, type ForecastJob } from "./domain/forecastJob";
 import { runForecast } from "./domain/engine";
 import { answerForecastQuestion } from "./domain/qaAnswer";
 import { canViewQuestion, visibleQuestions } from "./domain/access";
-import type { ForecastQuestion, Outcome, ProbabilityAlert, ProbabilityPoint, TouchpointSignal, User, Visibility, Category, EvidenceSource, QuestionComment, QaMessage } from "./domain/types";
+import {
+  assembleModelContext,
+  bindingsForQuestion,
+  createContextItemFromInput,
+  itemsForQuestion,
+  newId,
+  revisionsForItem,
+  seedContextAudit,
+  seedContextBindings,
+  seedContextItems,
+  seedContextRevisions,
+  touchpointSignalsFromBindings,
+} from "./domain/context";
+import {
+  canApproveContextItem,
+  canArchiveContextItem,
+  canEditContextItem,
+  visibleContextItems,
+} from "./domain/contextAccess";
+import type {
+  Category,
+  ContextAuditEntry,
+  ContextBinding,
+  ContextItem,
+  ContextRevision,
+  CreateContextItemInput,
+  EvidenceSource,
+  ForecastQuestion,
+  ModelContextBundle,
+  Outcome,
+  ProbabilityAlert,
+  ProbabilityPoint,
+  QuestionComment,
+  QaMessage,
+  TouchpointSignal,
+  User,
+  Visibility,
+} from "./domain/types";
 import { evidenceSources as seedEvidenceSources, seedComments } from "./domain/seed";
 
 const ALERTS_STORAGE_KEY = "foresight-probability-alerts";
+const CONTEXT_ITEMS_KEY = "foresight-context-items";
+const CONTEXT_BINDINGS_KEY = "foresight-context-bindings";
+const CONTEXT_REVISIONS_KEY = "foresight-context-revisions";
+const CONTEXT_AUDIT_KEY = "foresight-context-audit";
 const FORECAST_JOBS_STORAGE_KEY = "foresight-forecast-jobs";
 const COMMENTS_STORAGE_KEY = "foresight-question-comments";
 const QA_STORAGE_KEY = "foresight-question-qa";
@@ -97,6 +138,89 @@ function saveQaMessages(messages: QaMessage[]) {
   }
 }
 
+function loadContextItems(): ContextItem[] {
+  try {
+    const raw = localStorage.getItem(CONTEXT_ITEMS_KEY);
+    if (!raw) return [...seedContextItems];
+    const stored = JSON.parse(raw) as ContextItem[];
+    const ids = new Set(stored.map((i) => i.id));
+    const merged = [...seedContextItems.filter((i) => !ids.has(i.id)), ...stored];
+    return merged;
+  } catch {
+    return [...seedContextItems];
+  }
+}
+
+function saveContextItems(items: ContextItem[]) {
+  try {
+    localStorage.setItem(CONTEXT_ITEMS_KEY, JSON.stringify(items));
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadContextBindings(): ContextBinding[] {
+  try {
+    const raw = localStorage.getItem(CONTEXT_BINDINGS_KEY);
+    if (!raw) return [...seedContextBindings];
+    const stored = JSON.parse(raw) as ContextBinding[];
+    const ids = new Set(stored.map((b) => b.id));
+    return [...seedContextBindings.filter((b) => !ids.has(b.id)), ...stored];
+  } catch {
+    return [...seedContextBindings];
+  }
+}
+
+function saveContextBindings(bindings: ContextBinding[]) {
+  try {
+    localStorage.setItem(CONTEXT_BINDINGS_KEY, JSON.stringify(bindings));
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadContextRevisions(): ContextRevision[] {
+  try {
+    const raw = localStorage.getItem(CONTEXT_REVISIONS_KEY);
+    if (!raw) return [...seedContextRevisions];
+    const stored = JSON.parse(raw) as ContextRevision[];
+    const ids = new Set(stored.map((r) => r.id));
+    return [...seedContextRevisions.filter((r) => !ids.has(r.id)), ...stored];
+  } catch {
+    return [...seedContextRevisions];
+  }
+}
+
+function saveContextRevisions(revisions: ContextRevision[]) {
+  try {
+    localStorage.setItem(CONTEXT_REVISIONS_KEY, JSON.stringify(revisions));
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadContextAudit(): ContextAuditEntry[] {
+  try {
+    const raw = localStorage.getItem(CONTEXT_AUDIT_KEY);
+    if (!raw) return [...seedContextAudit];
+    const stored = JSON.parse(raw) as ContextAuditEntry[];
+    const ids = new Set(stored.map((a) => a.id));
+    return [...seedContextAudit.filter((a) => !ids.has(a.id)), ...stored].sort((a, b) =>
+      b.timestamp.localeCompare(a.timestamp)
+    );
+  } catch {
+    return [...seedContextAudit];
+  }
+}
+
+function saveContextAudit(entries: ContextAuditEntry[]) {
+  try {
+    localStorage.setItem(CONTEXT_AUDIT_KEY, JSON.stringify(entries));
+  } catch {
+    /* ignore */
+  }
+}
+
 function checkAlertCrossing(
   alert: ProbabilityAlert,
   prior: number,
@@ -131,10 +255,40 @@ interface StoreCtx {
   setCategory: (questionId: string, category: Category) => void;
   refreshForecast: (questionId: string) => void;
   touchpointSignalsFor: (questionId: string) => TouchpointSignal[];
-  /** Connect an app from the source gallery. */
-  addSource: (questionId: string, connector: Connector) => void;
-  /** Import files as an "Uploaded files" source. */
+  /** Add information from an org-provisioned app; optionally bind to a forecast. */
+  addAppContext: (
+    data: {
+      connectorId: string;
+      title: string;
+      body: string;
+      sourceRef?: string;
+      visibility?: Visibility;
+      tags?: string[];
+    },
+    questionId?: string
+  ) => ContextItem;
+  /** Import files as document context (creates library item + binding). */
   addUpload: (questionId: string, fileNames: string[]) => void;
+  contextItems: ContextItem[];
+  allContextItems: ContextItem[];
+  contextBindings: ContextBinding[];
+  contextAuditLog: ContextAuditEntry[];
+  bindingsFor: (questionId: string) => ContextBinding[];
+  boundContextFor: (questionId: string) => ContextItem[];
+  bindContext: (questionId: string, contextItemId: string, notes?: string) => string | undefined;
+  restoreContextBinding: (binding: ContextBinding) => void;
+  unbindContext: (bindingId: string) => ContextBinding | undefined;
+  addContextItem: (input: CreateContextItemInput) => ContextItem;
+  updateContextItem: (id: string, patch: Partial<Pick<ContextItem, "title" | "description" | "body" | "visibility" | "tags">>, changeSummary?: string) => void;
+  approveContextItem: (id: string) => void;
+  rejectContextItem: (id: string) => void;
+  archiveContextItem: (id: string) => void;
+  revisionsFor: (contextItemId: string) => ContextRevision[];
+  assembleModelContext: (questionId: string) => ModelContextBundle;
+  canEditContext: (item: ContextItem) => boolean;
+  canApproveContext: () => boolean;
+  saveManualContextForQuestion: (questionId: string, body: string) => void;
+  manualContextForQuestion: (questionId: string) => string;
   pinnedIds: string[];
   isPinned: (questionId: string) => boolean;
   togglePin: (questionId: string) => void;
@@ -181,6 +335,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [forecastJobs, setForecastJobs] = useState<ForecastJob[]>(() => loadForecastJobs());
   const [comments, setComments] = useState<QuestionComment[]>(() => loadComments());
   const [qaMessages, setQaMessages] = useState<QaMessage[]>(() => loadQaMessages());
+  const [contextItems, setContextItems] = useState<ContextItem[]>(() => loadContextItems());
+  const [contextBindings, setContextBindings] = useState<ContextBinding[]>(() => loadContextBindings());
+  const [contextRevisions, setContextRevisions] = useState<ContextRevision[]>(() => loadContextRevisions());
+  const [contextAuditLog, setContextAuditLog] = useState<ContextAuditEntry[]>(() => loadContextAudit());
 
   const persistAlerts = useCallback((updater: ProbabilityAlert[] | ((prev: ProbabilityAlert[]) => ProbabilityAlert[])) => {
     setAlerts((prev) => {
@@ -205,6 +363,61 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return next;
     });
   }, []);
+
+  const persistContextItems = useCallback((updater: ContextItem[] | ((prev: ContextItem[]) => ContextItem[])) => {
+    setContextItems((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      saveContextItems(next);
+      return next;
+    });
+  }, []);
+
+  const persistContextBindings = useCallback(
+    (updater: ContextBinding[] | ((prev: ContextBinding[]) => ContextBinding[])) => {
+      setContextBindings((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveContextBindings(next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const persistContextRevisions = useCallback(
+    (updater: ContextRevision[] | ((prev: ContextRevision[]) => ContextRevision[])) => {
+      setContextRevisions((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveContextRevisions(next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const persistContextAudit = useCallback(
+    (updater: ContextAuditEntry[] | ((prev: ContextAuditEntry[]) => ContextAuditEntry[])) => {
+      setContextAuditLog((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveContextAudit(next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const appendAudit = useCallback(
+    (entry: Omit<ContextAuditEntry, "id" | "timestamp">) => {
+      persistContextAudit((prev) => [
+        {
+          ...entry,
+          id: newId("audit"),
+          timestamp: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+    },
+    [persistContextAudit]
+  );
 
   const evaluateAlertsForOutcome = useCallback(
     (outcomeId: string, prior: number, current: number) => {
@@ -428,42 +641,349 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
       persistComments((prev) => prev.filter((c) => c.questionId !== questionId));
       persistQaMessages((prev) => prev.filter((m) => m.questionId !== questionId));
+      persistContextBindings((prev) => prev.filter((b) => b.questionId !== questionId));
     },
-    [persistAlerts, persistComments, persistQaMessages]
+    [persistAlerts, persistComments, persistQaMessages, persistContextBindings]
+  );
+
+  const visibleContextItemsList = useMemo(
+    () => visibleContextItems(user, contextItems),
+    [user, contextItems]
+  );
+
+  const bindingsFor = useCallback(
+    (questionId: string) => bindingsForQuestion(questionId, contextBindings),
+    [contextBindings]
+  );
+
+  const boundContextFor = useCallback(
+    (questionId: string) =>
+      itemsForQuestion(questionId, visibleContextItemsList, contextBindings),
+    [visibleContextItemsList, contextBindings]
   );
 
   const touchpointSignalsFor = useCallback(
-    (questionId: string) => touchpointSignals[questionId] ?? [],
-    [touchpointSignals]
+    (questionId: string) => {
+      const fromBindings = touchpointSignalsFromBindings(
+        questionId,
+        visibleContextItemsList,
+        contextBindings
+      );
+      if (fromBindings.length > 0) return fromBindings;
+      return touchpointSignals[questionId] ?? [];
+    },
+    [visibleContextItemsList, contextBindings, touchpointSignals]
   );
 
-  const addSource = useCallback((questionId: string, connector: Connector) => {
-    const signal = connectSignalFor(connector);
-    setTouchpointSignals((prev) => {
-      const current = prev[questionId] ?? [];
-      const already = current.some((s) =>
-        signal.kind === "custom" ? s.sourceId === signal.sourceId : s.kind === signal.kind
-      );
-      if (already) return prev;
-      return { ...prev, [questionId]: [...current, signal] };
-    });
-  }, []);
-
-  const addUpload = useCallback((questionId: string, fileNames: string[]) => {
-    if (fileNames.length === 0) return;
-    const signal = uploadSignalFor(fileNames);
-    setTouchpointSignals((prev) => {
-      const current = prev[questionId] ?? [];
-      const existing = current.find((s) => s.kind === "upload");
-      if (existing) {
-        return {
-          ...prev,
-          [questionId]: current.map((s) => (s.kind === "upload" ? signal : s)),
+  const bindContext = useCallback(
+    (questionId: string, contextItemId: string, notes?: string): string | undefined => {
+      const item = contextItems.find((i) => i.id === contextItemId);
+      if (!item || item.status === "archived") return undefined;
+      let createdId: string | undefined;
+      persistContextBindings((prev) => {
+        if (prev.some((b) => b.questionId === questionId && b.contextItemId === contextItemId)) {
+          return prev;
+        }
+        const binding: ContextBinding = {
+          id: newId("bind"),
+          questionId,
+          contextItemId,
+          attachedBy: user.id,
+          attachedAt: new Date().toISOString(),
+          notes,
         };
+        createdId = binding.id;
+        appendAudit({
+          actorId: user.id,
+          action: "bind",
+          resourceType: "binding",
+          resourceId: binding.id,
+          detail: `Bound "${item.title}" to forecast ${questionId}`,
+        });
+        return [...prev, binding];
+      });
+      return createdId;
+    },
+    [contextItems, user.id, persistContextBindings, appendAudit]
+  );
+
+  const unbindContext = useCallback(
+    (bindingId: string): ContextBinding | undefined => {
+      const target = contextBindings.find((b) => b.id === bindingId);
+      if (!target) return undefined;
+
+      persistContextBindings((prev) => {
+        if (!prev.some((b) => b.id === bindingId)) return prev;
+        const item = contextItems.find((i) => i.id === target.contextItemId);
+        appendAudit({
+          actorId: user.id,
+          action: "unbind",
+          resourceType: "binding",
+          resourceId: bindingId,
+          detail: `Unbound "${item?.title ?? target.contextItemId}" from ${target.questionId}`,
+        });
+        return prev.filter((b) => b.id !== bindingId);
+      });
+      return target;
+    },
+    [contextBindings, contextItems, user.id, persistContextBindings, appendAudit]
+  );
+
+  const restoreContextBinding = useCallback(
+    (binding: ContextBinding) => {
+      persistContextBindings((prev) => {
+        if (
+          prev.some(
+            (b) =>
+              b.id === binding.id ||
+              (b.questionId === binding.questionId && b.contextItemId === binding.contextItemId)
+          )
+        ) {
+          return prev;
+        }
+        const item = contextItems.find((i) => i.id === binding.contextItemId);
+        appendAudit({
+          actorId: user.id,
+          action: "bind",
+          resourceType: "binding",
+          resourceId: binding.id,
+          detail: `Restored binding for "${item?.title ?? binding.contextItemId}" on ${binding.questionId}`,
+        });
+        return [...prev, binding];
+      });
+    },
+    [contextItems, user.id, persistContextBindings, appendAudit]
+  );
+
+  const addContextItem = useCallback(
+    (input: CreateContextItemInput): ContextItem => {
+      const item = createContextItemFromInput(input, user);
+      persistContextItems((prev) => [...prev, item]);
+      appendAudit({
+        actorId: user.id,
+        action: "create",
+        resourceType: "context_item",
+        resourceId: item.id,
+        detail: `Created ${item.type} context: ${item.title}`,
+      });
+      if (item.body && (item.type === "manual" || item.type === "instruction")) {
+        persistContextRevisions((prev) => [
+          ...prev,
+          {
+            id: newId("rev"),
+            contextItemId: item.id,
+            version: 1,
+            body: item.body!,
+            changedBy: user.id,
+            changedAt: item.createdAt,
+            changeSummary: "Initial version",
+          },
+        ]);
       }
-      return { ...prev, [questionId]: [...current, signal] };
-    });
-  }, []);
+      return item;
+    },
+    [user, persistContextItems, appendAudit, persistContextRevisions]
+  );
+
+  const updateContextItem = useCallback(
+    (
+      id: string,
+      patch: Partial<Pick<ContextItem, "title" | "description" | "body" | "visibility" | "tags">>,
+      changeSummary = "Updated"
+    ) => {
+      const item = contextItems.find((i) => i.id === id);
+      if (!item || !canEditContextItem(user, item)) return;
+      const now = new Date().toISOString();
+      persistContextItems((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, ...patch, updatedAt: now } : i))
+      );
+      if (patch.body && patch.body !== item.body) {
+        const body = patch.body;
+        const revs = revisionsForItem(id, contextRevisions);
+        const nextVersion = (revs[0]?.version ?? 0) + 1;
+        persistContextRevisions((prev) => [
+          ...prev,
+          {
+            id: newId("rev"),
+            contextItemId: id,
+            version: nextVersion,
+            body,
+            changedBy: user.id,
+            changedAt: now,
+            changeSummary,
+          },
+        ]);
+      }
+      appendAudit({
+        actorId: user.id,
+        action: "update",
+        resourceType: "context_item",
+        resourceId: id,
+        detail: `${changeSummary}: ${item.title}`,
+      });
+    },
+    [contextItems, contextRevisions, user, persistContextItems, persistContextRevisions, appendAudit]
+  );
+
+  const approveContextItem = useCallback(
+    (id: string) => {
+      if (!canApproveContextItem(user)) return;
+      persistContextItems((prev) =>
+        prev.map((i) =>
+          i.id === id && i.status === "pending_approval"
+            ? { ...i, status: "active", updatedAt: new Date().toISOString() }
+            : i
+        )
+      );
+      appendAudit({
+        actorId: user.id,
+        action: "approve",
+        resourceType: "context_item",
+        resourceId: id,
+        detail: "Approved context item for model use",
+      });
+    },
+    [user, persistContextItems, appendAudit]
+  );
+
+  const rejectContextItem = useCallback(
+    (id: string) => {
+      if (!canApproveContextItem(user)) return;
+      persistContextItems((prev) =>
+        prev.map((i) =>
+          i.id === id && i.status === "pending_approval"
+            ? { ...i, status: "archived", updatedAt: new Date().toISOString() }
+            : i
+        )
+      );
+      appendAudit({
+        actorId: user.id,
+        action: "reject",
+        resourceType: "context_item",
+        resourceId: id,
+        detail: "Rejected context item",
+      });
+    },
+    [user, persistContextItems, appendAudit]
+  );
+
+  const archiveContextItem = useCallback(
+    (id: string) => {
+      const item = contextItems.find((i) => i.id === id);
+      if (!item || !canArchiveContextItem(user, item)) return;
+      persistContextItems((prev) =>
+        prev.map((i) =>
+          i.id === id ? { ...i, status: "archived", updatedAt: new Date().toISOString() } : i
+        )
+      );
+      appendAudit({
+        actorId: user.id,
+        action: "archive",
+        resourceType: "context_item",
+        resourceId: id,
+        detail: `Archived: ${item.title}`,
+      });
+    },
+    [contextItems, user, persistContextItems, appendAudit]
+  );
+
+  const revisionsFor = useCallback(
+    (contextItemId: string) => revisionsForItem(contextItemId, contextRevisions),
+    [contextRevisions]
+  );
+
+  const assembleModelContextFor = useCallback(
+    (questionId: string) =>
+      assembleModelContext(questionId, visibleContextItemsList, contextBindings, mergedQuestions),
+    [visibleContextItemsList, contextBindings, mergedQuestions]
+  );
+
+  const canEditContext = useCallback(
+    (item: ContextItem) => canEditContextItem(user, item),
+    [user]
+  );
+
+  const canApproveContext = useCallback(() => canApproveContextItem(user), [user]);
+
+  const manualContextItemForQuestion = useCallback(
+    (questionId: string): ContextItem | undefined => {
+      const bound = itemsForQuestion(questionId, contextItems, contextBindings);
+      return bound.find((i) => i.type === "manual" && i.status === "active");
+    },
+    [contextItems, contextBindings]
+  );
+
+  const manualContextForQuestion = useCallback(
+    (questionId: string) => manualContextItemForQuestion(questionId)?.body ?? "",
+    [manualContextItemForQuestion]
+  );
+
+  const saveManualContextForQuestion = useCallback(
+    (questionId: string, body: string) => {
+      const trimmed = body.trim();
+      const existing = manualContextItemForQuestion(questionId);
+      if (existing) {
+        updateContextItem(existing.id, { body: trimmed }, "Forecast-specific context update");
+        return;
+      }
+      if (!trimmed) return;
+      const item = addContextItem({
+        type: "manual",
+        title: `Additional context — ${questionId}`,
+        body: trimmed,
+        visibility: "team",
+        owningTeam: user.team,
+      });
+      bindContext(questionId, item.id);
+    },
+    [manualContextItemForQuestion, updateContextItem, addContextItem, bindContext, user.team]
+  );
+
+  const addAppContext = useCallback(
+    (
+      data: {
+        connectorId: string;
+        title: string;
+        body: string;
+        sourceRef?: string;
+        visibility?: Visibility;
+        tags?: string[];
+      },
+      questionId?: string
+    ): ContextItem => {
+      const connector = connectorById(data.connectorId);
+      const description = data.sourceRef
+        ? `From ${connector?.name ?? data.connectorId} · ${data.sourceRef}`
+        : `From ${connector?.name ?? data.connectorId}`;
+      const item = addContextItem({
+        type: "manual",
+        title: data.title.trim(),
+        body: data.body.trim(),
+        connectorId: data.connectorId,
+        description,
+        visibility: data.visibility ?? "team",
+        tags: data.tags,
+      });
+      if (questionId) bindContext(questionId, item.id);
+      return item;
+    },
+    [addContextItem, bindContext]
+  );
+
+  const addUpload = useCallback(
+    (questionId: string, fileNames: string[]) => {
+      if (fileNames.length === 0) return;
+      const title = fileNames.length === 1 ? fileNames[0] : `${fileNames.length} uploaded files`;
+      const item = addContextItem({
+        type: "document",
+        title,
+        fileNames,
+        visibility: "team",
+      });
+      bindContext(questionId, item.id);
+    },
+    [addContextItem, bindContext]
+  );
 
   const isPinned = useCallback((questionId: string) => pinnedIds.includes(questionId), [pinnedIds]);
 
@@ -581,6 +1101,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const q = mergedQuestions.find((item) => item.id === questionId);
       if (!q) return;
       const forecast = runForecast(q);
+      const bundle = assembleModelContextFor(questionId);
+      const contextNote =
+        bundle.connectors.length + bundle.documents.length + bundle.manualNotes.length > 0
+          ? `\n\n(Context: ${bundle.connectors.length} connector(s), ${bundle.documents.length} document(s), ${bundle.manualNotes.length} note(s) bound.)`
+          : "";
       const ts = Date.now();
       const userMsg: QaMessage = {
         id: `qa-${ts}-u`,
@@ -593,12 +1118,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         id: `qa-${ts}-a`,
         questionId,
         role: "assistant",
-        body: answerForecastQuestion(trimmed, forecast, q),
+        body: answerForecastQuestion(trimmed, forecast, q) + contextNote,
         createdAt: new Date(Date.now() + 1).toISOString(),
       };
       persistQaMessages((prev) => [...prev, userMsg, assistantMsg]);
     },
-    [mergedQuestions, persistQaMessages]
+    [mergedQuestions, persistQaMessages, assembleModelContextFor]
   );
 
   const resetQa = useCallback(
@@ -624,8 +1149,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setCategoryOverrides((prev) => ({ ...prev, [questionId]: category })),
       refreshForecast,
       touchpointSignalsFor,
-      addSource,
+      addAppContext,
       addUpload,
+      contextItems: visibleContextItemsList,
+      allContextItems: contextItems,
+      contextBindings,
+      contextAuditLog,
+      bindingsFor,
+      boundContextFor,
+      bindContext,
+      restoreContextBinding,
+      unbindContext,
+      addContextItem,
+      updateContextItem,
+      approveContextItem,
+      rejectContextItem,
+      archiveContextItem,
+      revisionsFor,
+      assembleModelContext: assembleModelContextFor,
+      canEditContext,
+      canApproveContext,
+      saveManualContextForQuestion,
+      manualContextForQuestion,
       pinnedIds,
       isPinned,
       togglePin,
@@ -660,7 +1205,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return list.reduce((best, o) => (o.currentProbability > best.currentProbability ? o : best));
       },
     };
-  }, [user, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addSource, addUpload, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, hideQuestion, deleteQuestion, commentsFor, addComment, editComment, deleteComment, qaMessagesFor, askQa, resetQa]);
+  }, [user, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addAppContext, addUpload, visibleContextItemsList, contextItems, contextBindings, contextAuditLog, bindingsFor, boundContextFor, bindContext, restoreContextBinding, unbindContext, addContextItem, updateContextItem, approveContextItem, rejectContextItem, archiveContextItem, revisionsFor, assembleModelContextFor, canEditContext, canApproveContext, saveManualContextForQuestion, manualContextForQuestion, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, hideQuestion, deleteQuestion, commentsFor, addComment, editComment, deleteComment, qaMessagesFor, askQa, resetQa]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

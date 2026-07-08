@@ -299,3 +299,97 @@ export interface ProbabilityAlert {
   triggeredProbability?: number;
   read: boolean;
 }
+
+// --- Context registry (org-wide library + per-forecast bindings) ---
+
+export type ContextItemType = "connector" | "document" | "manual" | "evidence" | "instruction";
+export type ContextItemStatus = "active" | "pending_approval" | "archived" | "error";
+
+export interface ContextItem {
+  id: string;
+  type: ContextItemType;
+  title: string;
+  description?: string;
+  visibility: Visibility;
+  owningTeam: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  status: ContextItemStatus;
+  tags?: string[];
+  /** Refs CONNECTORS catalog id. */
+  connectorId?: string;
+  /** Mock sync metadata for connector items. */
+  lastSyncAt?: string;
+  syncSummary?: string;
+  fileNames?: string[];
+  body?: string;
+  evidenceClass?: SourceClass;
+  /** For evidence-type items: link to EvidenceSource fields. */
+  evidenceUrl?: string;
+  credibilityScore?: number;
+}
+
+export interface ContextBinding {
+  id: string;
+  questionId: string;
+  contextItemId: string;
+  attachedBy: string;
+  attachedAt: string;
+  notes?: string;
+}
+
+export interface ContextRevision {
+  id: string;
+  contextItemId: string;
+  version: number;
+  body: string;
+  changedBy: string;
+  changedAt: string;
+  changeSummary: string;
+}
+
+export type ContextAuditAction =
+  | "create"
+  | "update"
+  | "archive"
+  | "bind"
+  | "unbind"
+  | "approve"
+  | "reject";
+
+export interface ContextAuditEntry {
+  id: string;
+  actorId: string;
+  action: ContextAuditAction;
+  resourceType: "context_item" | "binding" | "revision";
+  resourceId: string;
+  timestamp: string;
+  detail: string;
+}
+
+/** Structured payload assembled for LLM injection. */
+export interface ModelContextBundle {
+  questionId: string;
+  instructions: string[];
+  documents: { title: string; summary: string }[];
+  connectors: { name: string; lastSync: string; summary: string }[];
+  evidence: EvidenceSource[];
+  manualNotes: string[];
+  assembledAt: string;
+}
+
+export interface CreateContextItemInput {
+  type: ContextItemType;
+  title: string;
+  description?: string;
+  visibility?: Visibility;
+  owningTeam?: string;
+  tags?: string[];
+  connectorId?: string;
+  fileNames?: string[];
+  body?: string;
+  evidenceClass?: SourceClass;
+  evidenceUrl?: string;
+  credibilityScore?: number;
+}
