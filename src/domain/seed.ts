@@ -139,14 +139,14 @@ export const forecasters: Forecaster[] = [
 ];
 
 export const evidenceSources: EvidenceSource[] = [
-  { id: "ev-1", title: "Fed H.4.1 weekly release", sourceClass: "central_bank", geographyTag: "US", methodTag: "official", credibilityScore: 0.95, retrievedAt: "2026-06-20" },
-  { id: "ev-2", title: "BLS CPI report", sourceClass: "gov_stats", geographyTag: "US", methodTag: "official", credibilityScore: 0.93, retrievedAt: "2026-06-12" },
-  { id: "ev-3", title: "SOFR futures curve", sourceClass: "market_data", methodTag: "market-implied", credibilityScore: 0.8, retrievedAt: "2026-06-26" },
-  { id: "ev-4", title: "Drewry container index", sourceClass: "nowcasting", methodTag: "logistics", credibilityScore: 0.78, retrievedAt: "2026-06-24" },
-  { id: "ev-5", title: "Q2 earnings call transcript", sourceClass: "corporate_demand", methodTag: "primary", credibilityScore: 0.82, retrievedAt: "2026-06-22" },
-  { id: "ev-6", title: "GDELT geopolitical event stream", sourceClass: "fast_feed", methodTag: "entity-extraction", credibilityScore: 0.62, retrievedAt: "2026-06-27", disconfirming: true },
-  { id: "ev-7", title: "Internal incident log (SecOps)", sourceClass: "org_internal", methodTag: "internal", credibilityScore: 0.88, retrievedAt: "2026-06-27" },
-  { id: "ev-8", title: "Opposing think-tank brief", sourceClass: "fast_feed", ideologyTag: "contrarian", credibilityScore: 0.55, retrievedAt: "2026-06-25", disconfirming: true },
+  { id: "ev-1", title: "Fed H.4.1 weekly release", url: "https://www.federalreserve.gov/releases/h41/", sourceClass: "central_bank", geographyTag: "US", methodTag: "official", credibilityScore: 0.95, retrievedAt: "2026-06-20", relevance: "high", refreshFrequency: "weekly" },
+  { id: "ev-2", title: "BLS CPI report", url: "https://www.bls.gov/cpi/", sourceClass: "gov_stats", geographyTag: "US", methodTag: "official", credibilityScore: 0.93, retrievedAt: "2026-06-12", relevance: "high", refreshFrequency: "monthly" },
+  { id: "ev-3", title: "SOFR futures curve", url: "https://www.cmegroup.com/markets/interest-rates/stirs/sofr.html", sourceClass: "market_data", methodTag: "market-implied", credibilityScore: 0.8, retrievedAt: "2026-06-26", relevance: "medium", refreshFrequency: "daily" },
+  { id: "ev-4", title: "Drewry container index", url: "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry", sourceClass: "nowcasting", methodTag: "logistics", credibilityScore: 0.78, retrievedAt: "2026-06-24", relevance: "medium", refreshFrequency: "weekly" },
+  { id: "ev-5", title: "Q2 earnings call transcript", url: "https://example.com/investor-relations/q2-transcript", sourceClass: "corporate_demand", methodTag: "primary", credibilityScore: 0.82, retrievedAt: "2026-06-22", relevance: "medium", refreshFrequency: "default" },
+  { id: "ev-6", title: "GDELT geopolitical event stream", url: "https://www.gdeltproject.org/", sourceClass: "fast_feed", methodTag: "entity-extraction", credibilityScore: 0.62, retrievedAt: "2026-06-27", disconfirming: true, relevance: "low", refreshFrequency: "hourly" },
+  { id: "ev-7", title: "Internal incident log (SecOps)", sourceClass: "org_internal", methodTag: "internal", credibilityScore: 0.88, retrievedAt: "2026-06-27", relevance: "high", refreshFrequency: "default" },
+  { id: "ev-8", title: "Opposing think-tank brief", url: "https://example.com/research/opposing-view-brief", sourceClass: "fast_feed", ideologyTag: "contrarian", credibilityScore: 0.55, retrievedAt: "2026-06-25", disconfirming: true, relevance: "low", refreshFrequency: "default" },
 ];
 
 type QSeed = Omit<ForecastQuestion, "id"> & { id: string; initial: number; options?: string[] };

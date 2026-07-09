@@ -41,6 +41,8 @@ import type {
   ContextItem,
   ContextRevision,
   CreateContextItemInput,
+  EvidenceRefreshFrequency,
+  EvidenceRelevance,
   EvidenceSource,
   ForecastQuestion,
   ModelContextBundle,
@@ -57,7 +59,8 @@ import type {
 } from "./domain/types";
 import { defaultUserPreferences, seedUserPreferences } from "./domain/profile";
 import { orgTeams, userTeams } from "./domain/teams";
-import { evidenceSources as seedEvidenceSources, seedComments } from "./domain/seed";
+import { seedComments } from "./domain/seed";
+import { buildQuestionEvidence } from "./domain/questionEvidence";
 
 const ALERTS_STORAGE_KEY = "foresight-probability-alerts";
 const CONTEXT_ITEMS_KEY = "foresight-context-items";
@@ -356,6 +359,14 @@ interface StoreCtx {
   getForecastJob: (jobId: string) => ForecastJob | undefined;
   finishForecastJob: (jobId: string) => ForecastQuestion | null;
   evidenceFor: (questionId: string) => EvidenceSource[];
+  setEvidenceRelevance: (questionId: string, evidenceId: string, relevance: EvidenceRelevance) => void;
+  setEvidenceRefreshFrequency: (
+    questionId: string,
+    evidenceId: string,
+    frequency: EvidenceRefreshFrequency
+  ) => void;
+  refreshEvidenceRow: (questionId: string, evidenceId: string) => void;
+  deleteEvidenceRow: (questionId: string, evidenceId: string) => void;
   hideQuestion: (questionId: string) => void;
   deleteQuestion: (questionId: string) => void;
   commentsFor: (questionId: string) => QuestionComment[];
@@ -382,6 +393,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [extraOutcomes, setExtraOutcomes] = useState<Outcome[]>([]);
   const [extraHistory, setExtraHistory] = useState<ProbabilityPoint[]>([]);
   const [extraEvidence, setExtraEvidence] = useState<Record<string, EvidenceSource[]>>({});
+  /** Per-question edits (relevance/refresh settings) keyed by questionId -> evidenceId. */
+  const [evidenceRowEdits, setEvidenceRowEdits] = useState<
+    Record<string, Record<string, Partial<Pick<EvidenceSource, "relevance" | "refreshFrequency" | "lastRefreshedAt">>>>
+  >({});
+  /** Per-question row deletions, since the same seed evidence is shared across demo questions. */
+  const [deletedEvidenceByQuestion, setDeletedEvidenceByQuestion] = useState<Record<string, string[]>>({});
   const [touchpointSignals, setTouchpointSignals] = useState<Record<string, TouchpointSignal[]>>(() => ({
     ...seedTouchpointSignals,
   }));
@@ -773,12 +790,66 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const evidenceFor = useCallback(
     (questionId: string) => {
       const custom = extraEvidence[questionId];
-      if (custom?.length) return custom;
-      if (questionId.startsWith("q-user-")) return [];
-      return seedEvidenceSources.slice(0, 5);
+      const q = mergedQuestions.find((item) => item.id === questionId);
+      const base = custom?.length
+        ? custom
+        : questionId.startsWith("q-user-")
+          ? []
+          : buildQuestionEvidence(questionId, q);
+      const deleted = new Set(deletedEvidenceByQuestion[questionId] ?? []);
+      const edits = evidenceRowEdits[questionId] ?? {};
+      return base
+        .filter((e) => !deleted.has(e.id))
+        .map((e) => ({
+          ...e,
+          refreshFrequency: e.refreshFrequency ?? "default",
+          ...edits[e.id],
+        }));
     },
-    [extraEvidence]
+    [extraEvidence, deletedEvidenceByQuestion, evidenceRowEdits, mergedQuestions]
   );
+
+  const setEvidenceRelevance = useCallback(
+    (questionId: string, evidenceId: string, relevance: EvidenceRelevance) => {
+      setEvidenceRowEdits((prev) => ({
+        ...prev,
+        [questionId]: { ...prev[questionId], [evidenceId]: { ...prev[questionId]?.[evidenceId], relevance } },
+      }));
+    },
+    []
+  );
+
+  const setEvidenceRefreshFrequency = useCallback(
+    (questionId: string, evidenceId: string, refreshFrequency: EvidenceRefreshFrequency) => {
+      setEvidenceRowEdits((prev) => ({
+        ...prev,
+        [questionId]: {
+          ...prev[questionId],
+          [evidenceId]: { ...prev[questionId]?.[evidenceId], refreshFrequency },
+        },
+      }));
+    },
+    []
+  );
+
+  const refreshEvidenceRow = useCallback((questionId: string, evidenceId: string) => {
+    const now = new Date().toISOString();
+    setEvidenceRowEdits((prev) => ({
+      ...prev,
+      [questionId]: {
+        ...prev[questionId],
+        [evidenceId]: { ...prev[questionId]?.[evidenceId], lastRefreshedAt: now },
+      },
+    }));
+  }, []);
+
+  const deleteEvidenceRow = useCallback((questionId: string, evidenceId: string) => {
+    setDeletedEvidenceByQuestion((prev) => {
+      const current = prev[questionId] ?? [];
+      if (current.includes(evidenceId)) return prev;
+      return { ...prev, [questionId]: [...current, evidenceId] };
+    });
+  }, []);
 
   const hideQuestion = useCallback(
     (questionId: string) => {
@@ -1373,6 +1444,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       getForecastJob,
       finishForecastJob,
       evidenceFor,
+      setEvidenceRelevance,
+      setEvidenceRefreshFrequency,
+      refreshEvidenceRow,
+      deleteEvidenceRow,
       hideQuestion,
       deleteQuestion,
       commentsFor,
@@ -1393,7 +1468,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return list.reduce((best, o) => (o.currentProbability > best.currentProbability ? o : best));
       },
     };
-  }, [user, allUsers, setUser, userPreferences, updateUser, updateUserPreferences, teamJoinRequests, requestTeamJoin, approveTeamJoinRequest, rejectTeamJoinRequest, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addAppContext, addUpload, visibleContextItemsList, contextItems, contextBindings, contextAuditLog, bindingsFor, boundContextFor, bindContext, restoreContextBinding, unbindContext, addContextItem, updateContextItem, approveContextItem, rejectContextItem, archiveContextItem, revisionsFor, assembleModelContextFor, canEditContext, canApproveContext, saveManualContextForQuestion, manualContextForQuestion, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, hideQuestion, deleteQuestion, commentsFor, addComment, editComment, deleteComment, qaMessagesFor, askQa, resetQa]);
+  }, [user, allUsers, setUser, userPreferences, updateUser, updateUserPreferences, teamJoinRequests, requestTeamJoin, approveTeamJoinRequest, rejectTeamJoinRequest, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addAppContext, addUpload, visibleContextItemsList, contextItems, contextBindings, contextAuditLog, bindingsFor, boundContextFor, bindContext, restoreContextBinding, unbindContext, addContextItem, updateContextItem, approveContextItem, rejectContextItem, archiveContextItem, revisionsFor, assembleModelContextFor, canEditContext, canApproveContext, saveManualContextForQuestion, manualContextForQuestion, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, setEvidenceRelevance, setEvidenceRefreshFrequency, refreshEvidenceRow, deleteEvidenceRow, hideQuestion, deleteQuestion, commentsFor, addComment, editComment, deleteComment, qaMessagesFor, askQa, resetQa]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

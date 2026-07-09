@@ -6,6 +6,7 @@ import QuestionComments from "../components/QuestionComments";
 import QuestionQaChat from "../components/QuestionQaChat";
 import ReasoningThread from "../components/ReasoningThread";
 import CyberQuestionInsights from "../components/CyberQuestionInsights";
+import EvidenceTable from "../components/EvidenceTable";
 import { buildForecastReasoning } from "../domain/reasoning";
 import { buildProbPoints, colorForOption, ProbChart, type CompanionSeries } from "../components/charts";
 import VisibilityPicker from "../components/VisibilityPicker";
@@ -149,6 +150,8 @@ export default function QuestionDetail() {
 
       {q.category === "Security/Cyber" && <CyberQuestionInsights q={q} />}
 
+      <EvidenceTable questionId={q.id} evidence={evidence} />
+
       <div className="detail-grid">
         <div className="detail-main">
           <div className="panel two-col">
@@ -243,22 +246,6 @@ export default function QuestionDetail() {
                 <li key={u}>{u}</li>
               ))}
             </ul>
-          </div>
-
-          <div className="panel kv">
-            <h4>Evidence sources</h4>
-            {evidence.length === 0 ? (
-              <p className="muted">No evidence sources added yet.</p>
-            ) : (
-              evidence.map((e) => (
-                <div key={e.id} className="ev-row">
-                  <span className="ev-class">{e.sourceClass.replace("_", " ")}</span>
-                  <span className="ev-title">{e.title}</span>
-                  {e.disconfirming && <span className="ev-dis" title="Deliberately disconfirming">⚖︎</span>}
-                  <span className="ev-cred">{pct(e.credibilityScore)}</span>
-                </div>
-              ))
-            )}
           </div>
 
         </aside>

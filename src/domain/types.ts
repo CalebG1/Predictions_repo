@@ -196,6 +196,44 @@ export type SourceClass =
   | "fast_feed"
   | "org_internal";
 
+/** Manually-set read on how relevant a piece of evidence is to the question at hand. */
+export type EvidenceRelevance = "low" | "medium" | "high";
+
+/** How often a source should be automatically re-polled. "default" follows the org's inferred cadence for that source type. */
+export type EvidenceRefreshFrequency = "default" | "hourly" | "daily" | "weekly" | "monthly";
+
+/** Rich evidence row kinds shown in the question evidence table and detail drawer. */
+export type EvidenceRowKind = "feed" | "app_message" | "analysis" | "website" | "prediction";
+
+export interface EvidenceAppPayload {
+  app: "teams" | "slack";
+  channel: string;
+  author: string;
+  authorRole: string;
+  message: string;
+}
+
+export interface EvidenceAnalysisPayload {
+  narrative: string;
+  language: string;
+  code: string;
+  output: string;
+}
+
+export interface EvidenceWebsitePayload {
+  domain: string;
+  url: string;
+  publisher: string;
+  headline: string;
+  snippet: string;
+}
+
+export interface EvidencePredictionPayload {
+  agent: string;
+  probability: number;
+  summary: string;
+}
+
 export interface EvidenceSource {
   id: string;
   title: string;
@@ -205,9 +243,23 @@ export interface EvidenceSource {
   geographyTag?: string;
   methodTag?: string;
   credibilityScore: number; // 0..1
-  retrievedAt: string; // ISO
+  retrievedAt: string; // ISO — when this source was first published/retrieved
   /** Whether this source was deliberately fetched to disconfirm the lead view. */
   disconfirming?: boolean;
+  /** Manually-set relevance to the forecast; defaults to "medium" when unset. */
+  relevance?: EvidenceRelevance;
+  /** Automatic re-poll cadence; defaults to "default". */
+  refreshFrequency?: EvidenceRefreshFrequency;
+  /** Last time this row was refreshed (manually or on schedule), ISO timestamp. */
+  lastRefreshedAt?: string;
+  /** Rich row type; traditional catalog sources omit this (treated as "feed"). */
+  kind?: EvidenceRowKind;
+  /** Plain-language read on what this evidence indicates for the forecast. */
+  indicates?: string;
+  app?: EvidenceAppPayload;
+  analysis?: EvidenceAnalysisPayload;
+  website?: EvidenceWebsitePayload;
+  prediction?: EvidencePredictionPayload;
 }
 
 export type ErrorType =
