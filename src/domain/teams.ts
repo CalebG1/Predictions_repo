@@ -21,4 +21,5 @@ export const orgTeams = [
   "Product",
   "Corporate Strategy",
   "IT",
+  "Real Estate",
 ];

@@ -6,6 +6,7 @@ import QuestionComments from "../components/QuestionComments";
 import QuestionQaChat from "../components/QuestionQaChat";
 import ReasoningThread from "../components/ReasoningThread";
 import CyberQuestionInsights from "../components/CyberQuestionInsights";
+import SiteQuestionInsights from "../components/SiteQuestionInsights";
 import EvidenceTable from "../components/EvidenceTable";
 import { buildForecastReasoning } from "../domain/reasoning";
 import { buildProbPoints, colorForOption, ProbChart, type CompanionSeries } from "../components/charts";
@@ -149,6 +150,8 @@ export default function QuestionDetail() {
       <ReasoningThread reasoning={reasoning} questionId={q.id} />
 
       {q.category === "Security/Cyber" && <CyberQuestionInsights q={q} />}
+
+      {q.category === "Real Estate" && <SiteQuestionInsights q={q} />}
 
       <EvidenceTable questionId={q.id} evidence={evidence} />
 

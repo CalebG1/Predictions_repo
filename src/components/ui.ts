@@ -11,6 +11,7 @@ export const categoryOrder: Category[] = [
   "Product",
   "Reputational",
   "Macro",
+  "Real Estate",
 ];
 
 export const categoryColors: Record<Category, string> = {
@@ -24,6 +25,7 @@ export const categoryColors: Record<Category, string> = {
   Product: "#00b888",
   Reputational: "#db2777",
   Macro: "#475569",
+  "Real Estate": "#7c5c3e",
 };
 
 export function pct(p: number): string {

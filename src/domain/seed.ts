@@ -392,6 +392,95 @@ const Q: QSeed[] = [
     resolutionSource: "ATS", openDate: "2026-05-10", resolutionDate: "2026-10-01",
     status: "open", visibility: "public", owningTeam: "People", createdBy: "u-risk", priorBaseRate: 0.55, initial: 0.5,
   },
+  // --- Real Estate: predictive site selection (Harbor City metro) ---
+  {
+    id: "q-site-maple",
+    title: "Maple & 3rd hits first-year revenue target",
+    preciseDefinition:
+      "The Maple & 3rd (Downtown Core) QSR candidate reaches ≥ $2.4M revenue in its first 12 months of operation, measured from opening date.",
+    category: "Real Estate", type: "binary", riskOrOpportunity: "opportunity",
+    impactEstimate: "$2.4M year-1 revenue; anchor of downtown expansion plan", impactLevel: "high", impactScore: 0.7,
+    resolutionCriteria: "Resolves YES if trailing-12-month POS revenue ≥ $2.4M at month 12.",
+    resolutionSource: "POS revenue reporting", openDate: "2026-04-10", resolutionDate: "2027-12-31",
+    status: "open", visibility: "public", owningTeam: "Real Estate", createdBy: "u-analyst", priorBaseRate: 0.55, initial: 0.56,
+  },
+  {
+    id: "q-site-northgate",
+    title: "Northgate Promenade hits first-year revenue target",
+    preciseDefinition:
+      "The Northgate Promenade QSR candidate reaches ≥ $2.8M revenue in its first 12 months of operation.",
+    category: "Real Estate", type: "binary", riskOrOpportunity: "opportunity",
+    impactEstimate: "$2.8M year-1 revenue; highest-volume candidate in pipeline", impactLevel: "high", impactScore: 0.74,
+    resolutionCriteria: "Resolves YES if trailing-12-month POS revenue ≥ $2.8M at month 12.",
+    resolutionSource: "POS revenue reporting", openDate: "2026-03-20", resolutionDate: "2027-12-31",
+    status: "open", visibility: "public", owningTeam: "Real Estate", createdBy: "u-analyst", priorBaseRate: 0.55, initial: 0.62,
+  },
+  {
+    id: "q-site-eastbank",
+    title: "Eastbank Landing hits first-year revenue target",
+    preciseDefinition:
+      "The Eastbank Landing QSR candidate reaches ≥ $1.9M revenue in its first 12 months of operation.",
+    category: "Real Estate", type: "binary", riskOrOpportunity: "opportunity",
+    impactEstimate: "$1.9M year-1 revenue; first east-of-river unit", impactLevel: "medium", impactScore: 0.55,
+    resolutionCriteria: "Resolves YES if trailing-12-month POS revenue ≥ $1.9M at month 12.",
+    resolutionSource: "POS revenue reporting", openDate: "2026-04-01", resolutionDate: "2027-12-31",
+    status: "open", visibility: "public", owningTeam: "Real Estate", createdBy: "u-analyst", priorBaseRate: 0.5, initial: 0.44,
+  },
+  {
+    id: "q-site-university",
+    title: "University Commons hits first-year revenue target",
+    preciseDefinition:
+      "The University Commons QSR candidate reaches ≥ $2.2M revenue in its first 12 months of operation.",
+    category: "Real Estate", type: "binary", riskOrOpportunity: "opportunity",
+    impactEstimate: "$2.2M year-1 revenue; seasonal trade area", impactLevel: "medium", impactScore: 0.58,
+    resolutionCriteria: "Resolves YES if trailing-12-month POS revenue ≥ $2.2M at month 12.",
+    resolutionSource: "POS revenue reporting", openDate: "2026-04-15", resolutionDate: "2027-12-31",
+    status: "open", visibility: "team", owningTeam: "Real Estate", createdBy: "u-analyst", priorBaseRate: 0.52, initial: 0.54,
+  },
+  {
+    id: "q-site-harborpoint",
+    title: "Harbor Point Pavilion hits first-year revenue target",
+    preciseDefinition:
+      "The Harbor Point Pavilion QSR candidate reaches ≥ $1.7M revenue in its first 12 months of operation.",
+    category: "Real Estate", type: "binary", riskOrOpportunity: "opportunity",
+    impactEstimate: "$1.7M year-1 revenue; overlaps Westfield Crossing trade area", impactLevel: "medium", impactScore: 0.5,
+    resolutionCriteria: "Resolves YES if trailing-12-month POS revenue ≥ $1.7M at month 12.",
+    resolutionSource: "POS revenue reporting", openDate: "2026-05-01", resolutionDate: "2027-12-31",
+    status: "open", visibility: "team", owningTeam: "Real Estate", createdBy: "u-analyst", priorBaseRate: 0.48, initial: 0.45,
+  },
+  {
+    id: "q-site-airport",
+    title: "Airport Lot 7 rezoning approved before break-ground",
+    preciseDefinition:
+      "The rezoning application for Airport Logistics Park Lot 7 (light industrial → logistics/distribution) is approved by the zoning board before the 2026-11-01 break-ground deadline.",
+    category: "Real Estate", type: "binary", riskOrOpportunity: "opportunity",
+    impactEstimate: "Unlocks 420k sqft build-to-suit; $6M land option at risk", impactLevel: "critical", impactScore: 0.82,
+    resolutionCriteria: "Resolves YES on zoning board approval recorded before 2026-11-01.",
+    resolutionSource: "Zoning board docket Z-2026-114", openDate: "2026-03-01", resolutionDate: "2026-11-01",
+    status: "open", visibility: "public", owningTeam: "Real Estate", createdBy: "u-risk", priorBaseRate: 0.6, initial: 0.66,
+  },
+  {
+    id: "q-site-southloop",
+    title: "South Loop DC reaches 85% utilization in year 1",
+    preciseDefinition:
+      "The South Loop Distribution Center reaches ≥ 85% throughput utilization within 12 months of commissioning.",
+    category: "Real Estate", type: "binary", riskOrOpportunity: "opportunity",
+    impactEstimate: "$14M annualized logistics contribution at target utilization", impactLevel: "high", impactScore: 0.72,
+    resolutionCriteria: "Resolves YES if WMS-reported utilization ≥ 85% for a trailing quarter within 12 months of go-live.",
+    resolutionSource: "Warehouse management system", openDate: "2026-02-15", resolutionDate: "2027-09-30",
+    status: "open", visibility: "public", owningTeam: "Real Estate", createdBy: "u-risk", priorBaseRate: 0.5, initial: 0.53,
+  },
+  {
+    id: "q-site-riverside",
+    title: "Riverside campus fully staffed within 6 months",
+    preciseDefinition:
+      "The Riverside Industrial Campus reaches full staffing (250 FTE across shifts) within 6 months of its opening date.",
+    category: "Real Estate", type: "binary", riskOrOpportunity: "risk",
+    impactEstimate: "Staffing shortfall delays ramp; ~$2M/quarter opportunity cost", impactLevel: "high", impactScore: 0.64,
+    resolutionCriteria: "Resolves YES if HRIS headcount ≥ 250 FTE at the site by month 6 after opening.",
+    resolutionSource: "HRIS headcount report", openDate: "2026-03-10", resolutionDate: "2027-06-30",
+    status: "open", visibility: "team", owningTeam: "Real Estate", createdBy: "u-risk", priorBaseRate: 0.45, initial: 0.4,
+  },
   {
     id: "q-best-ai-model",
     title: "Which AI model leads by end of 2026?",

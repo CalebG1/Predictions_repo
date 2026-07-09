@@ -5,6 +5,7 @@ const tabs = [
   { label: "Movers", path: "/movers" },
   { label: "Cybersecurity", path: "/cybersecurity" },
   { label: "Cybersecurity 2", path: "/cybersecurity-2" },
+  { label: "Site Selection", path: "/site-selection" },
 ];
 
 export default function CategoryNav() {

@@ -5499,6 +5499,20 @@ ul.tight li {
   gap: 20px;
 }
 
+/*
+ * .cyber-dashboard-body is itself the scrollable .dash-page-body (flex: 1;
+ * min-height: 0; overflow: auto) AND a column flex container. Any direct
+ * child with its own `overflow` other than visible (the map panel, the
+ * top forecast table's .qtable-wrap) gets its flexbox "automatic minimum
+ * size" reset to 0, so the browser flex-shrinks it below its content size
+ * to fit the bounded height instead of letting the outer scroll take over.
+ * Pin every direct child to its natural content height so the whole
+ * section stacks and the page scrolls normally, like Overview.
+ */
+.cyber-dashboard-body > * {
+  flex-shrink: 0;
+}
+
 .cyber-page .dash-page-top {
   margin-bottom: 0;
 }
@@ -8089,6 +8103,404 @@ a.ctx-bind-cell-link {
 
   .profile-form-grid,
   .profile-security-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Site Selection (predictive real-estate) --- */
+
+.site-metro-tag {
+  margin: 4px 0 0;
+}
+
+.site-map-panel {
+  overflow: hidden;
+}
+
+.site-map-wrap {
+  position: relative;
+  padding: 8px 12px 4px;
+}
+
+.site-map {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  background: #f2f6f4;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.site-map-district {
+  fill: #e8efeb;
+  stroke: #d7e1db;
+  stroke-width: 0.3;
+}
+
+.site-map-district-label {
+  font-size: 2.4px;
+  font-weight: 600;
+  letter-spacing: 0.14px;
+  text-transform: uppercase;
+  fill: var(--text-3);
+  pointer-events: none;
+}
+
+.site-map-river {
+  fill: none;
+  stroke: #bcd8ea;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+
+.site-map-road {
+  fill: none;
+  stroke: #d3dcd7;
+  stroke-width: 0.6;
+}
+
+.site-map-road.major {
+  stroke: #c4cfc9;
+  stroke-width: 1;
+}
+
+.site-map-ring {
+  fill: none;
+  stroke: var(--text-3);
+  stroke-width: 0.3;
+  stroke-dasharray: 1.4 1.1;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.site-map-ring.selected {
+  stroke: var(--ink);
+  opacity: 0.9;
+}
+
+.site-map-pin {
+  cursor: pointer;
+  outline: none;
+}
+
+.site-map-dot {
+  stroke: #ffffff;
+  stroke-width: 0.5;
+  filter: drop-shadow(0 0.4px 0.8px rgba(16, 30, 24, 0.35));
+}
+
+.site-map-dot.operating {
+  fill: #93a29b;
+}
+
+.site-map-pin.selected .site-map-dot {
+  stroke: var(--ink);
+  stroke-width: 0.7;
+}
+
+.site-map-pin-label {
+  font-size: 2.6px;
+  font-weight: 700;
+  fill: var(--text);
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 0.6;
+  pointer-events: none;
+}
+
+.site-map-card {
+  position: absolute;
+  z-index: 5;
+  min-width: 210px;
+  max-width: 260px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 12px 14px;
+  font-size: 13px;
+}
+
+.site-map-card-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.site-map-card-meta {
+  color: var(--text-2);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.site-map-card-target {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.site-map-card-prob {
+  margin-top: 8px;
+}
+
+.site-map-card-prob-val {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.site-map-card-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--green-dark);
+}
+
+.site-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 10px 4px 8px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.site-map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.site-map-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid #ffffff;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.site-map-legend-swatch.operating {
+  background: #93a29b;
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.site-map-legend-ring {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--text-3);
+}
+
+.sft-submarket {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.asset-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.asset-chip.asset-retail {
+  background: #eaf1fb;
+  color: #2f6df6;
+}
+
+.asset-chip.asset-industrial {
+  background: #f3ede4;
+  color: #8a6a3a;
+}
+
+.cannibal-table .cannibal-cand {
+  font-weight: 600;
+}
+
+.cannibal-cell {
+  color: var(--text-2);
+}
+
+.cannibal-cell.heavy {
+  color: #c23934;
+  font-weight: 700;
+}
+
+.cannibal-abs {
+  font-weight: 400;
+}
+
+.cannibal-note {
+  padding: 8px 16px 14px;
+  margin: 0;
+}
+
+/* Scenario simulator */
+
+.scenario-panel {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  padding: 14px 16px 16px;
+}
+
+.scenario-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.scenario-site-pick select {
+  width: 100%;
+}
+
+.scenario-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.scenario-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.scenario-slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--green-dark);
+}
+
+.scenario-output {
+  min-width: 0;
+}
+
+.scenario-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 10px;
+}
+
+.scenario-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.scenario-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-3);
+}
+
+.scenario-stat-val {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.scenario-stat-val.small {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.scenario-stat-delta {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.scenario-stat-delta.up {
+  color: var(--green-dark);
+}
+
+.scenario-stat-delta.down {
+  color: var(--red);
+}
+
+.scenario-hist {
+  display: block;
+  width: 100%;
+  max-width: 620px;
+  background: var(--chart-bg);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+}
+
+.scenario-bar {
+  fill: #cdd8d3;
+}
+
+.scenario-bar.hit {
+  fill: var(--green);
+}
+
+.scenario-target-line {
+  stroke: var(--ink);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+}
+
+.scenario-target-label {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.scenario-axis-label {
+  font-size: 10px;
+  fill: var(--text-3);
+}
+
+.scenario-note {
+  margin: 8px 0 0;
+}
+
+/* Trade-area model stats on question detail */
+
+.gravity-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  padding: 14px 16px 16px;
+}
+
+.gravity-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gravity-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-3);
+}
+
+.gravity-stat-val {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.site-insight-context {
+  padding: 0 16px;
+  margin: 10px 0 0;
+}
+
+@media (max-width: 900px) {
+  .scenario-panel {
     grid-template-columns: 1fr;
   }
 }

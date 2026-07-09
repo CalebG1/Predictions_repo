@@ -14,7 +14,8 @@ export type Category =
   | "Supply Chain"
   | "Product"
   | "Reputational"
-  | "Macro";
+  | "Macro"
+  | "Real Estate";
 
 export type QuestionType = "binary" | "categorical" | "scalar";
 export type RiskOrOpportunity = "risk" | "opportunity";
@@ -306,7 +307,12 @@ export type AgentRole =
   | "calibration"
   | "synthesis"
   | "extremizer"
-  | "postmortem";
+  | "postmortem"
+  // Real-estate site selection roles:
+  | "trade-area"
+  | "demographics"
+  | "competition"
+  | "regulatory";
 
 export interface AgentEstimate {
   agent: AgentRole;

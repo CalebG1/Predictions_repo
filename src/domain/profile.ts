@@ -97,4 +97,5 @@ export const allCategories: Category[] = [
   "Product",
   "Reputational",
   "Macro",
+  "Real Estate",
 ];
