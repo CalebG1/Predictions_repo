@@ -52,14 +52,14 @@ export function kindFor(trigger?: string): RefreshKind {
   return "soft";
 }
 
-const KIND_META: Record<RefreshKind, { label: string; color: string }> = {
-  backcast: { label: "Backcast", color: "#8a95a3" },
-  hard: { label: "Hard refresh", color: "#4a5568" },
-  soft: { label: "Soft refresh", color: "#d97706" },
-};
-
 const CHART_AXIS = "#5b6672";
 const CHART_LINE = "#16345c";
+
+const KIND_META: Record<RefreshKind, { label: string; color: string }> = {
+  backcast: { label: "Backcast", color: "#b0b8c1" },
+  hard: { label: "Hard refresh", color: CHART_LINE },
+  soft: { label: "Soft refresh", color: "#d97706" },
+};
 
 export interface ProbPointContext {
   /** Label for this series, e.g. "OpenAI" or "Yes" — used to make evidence copy specific. */
@@ -552,7 +552,7 @@ export function ProbChart({
   const W = chartViewW;
   const H = chartHeight;
   const padL = 44;
-  const padR = hasCompanions ? 120 : endpointLabel ? 54 : 24;
+  const padR = hasCompanions ? 132 : endpointLabel ? 76 : 24;
   const labelOffset = 10;
   const padB = 46;
   const padT = 34;
@@ -851,13 +851,16 @@ export function ProbChart({
       )
     : null;
 
-  const lineW = hasCompanions ? 1.35 : 1.6;
-  const lineWPrimary = hasCompanions ? 1.45 : 1.75;
+  const lineW = hasCompanions ? 1.4 : 1.6;
+  const lineWPrimary = hasCompanions ? 2.1 : 1.75;
   const dotLastR = 3.5;
+  const dotLastRCompanion = 2.75;
   const dotSoftR = 2.25;
   const dotR = 1.75;
+  const dotCompanionR = 1.1;
   const dotHitR = 10;
   const dotHistOpacity = 0.62;
+  const dotCompanionOpacity = 0.5;
   const clipBleed = dotLastR + 1.5;
 
   return (
@@ -942,6 +945,13 @@ export function ProbChart({
                 height={innerH + clipBleed * 2}
               />
             </clipPath>
+            <linearGradient id="pc-area-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={primaryColor} stopOpacity="0.16" />
+              <stop offset="100%" stopColor={primaryColor} stopOpacity="0" />
+            </linearGradient>
+            <filter id="pc-badge-shadow" x="-60%" y="-60%" width="220%" height="220%">
+              <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="#0e1a16" floodOpacity="0.16" />
+            </filter>
           </defs>
 
           {gridY.map((g, i) => (
@@ -962,6 +972,15 @@ export function ProbChart({
           ))}
 
           <g clipPath="url(#pc-clip)">
+            {/* soft gradient wash beneath the primary line, single-series charts only */}
+            {!hasCompanions && (
+              <path
+                d={`${pathFromValues(primaryValues, 0, lastIdx)} L${xAt(lastIdx).toFixed(1)},${(padT + innerH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + innerH).toFixed(1)} Z`}
+                fill="url(#pc-area-fill)"
+                stroke="none"
+              />
+            )}
+
             {/* companion lines (faded future + solid past on hover) */}
             {(alignedCompanions).map((s) => (
               <g key={s.id}>
@@ -1031,13 +1050,22 @@ export function ProbChart({
                 const p = series.meta[i];
                 const prob = series.values[i] ?? 0;
                 const isLast = i === baseVisible.length - 1;
+                const isCompanion = series.id !== "primary";
                 const kind = kindFor(p.trigger);
                 const isSoft = kind === "soft";
                 const isSelected =
                   selectedDot?.seriesId === series.id && selectedDot?.idx === i;
-                const r = isLast ? dotLastR : isSoft ? dotSoftR : dotR;
+                const r = isCompanion
+                  ? isLast
+                    ? dotLastRCompanion
+                    : dotCompanionR
+                  : isLast
+                    ? dotLastR
+                    : isSoft
+                      ? dotSoftR
+                      : dotR;
                 const faded = crosshairActive && i > effFrac;
-                const dotOpacity = faded ? 0.25 : isLast ? 1 : dotHistOpacity;
+                const dotOpacity = faded ? 0.25 : isLast ? 1 : isCompanion ? dotCompanionOpacity : dotHistOpacity;
                 const handleSoftClick =
                   isSoft && !isAnimating
                     ? (e: React.MouseEvent) => {
@@ -1057,9 +1085,9 @@ export function ProbChart({
                     cx={cx}
                     cy={ys(prob)}
                     r={isSelected ? r + 0.75 : r}
-                    fill={isLast ? series.lineColor : KIND_META[kind].color}
+                    fill={isLast || isCompanion ? series.lineColor : KIND_META[kind].color}
                     stroke="#fff"
-                    strokeWidth={isSelected ? 1.25 : isLast ? 0.85 : 0.5}
+                    strokeWidth={isSelected ? 1.25 : isLast ? 0.85 : isCompanion ? 0 : 0.5}
                     opacity={dotOpacity}
                     pointerEvents="none"
                   />
@@ -1097,26 +1125,29 @@ export function ProbChart({
           {/* endpoint labels at line ends (hidden while crosshair is active) */}
           {!crosshairActive && hasCompanions && endLabelYs ? (
             <>
+              <circle cx={endX + labelOffset} cy={endLabelYs[0]} r={3} fill={primaryColor} stroke="#fff" strokeWidth={1} />
               <text
-                x={endX + labelOffset}
+                x={endX + labelOffset + 8}
                 y={endLabelYs[0] + 4}
                 fontSize="12"
-                fontWeight="600"
+                fontWeight="700"
                 fill={primaryColor}
               >
                 {endpointTag} {(primaryValues[lastIdx] * 100).toFixed(1)}%
               </text>
               {alignedCompanions.map((s, i) => (
-                <text
-                  key={`el-${s.id}`}
-                  x={endX + labelOffset}
-                  y={endLabelYs[i + 1] + 4}
-                  fontSize="12"
-                  fontWeight="600"
-                  fill={s.color}
-                >
-                  {s.label} {((s.values[lastIdx] ?? 0) * 100).toFixed(1)}%
-                </text>
+                <g key={`el-${s.id}`}>
+                  <circle cx={endX + labelOffset} cy={endLabelYs[i + 1]} r={2.75} fill={s.color} stroke="#fff" strokeWidth={1} />
+                  <text
+                    x={endX + labelOffset + 8}
+                    y={endLabelYs[i + 1] + 4}
+                    fontSize="11.5"
+                    fontWeight="600"
+                    fill={s.color}
+                  >
+                    {s.label} {((s.values[lastIdx] ?? 0) * 100).toFixed(1)}%
+                  </text>
+                </g>
               ))}
             </>
           ) : (
@@ -1124,16 +1155,46 @@ export function ProbChart({
             endpointLabel &&
             endpointPct && (
               <g className="pc-endpoint-label" aria-hidden="true">
-                <circle cx={endX} cy={endY} r={18} fill={CHART_LINE} fillOpacity="0.1" />
-                <text x={endX + 11} y={endY - 2} fontSize="9.5" fontWeight="600" fill={CHART_LINE}>
-                  {endpointTag}
+                <circle cx={endX} cy={endY} r={6} fill={primaryColor} fillOpacity="0.14">
+                  <animate attributeName="r" values="6;9;6" dur="2.4s" repeatCount="indefinite" />
+                  <animate attributeName="fill-opacity" values="0.14;0;0.14" dur="2.4s" repeatCount="indefinite" />
+                </circle>
+                <line
+                  x1={endX + dotLastR + 1}
+                  x2={endX + 12}
+                  y1={endY}
+                  y2={endY}
+                  stroke={primaryColor}
+                  strokeWidth="1"
+                  opacity="0.45"
+                />
+                <rect
+                  x={endX + 12}
+                  y={endY - 16}
+                  width={58}
+                  height={32}
+                  rx={7}
+                  fill="#fff"
+                  stroke="#e5e9e7"
+                  strokeWidth="1"
+                  filter="url(#pc-badge-shadow)"
+                />
+                <text
+                  x={endX + 19}
+                  y={endY - 4}
+                  fontSize="9"
+                  fontWeight="700"
+                  letterSpacing="0.4"
+                  fill={CHART_AXIS}
+                >
+                  {endpointTag.toUpperCase()}
                 </text>
                 <text
-                  x={endX + 11}
-                  y={endY + 14}
-                  fontSize="18"
+                  x={endX + 19}
+                  y={endY + 12}
+                  fontSize="15.5"
                   fontWeight="700"
-                  fill={CHART_LINE}
+                  fill={primaryColor}
                   fontFamily="Roboto Condensed, Arial Narrow, sans-serif"
                 >
                   {endpointPct}
@@ -1265,9 +1326,11 @@ export function ProbChart({
             >
               ×
             </button>
-            <div className="pc-popup-meta">
-              {fmtDate(selectedPoint.timestamp)} · {(selectedProb * 100).toFixed(0)}%
+            <div className="pc-popup-head">
+              <span className="pc-popup-prob">{(selectedProb * 100).toFixed(0)}%</span>
+              <span className="pc-popup-date">{fmtDate(selectedPoint.timestamp)}</span>
             </div>
+            {selectedPoint.trigger && <div className="pc-popup-trigger">{selectedPoint.trigger}</div>}
             <p className="pc-popup-summary">{selectedPoint.summary}</p>
             {selectedPoint.detail && (
               <button type="button" className="pc-popup-toggle" onClick={() => setExpanded((v) => !v)}>

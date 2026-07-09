@@ -2019,14 +2019,16 @@ body:has(.dash-page.detail) {
   align-items: center;
   gap: 6px;
   font-size: 11.5px;
+  font-weight: 500;
   color: var(--text-2);
 }
 
 .pc-leg-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
 }
 
 .pc-plot {
@@ -2521,14 +2523,41 @@ body:has(.dash-page.detail) {
 .pc-popup {
   position: absolute;
   z-index: 20;
-  width: min(260px, 72vw);
-  padding: 12px 14px 10px;
+  width: min(268px, 72vw);
+  padding: 13px 15px 11px;
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  box-shadow: var(--shadow), 0 10px 28px rgba(16, 30, 24, 0.12);
+  border-radius: 11px;
+  box-shadow: var(--shadow), 0 12px 30px rgba(16, 30, 24, 0.13);
   transform: translate(-50%, calc(-100% - 10px));
   pointer-events: auto;
+  animation: pc-popup-in 0.14s ease-out;
+}
+
+.pc-popup--below {
+  animation-name: pc-popup-in-below;
+}
+
+@keyframes pc-popup-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 4px)) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 10px)) scale(1);
+  }
+}
+
+@keyframes pc-popup-in-below {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 10px) scale(1);
+  }
 }
 
 .pc-popup--below {
@@ -2575,12 +2604,39 @@ body:has(.dash-page.detail) {
   color: var(--text);
 }
 
-.pc-popup-meta {
+.pc-popup-head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-bottom: 4px;
+  padding-right: 16px;
+}
+
+.pc-popup-prob {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.pc-popup-date {
   font-size: 10.5px;
   font-weight: 600;
   color: var(--text-3);
-  margin-bottom: 6px;
-  padding-right: 16px;
+  line-height: 1;
+}
+
+.pc-popup-trigger {
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #b45f06;
+  background: #fdf3e4;
+  border-radius: 5px;
+  padding: 2px 6px;
+  margin-bottom: 8px;
 }
 
 .pc-popup-summary {
