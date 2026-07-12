@@ -2808,6 +2808,10 @@ ul.tight li {
   padding: 0 4px;
 }
 
+.forecast-reasoning.fr-wide {
+  max-width: 100%;
+}
+
 .fr-view-nav {
   display: flex;
   align-items: center;
@@ -3054,99 +3058,12 @@ ul.tight li {
   text-align: center;
 }
 
-.fr-config {
-  border-top: 1px solid var(--line);
-  padding-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.fr-config-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 10px;
-  font-size: 13px;
-}
-
-.fr-config-label {
-  color: var(--text-2);
-  font-weight: 500;
-}
-
-.fr-config-select,
-.fr-config-date {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 13px;
-  background: var(--bg);
-  color: var(--text);
-}
-
-.fr-config-until-label {
-  color: var(--text-3);
-  margin-left: 6px;
-}
-
-.fr-config-clear {
-  border: none;
-  background: none;
-  color: var(--text-3);
-  font-size: 13px;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.fr-config-clear:hover {
-  color: var(--text);
-}
-
-.fr-context-block {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.fr-context-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.fr-context-preview {
-  border: 1px solid var(--line);
-  background: var(--bg);
-  border-radius: 8px;
-  padding: 5px 12px;
-  font-size: 12.5px;
-  color: var(--text-2);
-  cursor: pointer;
-}
-
-.fr-context-input {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-size: 13.5px;
-  line-height: 1.5;
-  resize: vertical;
-  min-height: 96px;
-  font-family: inherit;
-  color: var(--text);
-  background: var(--bg);
-}
-
-.fr-context-input::placeholder {
-  color: var(--text-3);
-}
-
 .fr-one-page {
   padding-top: 4px;
+}
+
+.fr-one-page-grid {
+  margin-top: 24px;
 }
 
 .fr-section-label {
@@ -3273,6 +3190,18 @@ ul.tight li {
 
 .evidence-table-head h4 {
   margin: 0;
+  margin-right: auto;
+}
+
+.evidence-table-head-count {
+  margin-right: 4px;
+}
+
+.evidence-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
 }
 
 .evidence-table-empty {

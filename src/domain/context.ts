@@ -291,17 +291,62 @@ export function createContextItemFromInput(
   };
 }
 
+/**
+ * Renders any context-library item bound to a forecast as an evidence row, so manually added or
+ * picked-from-library context shows up alongside auto-generated evidence in a question's evidence table.
+ */
 export function contextItemToEvidence(item: ContextItem): EvidenceSource | null {
-  if (item.type !== "evidence" || !item.evidenceClass) return null;
-  return {
-    id: item.id,
-    title: item.title,
-    url: item.evidenceUrl,
-    sourceClass: item.evidenceClass,
-    credibilityScore: item.credibilityScore ?? 0.5,
-    retrievedAt: item.updatedAt,
-    disconfirming: item.tags?.includes("disconfirming"),
-  };
+  if (item.type === "evidence") {
+    if (!item.evidenceClass) return null;
+    return {
+      id: item.id,
+      title: item.title,
+      url: item.evidenceUrl,
+      sourceClass: item.evidenceClass,
+      credibilityScore: item.credibilityScore ?? 0.5,
+      retrievedAt: item.updatedAt,
+      disconfirming: item.tags?.includes("disconfirming"),
+      indicates: item.description,
+    };
+  }
+
+  if (item.type === "analysis") {
+    return {
+      id: item.id,
+      title: item.title,
+      sourceClass: "org_internal",
+      credibilityScore: item.credibilityScore ?? 0.8,
+      retrievedAt: item.updatedAt,
+      kind: "analysis",
+      indicates: item.description,
+      analysis: {
+        narrative: item.description ?? `Analysis: ${item.title}`,
+        language: item.runtime ?? "python",
+        code: (item.notebookCells ?? [])
+          .filter((c) => c.kind === "code")
+          .map((c) => c.source)
+          .join("\n\n"),
+        output: (item.notebookCells ?? [])
+          .map((c) => c.output)
+          .filter((o): o is string => !!o)
+          .join("\n"),
+      },
+    };
+  }
+
+  if (item.type === "manual" || item.type === "document" || item.type === "instruction") {
+    return {
+      id: item.id,
+      title: item.title,
+      sourceClass: "org_internal",
+      credibilityScore: item.credibilityScore ?? 0.6,
+      retrievedAt: item.updatedAt,
+      kind: "feed",
+      indicates: item.body ?? item.description,
+    };
+  }
+
+  return null;
 }
 
 export function bindingCountForItem(itemId: string, bindings: ContextBinding[]): number {

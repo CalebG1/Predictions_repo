@@ -1,13 +1,15 @@
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import type {
   EvidenceRefreshFrequency,
   EvidenceRelevance,
   EvidenceSource,
   SourceClass,
+  Visibility,
 } from "../domain/types";
 import { useStore } from "../store";
+import AddSourceModal from "./AddSourceModal";
 import { BrandIcon } from "./brandIcons";
-import { IconExternalLink, IconRefresh, IconTrash } from "./icons";
+import { IconExternalLink, IconPlus, IconRefresh, IconTrash } from "./icons";
 import { pct } from "./ui";
 
 const SOURCE_CLASS_LABELS: Record<SourceClass, string> = {
@@ -261,9 +263,26 @@ export default function EvidenceTable({
   questionId: string;
   evidence: EvidenceSource[];
 }) {
-  const { setEvidenceRelevance, setEvidenceRefreshFrequency, refreshEvidenceRow, deleteEvidenceRow } = useStore();
+  const {
+    setEvidenceRelevance,
+    setEvidenceRefreshFrequency,
+    refreshEvidenceRow,
+    deleteEvidenceRow,
+    contextItems,
+    bindingsFor,
+    bindContext,
+    addAppContext,
+    addUpload,
+    addContextItem,
+  } = useStore();
   const [detail, setDetail] = useState<EvidenceSource | null>(null);
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+
+  const boundItemIds = useMemo(
+    () => new Set(bindingsFor(questionId).map((b) => b.contextItemId)),
+    [bindingsFor, questionId]
+  );
 
   const stop = (e: MouseEvent) => e.stopPropagation();
 
@@ -280,11 +299,15 @@ export default function EvidenceTable({
     <div className="panel evidence-table-panel">
       <div className="evidence-table-head">
         <h4>Evidence</h4>
-        <span className="muted small">
+        <span className="muted small evidence-table-head-count">
           {evidence.length === 0
             ? "No evidence sources yet"
             : `${evidence.length} source${evidence.length === 1 ? "" : "s"} · click a row for details`}
         </span>
+        <button type="button" className="ctx-primary-btn evidence-add-btn" onClick={() => setAddOpen(true)}>
+          <IconPlus />
+          Add evidence
+        </button>
       </div>
 
       {evidence.length === 0 ? (
@@ -418,6 +441,32 @@ export default function EvidenceTable({
       )}
 
       {detail && <EvidenceDetailModal evidence={detail} onClose={() => setDetail(null)} />}
+
+      <AddSourceModal
+        open={addOpen}
+        libraryItems={contextItems}
+        boundItemIds={boundItemIds}
+        onClose={() => setAddOpen(false)}
+        onAddAppContext={(connector, data) => {
+          addAppContext(
+            {
+              connectorId: connector.id,
+              title: data.title,
+              body: data.body,
+              sourceRef: data.sourceRef,
+              visibility: data.visibility as Visibility,
+              tags: data.tags,
+            },
+            questionId
+          );
+        }}
+        onImport={(fileNames) => addUpload(questionId, fileNames)}
+        onNotes={(data) => {
+          const item = addContextItem({ type: "manual", ...data });
+          bindContext(questionId, item.id);
+        }}
+        onBindFromLibrary={(itemId) => bindContext(questionId, itemId)}
+      />
     </div>
   );
 }

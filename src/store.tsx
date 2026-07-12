@@ -18,6 +18,7 @@ import { canViewQuestion, visibleQuestions } from "./domain/access";
 import {
   assembleModelContext,
   bindingsForQuestion,
+  contextItemToEvidence,
   createContextItemFromInput,
   itemsForQuestion,
   newId,
@@ -796,9 +797,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         : questionId.startsWith("q-user-")
           ? []
           : buildQuestionEvidence(questionId, q);
+      const baseIds = new Set(base.map((e) => e.id));
+      const boundEvidence = itemsForQuestion(questionId, contextItems, contextBindings)
+        .filter((i) => i.status === "active" && !baseIds.has(i.id))
+        .map(contextItemToEvidence)
+        .filter((e): e is EvidenceSource => e !== null);
+      const merged = [...base, ...boundEvidence];
       const deleted = new Set(deletedEvidenceByQuestion[questionId] ?? []);
       const edits = evidenceRowEdits[questionId] ?? {};
-      return base
+      return merged
         .filter((e) => !deleted.has(e.id))
         .map((e) => ({
           ...e,
@@ -806,7 +813,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...edits[e.id],
         }));
     },
-    [extraEvidence, deletedEvidenceByQuestion, evidenceRowEdits, mergedQuestions]
+    [extraEvidence, deletedEvidenceByQuestion, evidenceRowEdits, mergedQuestions, contextItems, contextBindings]
   );
 
   const setEvidenceRelevance = useCallback(

@@ -1,7 +1,7 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { formatModelContextPreview } from "../domain/context";
+import { useState, type ReactNode } from "react";
+import type { ForecastObject, ForecastQuestion, ProbabilityPoint } from "../domain/types";
 import type { ForecastReasoning, ReasoningView } from "../domain/reasoning";
-import { useStore } from "../store";
+import CyberQuestionInsights from "./CyberQuestionInsights";
 import { IconClock, IconDocument, IconExternalLink, IconLayers, IconRefresh } from "./icons";
 import { pct } from "./ui";
 
@@ -44,21 +44,18 @@ function AccordionSection({
 
 export default function ReasoningThread({
   reasoning,
-  questionId,
+  question,
+  forecast,
+  history,
 }: {
   reasoning: ForecastReasoning;
   questionId: string;
+  question: ForecastQuestion;
+  forecast: ForecastObject;
+  history: ProbabilityPoint[];
 }) {
-  const { manualContextForQuestion, saveManualContextForQuestion, assembleModelContext } = useStore();
   const [view, setView] = useState<ReasoningView>("one-line");
-  const [refreshFreq, setRefreshFreq] = useState("daily");
-  const [refreshUntil, setRefreshUntil] = useState("2026-12-05");
-  const [extraContext, setExtraContext] = useState(() => manualContextForQuestion(questionId));
-  const [previewOpen, setPreviewOpen] = useState(false);
-
-  useEffect(() => {
-    setExtraContext(manualContextForQuestion(questionId));
-  }, [questionId, manualContextForQuestion]);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const viewIndex = VIEWS.findIndex((v) => v.id === view);
 
@@ -68,7 +65,7 @@ export default function ReasoningThread({
   }
 
   return (
-    <section className="forecast-reasoning" aria-label="Forecast reasoning">
+    <section className={`forecast-reasoning${view === "one-page" ? " fr-wide" : ""}`} aria-label="Forecast reasoning">
       <div className="fr-view-nav">
         <button type="button" className="fr-view-arrow" aria-label="Previous view" onClick={() => shiftView(-1)}>
           ‹
@@ -130,6 +127,104 @@ export default function ReasoningThread({
               <li key={item}>{item}</li>
             ))}
           </ul>
+
+          {question.category === "Security/Cyber" && <CyberQuestionInsights q={question} />}
+
+          <div className="detail-grid fr-one-page-grid">
+            <div className="detail-main">
+              <div className="panel two-col">
+                <div>
+                  <h4 className="up">Drivers up</h4>
+                  <ul>
+                    {forecast.driversUp.map((d) => (
+                      <li key={d}>{d}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="down">Drivers down</h4>
+                  <ul>
+                    {forecast.driversDown.map((d) => (
+                      <li key={d}>{d}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="panel panel-collapse">
+                <button
+                  type="button"
+                  className="panel-collapse-trigger"
+                  aria-expanded={historyOpen}
+                  onClick={() => setHistoryOpen((open) => !open)}
+                >
+                  <span className="panel-collapse-label">
+                    <span>Forecast history</span>
+                    <span className="muted">{history.length} updates</span>
+                  </span>
+                  <span className={`panel-collapse-chevron${historyOpen ? " open" : ""}`} aria-hidden="true" />
+                </button>
+                {historyOpen && (
+                  <div className="panel-collapse-body">
+                    <p className="muted small panel-collapse-note">Immutable once locked for resolution.</p>
+                    <table className="hist-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Prob.</th>
+                          <th>Source</th>
+                          <th>What changed (trigger)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...history].reverse().map((h) => (
+                          <tr key={h.id}>
+                            <td>{h.timestamp}</td>
+                            <td>{pct(h.probability)}</td>
+                            <td>{h.source}</td>
+                            <td>{h.updateTrigger}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <aside className="detail-side">
+              <div className="panel kv">
+                <h4>Horizon sensitivity</h4>
+                {Object.entries(forecast.horizonSensitivity).map(([k, v]) => (
+                  <div className="kv-row" key={k}>
+                    <span>{k}</span>
+                    <b>{pct(v)}</b>
+                  </div>
+                ))}
+              </div>
+
+              <div className="panel kv">
+                <h4>Key uncertainties</h4>
+                <ul className="tight">
+                  {forecast.keyUncertainties.map((u) => (
+                    <li key={u}>{u}</li>
+                  ))}
+                </ul>
+                <h4>Update triggers</h4>
+                <ul className="tight">
+                  {forecast.updateTriggers.map((u) => (
+                    <li key={u}>{u}</li>
+                  ))}
+                </ul>
+                <h4>Alternative scenarios</h4>
+                <ul className="tight">
+                  {forecast.alternativeScenarios.map((u) => (
+                    <li key={u}>{u}</li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
+          </div>
         </div>
       ) : (
         <>
@@ -228,59 +323,6 @@ export default function ReasoningThread({
           </div>
 
           <p className="fr-chat-hint">For more information, use the forecast chat.</p>
-
-          <div className="fr-config">
-            <div className="fr-config-row">
-              <label className="fr-config-label" htmlFor="fr-refresh-freq">
-                Refresh frequency:
-              </label>
-              <select
-                id="fr-refresh-freq"
-                className="fr-config-select"
-                value={refreshFreq}
-                onChange={(e) => setRefreshFreq(e.target.value)}
-              >
-                <option value="hourly">Hourly</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-              </select>
-              <span className="fr-config-until-label">until</span>
-              <input
-                type="date"
-                className="fr-config-date"
-                value={refreshUntil}
-                onChange={(e) => setRefreshUntil(e.target.value)}
-              />
-              <button type="button" className="fr-config-clear" onClick={() => setRefreshUntil("")}>
-                Clear date
-              </button>
-            </div>
-
-            <div className="fr-context-block">
-              <div className="fr-context-head">
-                <span className="fr-config-label">Additional context (optional):</span>
-                <button
-                  type="button"
-                  className="fr-context-preview"
-                  onClick={() => setPreviewOpen((v) => !v)}
-                >
-                  {previewOpen ? "Hide preview" : "Preview"}
-                </button>
-              </div>
-              <textarea
-                className="fr-context-input"
-                rows={4}
-                placeholder="Provide any additional information that should inform this forecast (e.g., private knowledge, specific assumptions, constraints)..."
-                value={extraContext}
-                onChange={(e) => setExtraContext(e.target.value)}
-                onBlur={() => saveManualContextForQuestion(questionId, extraContext)}
-              />
-              {previewOpen && (
-                <pre className="ctx-preview-pre">{formatModelContextPreview(assembleModelContext(questionId))}</pre>
-              )}
-              <p className="muted small">Saved to the org context library on blur. Versioned for audit.</p>
-            </div>
-          </div>
         </>
       )}
     </section>
