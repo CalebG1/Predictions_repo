@@ -5,6 +5,7 @@ import { runForecast } from "../domain/engine";
 import QuestionComments from "../components/QuestionComments";
 import QuestionQaChat from "../components/QuestionQaChat";
 import ReasoningThread from "../components/ReasoningThread";
+import AssumptionsPanel from "../components/assumptions/AssumptionsPanel";
 import EvidenceTable from "../components/EvidenceTable";
 import InterventionsPanel from "../components/InterventionsPanel";
 import { buildForecastReasoning } from "../domain/reasoning";
@@ -165,6 +166,8 @@ export default function QuestionDetail() {
         forecast={forecast!}
         history={chartConfig.history}
       />
+
+      <AssumptionsPanel questionId={q.id} question={q} evidence={evidence} />
 
       <EvidenceTable questionId={q.id} evidence={evidence} />
 

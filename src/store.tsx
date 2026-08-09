@@ -24,6 +24,22 @@ import { runForecast } from "./domain/engine";
 import { answerForecastQuestion } from "./domain/qaAnswer";
 import { canViewQuestion, visibleQuestions } from "./domain/access";
 import {
+  canApproveProposals,
+  canEditAssumption,
+  localPerspectiveId,
+  newAssumptionId,
+  personPerspectiveId,
+  perspectiveType,
+  sharedPerspectiveId,
+  visibleAssumptionsForQuestion,
+} from "./domain/assumptions";
+import {
+  seedAssumptionEvidenceLinks,
+  seedAssumptionNotes,
+  seedAssumptionProposals,
+  seedAssumptions,
+} from "./domain/seedAssumptions";
+import {
   assembleModelContext,
   bindingsForQuestion,
   contextItemToEvidence,
@@ -44,6 +60,11 @@ import {
   visibleContextItems,
 } from "./domain/contextAccess";
 import type {
+  AssumptionConfidence,
+  AssumptionEvidenceLink,
+  AssumptionEvidenceRelationship,
+  AssumptionNote,
+  AssumptionProposal,
   Category,
   ContextAuditEntry,
   ContextBinding,
@@ -58,6 +79,7 @@ import type {
   Outcome,
   ProbabilityAlert,
   ProbabilityPoint,
+  QuestionAssumption,
   QuestionComment,
   QaMessage,
   TouchpointSignal,
@@ -94,6 +116,10 @@ const USER_PREFERENCES_KEY = "foresight-user-preferences";
 const TEAM_JOIN_REQUESTS_KEY = "foresight-team-join-requests";
 const INTERVENTION_DECISIONS_KEY = "foresight-intervention-decisions";
 const AGENT_RUNS_KEY = "foresight-agent-runs";
+const ASSUMPTIONS_KEY = "foresight-assumptions";
+const ASSUMPTION_EVIDENCE_LINKS_KEY = "foresight-assumption-evidence-links";
+const ASSUMPTION_PROPOSALS_KEY = "foresight-assumption-proposals";
+const ASSUMPTION_NOTES_KEY = "foresight-assumption-notes";
 
 function loadTeamJoinRequests(): TeamJoinRequest[] {
   try {
@@ -329,6 +355,86 @@ function saveContextAudit(entries: ContextAuditEntry[]) {
   }
 }
 
+function loadAssumptions(): QuestionAssumption[] {
+  try {
+    const raw = localStorage.getItem(ASSUMPTIONS_KEY);
+    if (!raw) return [...seedAssumptions];
+    const stored = JSON.parse(raw) as QuestionAssumption[];
+    const ids = new Set(stored.map((a) => a.id));
+    return [...seedAssumptions.filter((a) => !ids.has(a.id)), ...stored];
+  } catch {
+    return [...seedAssumptions];
+  }
+}
+
+function saveAssumptions(assumptions: QuestionAssumption[]) {
+  try {
+    localStorage.setItem(ASSUMPTIONS_KEY, JSON.stringify(assumptions));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+function loadAssumptionEvidenceLinks(): AssumptionEvidenceLink[] {
+  try {
+    const raw = localStorage.getItem(ASSUMPTION_EVIDENCE_LINKS_KEY);
+    if (!raw) return [...seedAssumptionEvidenceLinks];
+    const stored = JSON.parse(raw) as AssumptionEvidenceLink[];
+    const ids = new Set(stored.map((l) => l.id));
+    return [...seedAssumptionEvidenceLinks.filter((l) => !ids.has(l.id)), ...stored];
+  } catch {
+    return [...seedAssumptionEvidenceLinks];
+  }
+}
+
+function saveAssumptionEvidenceLinks(links: AssumptionEvidenceLink[]) {
+  try {
+    localStorage.setItem(ASSUMPTION_EVIDENCE_LINKS_KEY, JSON.stringify(links));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+function loadAssumptionProposals(): AssumptionProposal[] {
+  try {
+    const raw = localStorage.getItem(ASSUMPTION_PROPOSALS_KEY);
+    if (!raw) return [...seedAssumptionProposals];
+    const stored = JSON.parse(raw) as AssumptionProposal[];
+    const ids = new Set(stored.map((p) => p.id));
+    return [...seedAssumptionProposals.filter((p) => !ids.has(p.id)), ...stored];
+  } catch {
+    return [...seedAssumptionProposals];
+  }
+}
+
+function saveAssumptionProposals(proposals: AssumptionProposal[]) {
+  try {
+    localStorage.setItem(ASSUMPTION_PROPOSALS_KEY, JSON.stringify(proposals));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+function loadAssumptionNotes(): AssumptionNote[] {
+  try {
+    const raw = localStorage.getItem(ASSUMPTION_NOTES_KEY);
+    if (!raw) return [...seedAssumptionNotes];
+    const stored = JSON.parse(raw) as AssumptionNote[];
+    const ids = new Set(stored.map((n) => n.id));
+    return [...seedAssumptionNotes.filter((n) => !ids.has(n.id)), ...stored];
+  } catch {
+    return [...seedAssumptionNotes];
+  }
+}
+
+function saveAssumptionNotes(notes: AssumptionNote[]) {
+  try {
+    localStorage.setItem(ASSUMPTION_NOTES_KEY, JSON.stringify(notes));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
 function checkAlertCrossing(
   alert: ProbabilityAlert,
   prior: number,
@@ -455,6 +561,47 @@ interface StoreCtx {
   getAgentRun: (runId: string) => AgentRun | undefined;
   /** Every launched run on questions the current user can see (for the ops page). */
   agentRuns: AgentRun[];
+  /** Assumptions this user is authorized to see: their own local view + everything shared. */
+  assumptionsFor: (questionId: string) => QuestionAssumption[];
+  addAssumption: (
+    questionId: string,
+    perspectiveId: string,
+    input: { statement: string; rationale?: string; confidence?: AssumptionConfidence }
+  ) => QuestionAssumption | null;
+  updateAssumption: (
+    assumptionId: string,
+    patch: Partial<Pick<QuestionAssumption, "statement" | "rationale" | "confidence" | "status">>
+  ) => void;
+  deleteAssumption: (assumptionId: string) => void;
+  shareAssumption: (assumptionId: string) => void;
+  unshareAssumption: (localAssumptionId: string) => void;
+  copyAssumptionToLocal: (assumptionId: string) => void;
+  assumptionEvidenceLinksFor: (assumptionId: string) => AssumptionEvidenceLink[];
+  linkEvidenceToAssumption: (
+    assumptionId: string,
+    evidenceId: string,
+    relationship: AssumptionEvidenceRelationship,
+    note?: string
+  ) => void;
+  unlinkAssumptionEvidence: (linkId: string) => void;
+  addEvidenceAndLinkToAssumption: (
+    questionId: string,
+    assumptionId: string,
+    data: { title: string; body: string },
+    relationship: AssumptionEvidenceRelationship
+  ) => void;
+  assumptionProposalsFor: (questionId: string) => AssumptionProposal[];
+  requestAssumptionPublish: (
+    sourceAssumptionId: string,
+    target: "viewing" | "default",
+    rationale?: string
+  ) => void;
+  proposeArchiveSharedAssumption: (targetAssumptionId: string, rationale?: string) => void;
+  canApproveAssumptionProposals: (question: ForecastQuestion) => boolean;
+  approveAssumptionProposal: (proposalId: string, decisionNote?: string) => void;
+  rejectAssumptionProposal: (proposalId: string, decisionNote?: string) => void;
+  assumptionNotesFor: (assumptionId: string) => AssumptionNote[];
+  addAssumptionNote: (assumptionId: string, body: string, isChallenge: boolean, evidenceId?: string) => void;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -515,6 +662,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     Record<string, InterventionDecision>
   >(() => loadInterventionDecisions());
   const [agentRuns, setAgentRuns] = useState<AgentRun[]>(() => loadAgentRuns());
+  const [assumptions, setAssumptions] = useState<QuestionAssumption[]>(() => loadAssumptions());
+  const [assumptionEvidenceLinks, setAssumptionEvidenceLinks] = useState<AssumptionEvidenceLink[]>(() =>
+    loadAssumptionEvidenceLinks()
+  );
+  const [assumptionProposals, setAssumptionProposals] = useState<AssumptionProposal[]>(() =>
+    loadAssumptionProposals()
+  );
+  const [assumptionNotes, setAssumptionNotes] = useState<AssumptionNote[]>(() => loadAssumptionNotes());
   /**
    * Run ids whose probability effect has been applied THIS SESSION. Probability
    * overrides and history live in session state, so completed act-runs re-apply
@@ -1204,6 +1359,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         return next;
       });
+      setAssumptions((prev) => {
+        const removedIds = new Set(prev.filter((a) => a.questionId === questionId).map((a) => a.id));
+        const next = prev.filter((a) => a.questionId !== questionId);
+        saveAssumptions(next);
+        if (removedIds.size > 0) {
+          setAssumptionEvidenceLinks((links) => {
+            const nextLinks = links.filter((l) => !removedIds.has(l.assumptionId));
+            saveAssumptionEvidenceLinks(nextLinks);
+            return nextLinks;
+          });
+          setAssumptionNotes((notes) => {
+            const nextNotes = notes.filter((n) => !removedIds.has(n.assumptionId));
+            saveAssumptionNotes(nextNotes);
+            return nextNotes;
+          });
+        }
+        return next;
+      });
+      setAssumptionProposals((prev) => {
+        const next = prev.filter((p) => p.questionId !== questionId);
+        saveAssumptionProposals(next);
+        return next;
+      });
     },
     [
       persistAlerts,
@@ -1705,6 +1883,512 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [persistQaMessages],
   );
 
+  const persistAssumptions = useCallback(
+    (updater: QuestionAssumption[] | ((prev: QuestionAssumption[]) => QuestionAssumption[])) => {
+      setAssumptions((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveAssumptions(next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const persistAssumptionEvidenceLinks = useCallback(
+    (updater: AssumptionEvidenceLink[] | ((prev: AssumptionEvidenceLink[]) => AssumptionEvidenceLink[])) => {
+      setAssumptionEvidenceLinks((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveAssumptionEvidenceLinks(next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const persistAssumptionProposals = useCallback(
+    (updater: AssumptionProposal[] | ((prev: AssumptionProposal[]) => AssumptionProposal[])) => {
+      setAssumptionProposals((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveAssumptionProposals(next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const persistAssumptionNotes = useCallback(
+    (updater: AssumptionNote[] | ((prev: AssumptionNote[]) => AssumptionNote[])) => {
+      setAssumptionNotes((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveAssumptionNotes(next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const assumptionsFor = useCallback(
+    (questionId: string) => visibleAssumptionsForQuestion(questionId, user, assumptions),
+    [user, assumptions]
+  );
+
+  const addAssumption = useCallback(
+    (
+      questionId: string,
+      perspectiveId: string,
+      input: { statement: string; rationale?: string; confidence?: AssumptionConfidence }
+    ): QuestionAssumption | null => {
+      const statement = input.statement.trim();
+      if (!statement) return null;
+      // New assumptions can only be created directly in the author's own local view;
+      // other perspectives are populated via sharing, proposing, copying, or approval.
+      if (perspectiveId !== localPerspectiveId(questionId, user.id)) return null;
+      const now = new Date().toISOString();
+      const created: QuestionAssumption = {
+        id: newAssumptionId("asum"),
+        questionId,
+        perspectiveId,
+        statement,
+        rationale: input.rationale?.trim() || undefined,
+        status: "active",
+        confidence: input.confidence,
+        createdBy: user.id,
+        createdAt: now,
+        updatedBy: user.id,
+        updatedAt: now,
+      };
+      persistAssumptions((prev) => [...prev, created]);
+      return created;
+    },
+    [user.id, persistAssumptions]
+  );
+
+  const updateAssumption = useCallback(
+    (
+      assumptionId: string,
+      patch: Partial<Pick<QuestionAssumption, "statement" | "rationale" | "confidence" | "status">>
+    ) => {
+      const target = assumptions.find((a) => a.id === assumptionId);
+      if (!target || !canEditAssumption(user, target)) return;
+      if (target.status === "pending_review" && patch.status) return;
+      const now = new Date().toISOString();
+      persistAssumptions((prev) =>
+        prev.map((a) =>
+          a.id === assumptionId
+            ? {
+                ...a,
+                ...patch,
+                statement: patch.statement?.trim() || a.statement,
+                rationale: "rationale" in patch ? patch.rationale?.trim() || undefined : a.rationale,
+                updatedBy: user.id,
+                updatedAt: now,
+              }
+            : a
+        )
+      );
+    },
+    [assumptions, user, persistAssumptions]
+  );
+
+  const deleteAssumption = useCallback(
+    (assumptionId: string) => {
+      const target = assumptions.find((a) => a.id === assumptionId);
+      if (!target || !canEditAssumption(user, target)) return;
+      const removedIds = new Set<string>([assumptionId]);
+      for (const a of assumptions) {
+        if (a.originAssumptionId === assumptionId && a.createdBy === user.id) {
+          removedIds.add(a.id);
+        }
+      }
+      persistAssumptions((prev) => prev.filter((a) => !removedIds.has(a.id)));
+      persistAssumptionEvidenceLinks((prev) => prev.filter((l) => !removedIds.has(l.assumptionId)));
+      persistAssumptionNotes((prev) => prev.filter((n) => !removedIds.has(n.assumptionId)));
+      persistAssumptionProposals((prev) =>
+        prev.filter(
+          (p) =>
+            !removedIds.has(p.sourceAssumptionId ?? "") &&
+            !removedIds.has(p.targetAssumptionId ?? "")
+        )
+      );
+    },
+    [assumptions, user, persistAssumptions, persistAssumptionEvidenceLinks, persistAssumptionNotes, persistAssumptionProposals]
+  );
+
+  const shareAssumption = useCallback(
+    (assumptionId: string) => {
+      const source = assumptions.find((a) => a.id === assumptionId);
+      if (!source || !canEditAssumption(user, source)) return;
+      const now = new Date().toISOString();
+      const targetPerspectiveId = personPerspectiveId(source.questionId, user.id);
+      persistAssumptions((prev) => {
+        const existing = prev.find(
+          (a) => a.perspectiveId === targetPerspectiveId && a.originAssumptionId === assumptionId
+        );
+        if (existing) {
+          return prev.map((a) =>
+            a.id === existing.id
+              ? {
+                  ...a,
+                  statement: source.statement,
+                  rationale: source.rationale,
+                  confidence: source.confidence,
+                  status: source.status,
+                  updatedBy: user.id,
+                  updatedAt: now,
+                }
+              : a
+          );
+        }
+        const shared: QuestionAssumption = {
+          id: newAssumptionId("asum"),
+          questionId: source.questionId,
+          perspectiveId: targetPerspectiveId,
+          statement: source.statement,
+          rationale: source.rationale,
+          status: source.status,
+          confidence: source.confidence,
+          createdBy: user.id,
+          createdAt: now,
+          updatedBy: user.id,
+          updatedAt: now,
+          originAssumptionId: assumptionId,
+        };
+        return [...prev, shared];
+      });
+    },
+    [assumptions, user, persistAssumptions]
+  );
+
+  const unshareAssumption = useCallback(
+    (localAssumptionId: string) => {
+      persistAssumptions((prev) => {
+        const copy = prev.find(
+          (a) =>
+            a.originAssumptionId === localAssumptionId &&
+            perspectiveType(a.perspectiveId) === "person" &&
+            a.createdBy === user.id
+        );
+        if (!copy) return prev;
+        return prev.filter((a) => a.id !== copy.id);
+      });
+    },
+    [user.id, persistAssumptions]
+  );
+
+  const copyAssumptionToLocal = useCallback(
+    (assumptionId: string) => {
+      const source = assumptions.find((a) => a.id === assumptionId);
+      if (!source) return;
+      const now = new Date().toISOString();
+      const created: QuestionAssumption = {
+        id: newAssumptionId("asum"),
+        questionId: source.questionId,
+        perspectiveId: localPerspectiveId(source.questionId, user.id),
+        statement: source.statement,
+        rationale: source.rationale,
+        status: "active",
+        confidence: source.confidence,
+        createdBy: user.id,
+        createdAt: now,
+        updatedBy: user.id,
+        updatedAt: now,
+        originAssumptionId: assumptionId,
+      };
+      persistAssumptions((prev) => [...prev, created]);
+    },
+    [assumptions, user.id, persistAssumptions]
+  );
+
+  const assumptionEvidenceLinksFor = useCallback(
+    (assumptionId: string) => assumptionEvidenceLinks.filter((l) => l.assumptionId === assumptionId),
+    [assumptionEvidenceLinks]
+  );
+
+  const linkEvidenceToAssumption = useCallback(
+    (assumptionId: string, evidenceId: string, relationship: AssumptionEvidenceRelationship, note?: string) => {
+      persistAssumptionEvidenceLinks((prev) => {
+        const existing = prev.find((l) => l.assumptionId === assumptionId && l.evidenceId === evidenceId);
+        if (existing) {
+          return prev.map((l) => (l.id === existing.id ? { ...l, relationship, note: note?.trim() || undefined } : l));
+        }
+        return [
+          ...prev,
+          {
+            id: newAssumptionId("aslink"),
+            assumptionId,
+            evidenceId,
+            relationship,
+            note: note?.trim() || undefined,
+            createdBy: user.id,
+            createdAt: new Date().toISOString(),
+          },
+        ];
+      });
+    },
+    [user.id, persistAssumptionEvidenceLinks]
+  );
+
+  const unlinkAssumptionEvidence = useCallback(
+    (linkId: string) => {
+      persistAssumptionEvidenceLinks((prev) => prev.filter((l) => l.id !== linkId));
+    },
+    [persistAssumptionEvidenceLinks]
+  );
+
+  const addEvidenceAndLinkToAssumption = useCallback(
+    (
+      questionId: string,
+      assumptionId: string,
+      data: { title: string; body: string },
+      relationship: AssumptionEvidenceRelationship
+    ) => {
+      const title = data.title.trim();
+      const body = data.body.trim();
+      if (!title || !body) return;
+      const item = addContextItem({ type: "manual", title, body, visibility: "team" });
+      bindContext(questionId, item.id);
+      linkEvidenceToAssumption(assumptionId, item.id, relationship);
+    },
+    [addContextItem, bindContext, linkEvidenceToAssumption]
+  );
+
+  const assumptionProposalsFor = useCallback(
+    (questionId: string) =>
+      assumptionProposals
+        .filter((p) => p.questionId === questionId)
+        .sort((a, b) => b.proposedAt.localeCompare(a.proposedAt)),
+    [assumptionProposals]
+  );
+
+  const requestAssumptionPublish = useCallback(
+    (sourceAssumptionId: string, target: "viewing" | "default", rationale?: string) => {
+      const source = assumptions.find((a) => a.id === sourceAssumptionId);
+      if (!source || !canEditAssumption(user, source)) return;
+      if (source.status === "pending_review") return;
+      const alreadyPending = assumptionProposals.some(
+        (p) => p.sourceAssumptionId === sourceAssumptionId && p.status === "pending"
+      );
+      if (alreadyPending) return;
+
+      const now = new Date().toISOString();
+      const proposal: AssumptionProposal = {
+        id: newAssumptionId("aprop"),
+        questionId: source.questionId,
+        sourceAssumptionId,
+        changeType: target === "viewing" ? "publish_viewing" : "add",
+        proposedStatement: source.statement,
+        proposedRationale: source.rationale,
+        proposedConfidence: source.confidence,
+        rationale: rationale?.trim() || undefined,
+        status: "pending",
+        proposedBy: user.id,
+        proposedAt: now,
+      };
+
+      persistAssumptionProposals((prev) => [...prev, proposal]);
+      persistAssumptions((prev) =>
+        prev.map((a) =>
+          a.id === sourceAssumptionId
+            ? { ...a, status: "pending_review", updatedBy: user.id, updatedAt: now }
+            : a
+        )
+      );
+    },
+    [assumptions, assumptionProposals, user, persistAssumptionProposals, persistAssumptions]
+  );
+
+  const proposeArchiveSharedAssumption = useCallback(
+    (targetAssumptionId: string, rationale?: string) => {
+      const target = assumptions.find((a) => a.id === targetAssumptionId);
+      if (!target || perspectiveType(target.perspectiveId) !== "shared") return;
+      const proposal: AssumptionProposal = {
+        id: newAssumptionId("aprop"),
+        questionId: target.questionId,
+        sourceAssumptionId: targetAssumptionId,
+        targetAssumptionId,
+        changeType: "archive",
+        rationale: rationale?.trim() || undefined,
+        status: "pending",
+        proposedBy: user.id,
+        proposedAt: new Date().toISOString(),
+      };
+      persistAssumptionProposals((prev) => [...prev, proposal]);
+    },
+    [assumptions, user.id, persistAssumptionProposals]
+  );
+
+  const canApproveAssumptionProposals = useCallback(
+    (question: ForecastQuestion) => canApproveProposals(user, question),
+    [user]
+  );
+
+  const approveAssumptionProposal = useCallback(
+    (proposalId: string, decisionNote?: string) => {
+      const proposal = assumptionProposals.find((p) => p.id === proposalId && p.status === "pending");
+      if (!proposal) return;
+      const question = mergedQuestions.find((q) => q.id === proposal.questionId);
+      if (!question || !canApproveProposals(user, question)) return;
+      const now = new Date().toISOString();
+
+      if (proposal.changeType === "add") {
+        const created: QuestionAssumption = {
+          id: newAssumptionId("asum"),
+          questionId: proposal.questionId,
+          perspectiveId: sharedPerspectiveId(proposal.questionId),
+          statement: proposal.proposedStatement ?? "",
+          rationale: proposal.proposedRationale,
+          status: "active",
+          confidence: proposal.proposedConfidence,
+          createdBy: proposal.proposedBy,
+          createdAt: now,
+          updatedBy: user.id,
+          updatedAt: now,
+          originAssumptionId: proposal.sourceAssumptionId,
+        };
+        persistAssumptions((prev) => {
+          let next: QuestionAssumption[] = [...prev, created];
+          if (proposal.sourceAssumptionId) {
+            next = next.map((a) =>
+              a.id === proposal.sourceAssumptionId
+                ? { ...a, status: "active", updatedBy: user.id, updatedAt: now }
+                : a
+            );
+          }
+          return next;
+        });
+      } else if (proposal.changeType === "publish_viewing" && proposal.sourceAssumptionId) {
+        persistAssumptions((prev) => {
+          const source = prev.find((a) => a.id === proposal.sourceAssumptionId);
+          if (!source) return prev;
+          const targetPerspectiveId = personPerspectiveId(source.questionId, proposal.proposedBy);
+          const existing = prev.find(
+            (a) => a.perspectiveId === targetPerspectiveId && a.originAssumptionId === proposal.sourceAssumptionId
+          );
+          let next = prev;
+          if (existing) {
+            next = next.map((a) =>
+              a.id === existing.id
+                ? {
+                    ...a,
+                    statement: source.statement,
+                    rationale: source.rationale,
+                    confidence: source.confidence,
+                    status: "active",
+                    updatedBy: proposal.proposedBy,
+                    updatedAt: now,
+                  }
+                : a
+            );
+          } else {
+            const shared: QuestionAssumption = {
+              id: newAssumptionId("asum"),
+              questionId: source.questionId,
+              perspectiveId: targetPerspectiveId,
+              statement: source.statement,
+              rationale: source.rationale,
+              status: "active",
+              confidence: source.confidence,
+              createdBy: proposal.proposedBy,
+              createdAt: now,
+              updatedBy: user.id,
+              updatedAt: now,
+              originAssumptionId: proposal.sourceAssumptionId,
+            };
+            next = [...next, shared];
+          }
+          return next.map((a) =>
+            a.id === proposal.sourceAssumptionId
+              ? { ...a, status: "active", updatedBy: user.id, updatedAt: now }
+              : a
+          );
+        });
+      } else if (proposal.changeType === "archive" && proposal.targetAssumptionId) {
+        persistAssumptions((prev) =>
+          prev.map((a) =>
+            a.id === proposal.targetAssumptionId
+              ? { ...a, status: "archived", updatedBy: user.id, updatedAt: now }
+              : a
+          )
+        );
+      }
+
+      persistAssumptionProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposalId
+            ? { ...p, status: "approved", decidedBy: user.id, decidedAt: now, decisionNote: decisionNote?.trim() || undefined }
+            : p
+        )
+      );
+    },
+    [assumptionProposals, mergedQuestions, user, persistAssumptions, persistAssumptionProposals]
+  );
+
+  const rejectAssumptionProposal = useCallback(
+    (proposalId: string, decisionNote?: string) => {
+      const proposal = assumptionProposals.find((p) => p.id === proposalId && p.status === "pending");
+      if (!proposal) return;
+      const question = mergedQuestions.find((q) => q.id === proposal.questionId);
+      if (!question || !canApproveProposals(user, question)) return;
+      const now = new Date().toISOString();
+      if (
+        proposal.sourceAssumptionId &&
+        (proposal.changeType === "add" || proposal.changeType === "publish_viewing")
+      ) {
+        persistAssumptions((prev) =>
+          prev.map((a) =>
+            a.id === proposal.sourceAssumptionId
+              ? { ...a, status: "active", updatedBy: user.id, updatedAt: now }
+              : a
+          )
+        );
+      }
+      persistAssumptionProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposalId
+            ? { ...p, status: "rejected", decidedBy: user.id, decidedAt: now, decisionNote: decisionNote?.trim() || undefined }
+            : p
+        )
+      );
+    },
+    [assumptionProposals, mergedQuestions, user, persistAssumptionProposals, persistAssumptions]
+  );
+
+  const assumptionNotesFor = useCallback(
+    (assumptionId: string) =>
+      assumptionNotes
+        .filter((n) => n.assumptionId === assumptionId)
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [assumptionNotes]
+  );
+
+  const addAssumptionNote = useCallback(
+    (assumptionId: string, body: string, isChallenge: boolean, evidenceId?: string) => {
+      const trimmed = body.trim();
+      if (!trimmed) return;
+      const note: AssumptionNote = {
+        id: newAssumptionId("anote"),
+        assumptionId,
+        authorId: user.id,
+        authorName: user.name,
+        body: trimmed,
+        isChallenge,
+        evidenceId,
+        createdAt: new Date().toISOString(),
+      };
+      persistAssumptionNotes((prev) => [...prev, note]);
+      if (isChallenge) {
+        persistAssumptions((prev) =>
+          prev.map((a) =>
+            a.id === assumptionId && a.status !== "archived" && a.status !== "invalidated"
+              ? { ...a, status: "challenged", updatedAt: new Date().toISOString() }
+              : a
+          )
+        );
+      }
+    },
+    [user, persistAssumptionNotes, persistAssumptions]
+  );
+
   const value = useMemo<StoreCtx>(() => {
     const visible = visibleQuestions(user, mergedQuestions, accessGrants);
     const hidden = new Set(hiddenByUser[user.id] ?? []);
@@ -1785,6 +2469,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       launchInterventionRun,
       getAgentRun,
       agentRuns: agentRuns.filter((r) => visibleIds.has(r.questionId)),
+      assumptionsFor,
+      addAssumption,
+      updateAssumption,
+      deleteAssumption,
+      shareAssumption,
+      unshareAssumption,
+      copyAssumptionToLocal,
+      assumptionEvidenceLinksFor,
+      linkEvidenceToAssumption,
+      unlinkAssumptionEvidence,
+      addEvidenceAndLinkToAssumption,
+      assumptionProposalsFor,
+      requestAssumptionPublish,
+      proposeArchiveSharedAssumption,
+      canApproveAssumptionProposals,
+      approveAssumptionProposal,
+      rejectAssumptionProposal,
+      assumptionNotesFor,
+      addAssumptionNote,
       outcomesFor: (questionId) =>
         allOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
       historyFor,
@@ -1874,6 +2577,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     launchInterventionRun,
     getAgentRun,
     agentRuns,
+    assumptionsFor,
+    addAssumption,
+    updateAssumption,
+    deleteAssumption,
+    shareAssumption,
+    unshareAssumption,
+    copyAssumptionToLocal,
+    assumptionEvidenceLinksFor,
+    linkEvidenceToAssumption,
+    unlinkAssumptionEvidence,
+    addEvidenceAndLinkToAssumption,
+    assumptionProposalsFor,
+    requestAssumptionPublish,
+    proposeArchiveSharedAssumption,
+    canApproveAssumptionProposals,
+    approveAssumptionProposal,
+    rejectAssumptionProposal,
+    assumptionNotesFor,
+    addAssumptionNote,
   ]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
