@@ -147,6 +147,15 @@ export function IconLayers() {
   );
 }
 
+export function IconMail() {
+  return (
+    <svg {...svgProps}>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m22 7-10 6L2 7" />
+    </svg>
+  );
+}
+
 export function IconExternalLink() {
   return (
     <svg {...svgProps} width={12} height={12} strokeWidth={2.2}>

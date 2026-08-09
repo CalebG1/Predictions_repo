@@ -62,6 +62,17 @@ import { defaultUserPreferences, seedUserPreferences } from "./domain/profile";
 import { orgTeams, userTeams } from "./domain/teams";
 import { seedComments } from "./domain/seed";
 import { buildQuestionEvidence } from "./domain/questionEvidence";
+import {
+  buildInterventionSuggestions,
+  createAgentRun,
+  runEvidenceRow,
+  runIsComplete,
+  type AgentRun,
+  type InterventionDecision,
+  type InterventionResources,
+  type InterventionRow,
+  type InterventionSuggestion,
+} from "./domain/interventions";
 
 const ALERTS_STORAGE_KEY = "foresight-probability-alerts";
 const CONTEXT_ITEMS_KEY = "foresight-context-items";
@@ -73,6 +84,8 @@ const COMMENTS_STORAGE_KEY = "foresight-question-comments";
 const QA_STORAGE_KEY = "foresight-question-qa";
 const USER_PREFERENCES_KEY = "foresight-user-preferences";
 const TEAM_JOIN_REQUESTS_KEY = "foresight-team-join-requests";
+const INTERVENTION_DECISIONS_KEY = "foresight-intervention-decisions";
+const AGENT_RUNS_KEY = "foresight-agent-runs";
 
 function loadTeamJoinRequests(): TeamJoinRequest[] {
   try {
@@ -107,6 +120,44 @@ function loadUserPreferences(): Record<string, UserPreferences> {
 function saveUserPreferences(prefs: Record<string, UserPreferences>) {
   try {
     localStorage.setItem(USER_PREFERENCES_KEY, JSON.stringify(prefs));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+function loadInterventionDecisions(): Record<string, InterventionDecision> {
+  try {
+    const raw = localStorage.getItem(INTERVENTION_DECISIONS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, InterventionDecision>;
+  } catch {
+    return {};
+  }
+}
+
+function saveInterventionDecisions(decisions: Record<string, InterventionDecision>) {
+  try {
+    localStorage.setItem(INTERVENTION_DECISIONS_KEY, JSON.stringify(decisions));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+function loadAgentRuns(): AgentRun[] {
+  try {
+    const raw = localStorage.getItem(AGENT_RUNS_KEY);
+    if (!raw) return [];
+    const stored = JSON.parse(raw) as AgentRun[];
+    // Drop runs persisted by older builds that predate the intent/tasks shape.
+    return stored.filter((r) => r.intent !== undefined && Array.isArray(r.resources?.tasks));
+  } catch {
+    return [];
+  }
+}
+
+function saveAgentRuns(runs: AgentRun[]) {
+  try {
+    localStorage.setItem(AGENT_RUNS_KEY, JSON.stringify(runs));
   } catch {
     /* ignore quota errors */
   }
@@ -377,6 +428,14 @@ interface StoreCtx {
   qaMessagesFor: (questionId: string) => QaMessage[];
   askQa: (questionId: string, prompt: string) => void;
   resetQa: (questionId: string) => void;
+  /** Outcome-agent suggestions for a question, joined with decisions + runs. */
+  interventionsFor: (questionId: string) => InterventionRow[];
+  rejectIntervention: (questionId: string, suggestionId: string, reason?: string) => void;
+  restoreIntervention: (suggestionId: string) => void;
+  launchInterventionRun: (suggestion: InterventionSuggestion, resources: InterventionResources) => AgentRun;
+  getAgentRun: (runId: string) => AgentRun | undefined;
+  /** Every launched run on questions the current user can see (for the ops page). */
+  agentRuns: AgentRun[];
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -415,6 +474,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [contextRevisions, setContextRevisions] = useState<ContextRevision[]>(() => loadContextRevisions());
   const [contextAuditLog, setContextAuditLog] = useState<ContextAuditEntry[]>(() => loadContextAudit());
   const [teamJoinRequests, setTeamJoinRequests] = useState<TeamJoinRequest[]>(() => loadTeamJoinRequests());
+  const [interventionDecisions, setInterventionDecisions] = useState<Record<string, InterventionDecision>>(() =>
+    loadInterventionDecisions()
+  );
+  const [agentRuns, setAgentRuns] = useState<AgentRun[]>(() => loadAgentRuns());
+  /**
+   * Run ids whose probability effect has been applied THIS SESSION. Probability
+   * overrides and history live in session state, so completed act-runs re-apply
+   * their effect once per page load (idempotent: prior is re-read each time).
+   */
+  const [appliedEffectRunIds, setAppliedEffectRunIds] = useState<Set<string>>(() => new Set());
 
   const persistTeamJoinRequests = useCallback(
     (updater: TeamJoinRequest[] | ((prev: TeamJoinRequest[]) => TeamJoinRequest[])) => {
@@ -788,6 +857,159 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => window.clearInterval(timer);
   }, [forecastJobs, finishForecastJob]);
 
+  const persistInterventionDecisions = useCallback(
+    (updater: (prev: Record<string, InterventionDecision>) => Record<string, InterventionDecision>) => {
+      setInterventionDecisions((prev) => {
+        const next = updater(prev);
+        saveInterventionDecisions(next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const persistAgentRuns = useCallback((updater: (prev: AgentRun[]) => AgentRun[]) => {
+    setAgentRuns((prev) => {
+      const next = updater(prev);
+      saveAgentRuns(next);
+      return next;
+    });
+  }, []);
+
+  const rejectIntervention = useCallback(
+    (questionId: string, suggestionId: string, reason?: string) => {
+      persistInterventionDecisions((prev) => ({
+        ...prev,
+        [suggestionId]: {
+          suggestionId,
+          questionId,
+          status: "rejected",
+          rejectReason: reason?.trim() || undefined,
+          decidedAt: new Date().toISOString(),
+        },
+      }));
+    },
+    [persistInterventionDecisions]
+  );
+
+  const restoreIntervention = useCallback(
+    (suggestionId: string) => {
+      persistInterventionDecisions((prev) => {
+        if (!(suggestionId in prev)) return prev;
+        const next = { ...prev };
+        delete next[suggestionId];
+        return next;
+      });
+    },
+    [persistInterventionDecisions]
+  );
+
+  const launchInterventionRun = useCallback(
+    (suggestion: InterventionSuggestion, resources: InterventionResources): AgentRun => {
+      const q = mergedQuestions.find((item) => item.id === suggestion.questionId);
+      const run = createAgentRun(
+        suggestion,
+        q ?? ({ id: suggestion.questionId, title: suggestion.title } as ForecastQuestion),
+        resources,
+        Date.now()
+      );
+      persistAgentRuns((prev) => [...prev, run]);
+      persistInterventionDecisions((prev) => ({
+        ...prev,
+        [suggestion.id]: {
+          suggestionId: suggestion.id,
+          questionId: suggestion.questionId,
+          status: "accepted",
+          decidedAt: new Date().toISOString(),
+          runId: run.id,
+        },
+      }));
+      return run;
+    },
+    [mergedQuestions, persistAgentRuns, persistInterventionDecisions]
+  );
+
+  const getAgentRun = useCallback((runId: string) => agentRuns.find((r) => r.id === runId), [agentRuns]);
+
+  const interventionsFor = useCallback(
+    (questionId: string): InterventionRow[] => {
+      const q = mergedQuestions.find((item) => item.id === questionId);
+      if (!q) return [];
+      const suggestions = buildInterventionSuggestions(q, runForecast(q));
+      return suggestions.map((suggestion) => {
+        const decision = interventionDecisions[suggestion.id];
+        const run = decision?.runId ? agentRuns.find((r) => r.id === decision.runId) : undefined;
+        return { suggestion, decision, run };
+      });
+    },
+    [mergedQuestions, interventionDecisions, agentRuns]
+  );
+
+  // Side effects of a run finishing: "act" runs move the question probability
+  // by their declared effect (with a history point attributing the move to the
+  // run); all runs surface their outcome as an evidence row via evidenceFor.
+  const applyRunCompletion = useCallback(
+    (run: AgentRun) => {
+      if (run.intent !== "act" || !run.outcomeEffectPp) return;
+      const yes = allOutcomes.find((o) => o.questionId === run.questionId && o.id.endsWith("-yes"));
+      if (!yes) return;
+      const prior = probabilityOverrides[yes.id] ?? yes.currentProbability;
+      const newP = Number(Math.min(0.99, Math.max(0.01, prior + run.outcomeEffectPp / 100)).toFixed(3));
+      const no = allOutcomes.find((o) => o.questionId === run.questionId && o.id.endsWith("-no"));
+      evaluateAlertsForOutcome(yes.id, prior, newP);
+      setProbabilityOverrides((prev) => ({
+        ...prev,
+        [yes.id]: newP,
+        ...(no ? { [no.id]: Number((1 - newP).toFixed(3)) } : {}),
+      }));
+      setExtraHistory((prev) => [
+        ...prev,
+        {
+          id: `${run.questionId}-ph-run-${run.id}`,
+          outcomeId: yes.id,
+          probability: newP,
+          timestamp: new Date().toISOString().slice(0, 10),
+          source: "delivery-agent",
+          updateTrigger: `Agent run completed: ${run.title}`,
+        },
+      ]);
+    },
+    [allOutcomes, probabilityOverrides, evaluateAlertsForOutcome]
+  );
+
+  // Tick completed runs: apply outcome effects (once per session — overrides
+  // and history are session state) and persist the flag that surfaces the
+  // run's evidence row (once ever).
+  useEffect(() => {
+    const pending = agentRuns.some((r) => !r.completionApplied || !appliedEffectRunIds.has(r.id));
+    if (!pending) return;
+    const check = () => {
+      const now = Date.now();
+      const finished = agentRuns.filter(
+        (r) => runIsComplete(r, now) && (!r.completionApplied || !appliedEffectRunIds.has(r.id))
+      );
+      if (finished.length === 0) return;
+      const needingEffect = finished.filter((r) => !appliedEffectRunIds.has(r.id));
+      needingEffect.forEach(applyRunCompletion);
+      if (needingEffect.length > 0) {
+        setAppliedEffectRunIds((prev) => {
+          const next = new Set(prev);
+          needingEffect.forEach((r) => next.add(r.id));
+          return next;
+        });
+      }
+      const needingFlag = new Set(finished.filter((r) => !r.completionApplied).map((r) => r.id));
+      if (needingFlag.size > 0) {
+        persistAgentRuns((prev) =>
+          prev.map((r) => (needingFlag.has(r.id) ? { ...r, completionApplied: true } : r))
+        );
+      }
+    };
+    check();
+    const timer = window.setInterval(check, 2000);
+    return () => window.clearInterval(timer);
+  }, [agentRuns, appliedEffectRunIds, applyRunCompletion, persistAgentRuns]);
+
   const evidenceFor = useCallback(
     (questionId: string) => {
       const custom = extraEvidence[questionId];
@@ -802,7 +1024,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .filter((i) => i.status === "active" && !baseIds.has(i.id))
         .map(contextItemToEvidence)
         .filter((e): e is EvidenceSource => e !== null);
-      const merged = [...base, ...boundEvidence];
+      const runRows = agentRuns
+        .filter((r) => r.questionId === questionId && r.completionApplied)
+        .map(runEvidenceRow);
+      const merged = [...base, ...boundEvidence, ...runRows];
       const deleted = new Set(deletedEvidenceByQuestion[questionId] ?? []);
       const edits = evidenceRowEdits[questionId] ?? {};
       return merged
@@ -813,7 +1038,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...edits[e.id],
         }));
     },
-    [extraEvidence, deletedEvidenceByQuestion, evidenceRowEdits, mergedQuestions, contextItems, contextBindings]
+    [extraEvidence, deletedEvidenceByQuestion, evidenceRowEdits, mergedQuestions, contextItems, contextBindings, agentRuns]
   );
 
   const setEvidenceRelevance = useCallback(
@@ -900,8 +1125,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       persistComments((prev) => prev.filter((c) => c.questionId !== questionId));
       persistQaMessages((prev) => prev.filter((m) => m.questionId !== questionId));
       persistContextBindings((prev) => prev.filter((b) => b.questionId !== questionId));
+      persistAgentRuns((prev) => prev.filter((r) => r.questionId !== questionId));
+      persistInterventionDecisions((prev) => {
+        const next: Record<string, InterventionDecision> = {};
+        for (const [key, decision] of Object.entries(prev)) {
+          if (decision.questionId !== questionId) next[key] = decision;
+        }
+        return next;
+      });
     },
-    [persistAlerts, persistComments, persistQaMessages, persistContextBindings]
+    [persistAlerts, persistComments, persistQaMessages, persistContextBindings, persistAgentRuns, persistInterventionDecisions]
   );
 
   const visibleContextItemsList = useMemo(
@@ -1394,6 +1627,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value = useMemo<StoreCtx>(() => {
     const visible = visibleQuestions(user, mergedQuestions, accessGrants);
     const hidden = new Set(hiddenByUser[user.id] ?? []);
+    const visibleIds = new Set(visible.map((q) => q.id));
     return {
       org: organization,
       user,
@@ -1464,6 +1698,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       qaMessagesFor,
       askQa,
       resetQa,
+      interventionsFor,
+      rejectIntervention,
+      restoreIntervention,
+      launchInterventionRun,
+      getAgentRun,
+      agentRuns: agentRuns.filter((r) => visibleIds.has(r.questionId)),
       outcomesFor: (questionId) =>
         allOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
       historyFor,
@@ -1475,7 +1715,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return list.reduce((best, o) => (o.currentProbability > best.currentProbability ? o : best));
       },
     };
-  }, [user, allUsers, setUser, userPreferences, updateUser, updateUserPreferences, teamJoinRequests, requestTeamJoin, approveTeamJoinRequest, rejectTeamJoinRequest, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addAppContext, addUpload, visibleContextItemsList, contextItems, contextBindings, contextAuditLog, bindingsFor, boundContextFor, bindContext, restoreContextBinding, unbindContext, addContextItem, updateContextItem, approveContextItem, rejectContextItem, archiveContextItem, revisionsFor, assembleModelContextFor, canEditContext, canApproveContext, saveManualContextForQuestion, manualContextForQuestion, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, setEvidenceRelevance, setEvidenceRefreshFrequency, refreshEvidenceRow, deleteEvidenceRow, hideQuestion, deleteQuestion, commentsFor, addComment, editComment, deleteComment, qaMessagesFor, askQa, resetQa]);
+  }, [user, allUsers, setUser, userPreferences, updateUser, updateUserPreferences, teamJoinRequests, requestTeamJoin, approveTeamJoinRequest, rejectTeamJoinRequest, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addAppContext, addUpload, visibleContextItemsList, contextItems, contextBindings, contextAuditLog, bindingsFor, boundContextFor, bindContext, restoreContextBinding, unbindContext, addContextItem, updateContextItem, approveContextItem, rejectContextItem, archiveContextItem, revisionsFor, assembleModelContextFor, canEditContext, canApproveContext, saveManualContextForQuestion, manualContextForQuestion, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, setEvidenceRelevance, setEvidenceRefreshFrequency, refreshEvidenceRow, deleteEvidenceRow, hideQuestion, deleteQuestion, commentsFor, addComment, editComment, deleteComment, qaMessagesFor, askQa, resetQa, interventionsFor, rejectIntervention, restoreIntervention, launchInterventionRun, getAgentRun, agentRuns]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

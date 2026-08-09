@@ -10,6 +10,8 @@ import Methodology from "./pages/settings/Methodology";
 import Context from "./pages/settings/Context";
 import Profile from "./pages/settings/Profile";
 import ForecastProcessing from "./pages/ForecastProcessing";
+import AgentRunMonitor from "./pages/AgentRunMonitor";
+import AgentOps from "./pages/AgentOps";
 import Cybersecurity from "./pages/Cybersecurity";
 import Cybersecurity2 from "./pages/Cybersecurity2";
 
@@ -22,6 +24,8 @@ function AppShell() {
         <Route path="/" element={<Overview />} />
         <Route path="/forecast/:jobId/processing" element={<ForecastProcessing />} />
         <Route path="/q/:id" element={<QuestionDetail />} />
+        <Route path="/q/:id/run/:runId" element={<AgentRunMonitor />} />
+        <Route path="/agents" element={<AgentOps />} />
         <Route path="/movers" element={<Movers />} />
         <Route path="/cybersecurity" element={<Cybersecurity />} />
         <Route path="/cybersecurity-2" element={<Cybersecurity2 />} />

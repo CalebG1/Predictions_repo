@@ -6,6 +6,7 @@ import QuestionComments from "../components/QuestionComments";
 import QuestionQaChat from "../components/QuestionQaChat";
 import ReasoningThread from "../components/ReasoningThread";
 import EvidenceTable from "../components/EvidenceTable";
+import InterventionsPanel from "../components/InterventionsPanel";
 import { buildForecastReasoning } from "../domain/reasoning";
 import { buildProbPoints, colorForOption, ProbChart, type CompanionSeries } from "../components/charts";
 import VisibilityPicker from "../components/VisibilityPicker";
@@ -153,6 +154,8 @@ export default function QuestionDetail() {
       />
 
       <EvidenceTable questionId={q.id} evidence={evidence} />
+
+      <InterventionsPanel questionId={q.id} />
 
       <QuestionComments q={q} />
 
