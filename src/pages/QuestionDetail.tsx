@@ -9,7 +9,12 @@ import AssumptionsPanel from "../components/assumptions/AssumptionsPanel";
 import EvidenceTable from "../components/EvidenceTable";
 import InterventionsPanel from "../components/InterventionsPanel";
 import { buildForecastReasoning } from "../domain/reasoning";
-import { buildProbPoints, colorForOption, ProbChart, type CompanionSeries } from "../components/charts";
+import {
+  buildProbPoints,
+  colorForOption,
+  ProbChart,
+  type CompanionSeries,
+} from "../components/charts";
 import VisibilityPicker from "../components/VisibilityPicker";
 import { overviewHref } from "../components/ui";
 
@@ -28,10 +33,16 @@ export default function QuestionDetail() {
       const sorted = [...allOutcomes].sort((a, b) => b.currentProbability - a.currentProbability);
       const primary = sorted[0];
       const primaryHistory = historyFor(primary.id);
-      const points = buildProbPoints(primaryHistory, { subject: primary.label, questionTitle: q.title });
+      const points = buildProbPoints(primaryHistory, {
+        subject: primary.label,
+        questionTitle: q.title,
+      });
 
       const companionSeries: CompanionSeries[] = sorted.slice(1).map((o, i) => {
-        const companionPoints = buildProbPoints(historyFor(o.id), { subject: o.label, questionTitle: q.title });
+        const companionPoints = buildProbPoints(historyFor(o.id), {
+          subject: o.label,
+          questionTitle: q.title,
+        });
         const byTs = new Map(companionPoints.map((p) => [p.timestamp, p]));
         return {
           id: o.id,
@@ -88,8 +99,8 @@ export default function QuestionDetail() {
         <div className="locked-card">
           <h2>🔒 Not available</h2>
           <p>
-            This question is outside your visibility level, or doesn't exist. Restricted lines are never
-            exposed outside authorized roles.
+            This question is outside your visibility level, or doesn't exist. Restricted lines are
+            never exposed outside authorized roles.
           </p>
           <Link to="/" className="btn">
             Back to overview
@@ -111,7 +122,9 @@ export default function QuestionDetail() {
               <span className="detail-crumb-sep" aria-hidden="true">
                 ·
               </span>
-              <Link to={overviewHref({ type: q.riskOrOpportunity, cat: q.category })}>{q.category}</Link>
+              <Link to={overviewHref({ type: q.riskOrOpportunity, cat: q.category })}>
+                {q.category}
+              </Link>
               <span className="detail-crumb-sep" aria-hidden="true">
                 ·
               </span>

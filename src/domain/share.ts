@@ -30,6 +30,8 @@ export function slackShareText(q: ForecastQuestion, probability: number): string
 
 export function emailShareUrl(q: ForecastQuestion, probability: number): string {
   const subject = encodeURIComponent(`Forecast: ${q.title}`);
-  const body = encodeURIComponent(`${shareMessage(q, probability)}\n\nView forecast: ${questionUrl(q.id)}`);
+  const body = encodeURIComponent(
+    `${shareMessage(q, probability)}\n\nView forecast: ${questionUrl(q.id)}`,
+  );
   return `mailto:?subject=${subject}&body=${body}`;
 }

@@ -54,7 +54,15 @@ export default function DeleteQuestionModal({
             <h2 className="alert-title">Delete question?</h2>
           </div>
           <button type="button" className="alert-close" aria-label="Close" onClick={onClose}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+            >
               <line x1="6" y1="6" x2="18" y2="18" />
               <line x1="18" y1="6" x2="6" y2="18" />
             </svg>
@@ -63,7 +71,8 @@ export default function DeleteQuestionModal({
 
         <div className="alert-body">
           <p className="del-warning">
-            Deleting will remove this question for <strong>everyone</strong> in your organization. This cannot be undone.
+            Deleting will remove this question for <strong>everyone</strong> in your organization.
+            This cannot be undone.
           </p>
           <div className="alert-question">
             <span className="alert-q-label">Question</span>
@@ -81,6 +90,6 @@ export default function DeleteQuestionModal({
         </footer>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

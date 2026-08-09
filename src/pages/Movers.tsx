@@ -32,14 +32,19 @@ export default function Movers() {
       });
     }
   }
-  rows.sort((a, b) => b.date.localeCompare(a.date) || Math.abs(b.to - b.from) - Math.abs(a.to - a.from));
+  rows.sort(
+    (a, b) => b.date.localeCompare(a.date) || Math.abs(b.to - b.from) - Math.abs(a.to - a.from),
+  );
   const top = rows.slice(0, 40);
 
   return (
     <div className="dash-page">
       <div className="dash-head">
         <h1>Movers Feed</h1>
-        <p className="dash-sub">Every probability change across questions you can see, newest first, with the one-line trigger.</p>
+        <p className="dash-sub">
+          Every probability change across questions you can see, newest first, with the one-line
+          trigger.
+        </p>
       </div>
 
       <div className="feed">

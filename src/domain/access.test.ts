@@ -21,9 +21,25 @@ const base: Omit<ForecastQuestion, "id" | "visibility" | "title"> = {
 };
 
 const pub: ForecastQuestion = { ...base, id: "pub", title: "Public Q", visibility: "public" };
-const teamQ: ForecastQuestion = { ...base, id: "team", title: "Team Q", visibility: "team", owningTeam: "Strategy" };
-const leadQ: ForecastQuestion = { ...base, id: "lead", title: "Leadership Q", visibility: "leadership" };
-const restricted: ForecastQuestion = { ...base, id: "restricted", title: "Restricted Q", visibility: "restricted" };
+const teamQ: ForecastQuestion = {
+  ...base,
+  id: "team",
+  title: "Team Q",
+  visibility: "team",
+  owningTeam: "Strategy",
+};
+const leadQ: ForecastQuestion = {
+  ...base,
+  id: "lead",
+  title: "Leadership Q",
+  visibility: "leadership",
+};
+const restricted: ForecastQuestion = {
+  ...base,
+  id: "restricted",
+  title: "Restricted Q",
+  visibility: "restricted",
+};
 
 const exec: User = { id: "u-exec", name: "Exec", role: "executive", team: "Executive" };
 const analyst: User = { id: "u-analyst", name: "Analyst", role: "analyst", team: "Strategy" };

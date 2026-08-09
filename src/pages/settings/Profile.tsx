@@ -13,7 +13,11 @@ import { visibilityOrder } from "../../components/ui";
 
 function formatDate(iso?: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function Toggle({
@@ -79,25 +83,25 @@ export default function Profile() {
   }, [user.id, user.name, user.email, user.title]);
 
   const memberships = useMemo(() => userTeams(user), [user]);
-  const visibleQuestionCount = useMemo(() => questions.filter(canView).length, [questions, canView]);
+  const visibleQuestionCount = useMemo(
+    () => questions.filter(canView).length,
+    [questions, canView],
+  );
   const integrations = useMemo(() => integrationsFor(user.role), [user.role]);
 
   const myPendingRequests = useMemo(
     () => teamJoinRequests.filter((r) => r.userId === user.id && r.status === "pending"),
-    [teamJoinRequests, user.id]
+    [teamJoinRequests, user.id],
   );
 
   const availableTeams = useMemo(() => {
-    const blocked = new Set([
-      ...memberships,
-      ...myPendingRequests.map((r) => r.team),
-    ]);
+    const blocked = new Set([...memberships, ...myPendingRequests.map((r) => r.team)]);
     return orgTeams.filter((team) => !blocked.has(team));
   }, [memberships, myPendingRequests, orgTeams]);
 
   const adminPendingRequests = useMemo(
     () => (user.role === "admin" ? teamJoinRequests.filter((r) => r.status === "pending") : []),
-    [teamJoinRequests, user.role]
+    [teamJoinRequests, user.role],
   );
 
   const userNameById = (id: string) => {
@@ -334,7 +338,9 @@ export default function Profile() {
             <span>Email digest</span>
             <select
               value={userPreferences.emailDigest}
-              onChange={(e) => handlePrefChange("emailDigest", e.target.value as UserPreferences["emailDigest"])}
+              onChange={(e) =>
+                handlePrefChange("emailDigest", e.target.value as UserPreferences["emailDigest"])
+              }
             >
               <option value="daily">Daily summary</option>
               <option value="weekly">Weekly rollup</option>
@@ -447,8 +453,8 @@ export default function Profile() {
           <span>Data &amp; account</span>
         </div>
         <p className="muted small profile-panel-intro">
-          Export your forecast activity and comments for compliance requests. Account deactivation requires
-          admin approval.
+          Export your forecast activity and comments for compliance requests. Account deactivation
+          requires admin approval.
         </p>
         <div className="profile-danger-actions">
           <button type="button" className="profile-secondary-btn">

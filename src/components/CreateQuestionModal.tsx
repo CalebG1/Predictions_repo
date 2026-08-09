@@ -57,7 +57,15 @@ const defaultForm = (category: Category = "Operational"): FormState => ({
 
 function IconArrow({ direction }: { direction: "left" | "right" }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+    >
       {direction === "left" ? (
         <>
           <line x1="19" y1="12" x2="5" y2="12" />
@@ -89,16 +97,10 @@ export default function CreateQuestionModal({
   const [submitting, setSubmitting] = useState(false);
   const [similarDismissed, setSimilarDismissed] = useState(false);
 
-  const similar = useMemo(
-    () => findSimilarQuestions(form.title, seedQuestions, 12),
-    [form.title]
-  );
+  const similar = useMemo(() => findSimilarQuestions(form.title, seedQuestions, 12), [form.title]);
 
   const showSimilar =
-    step === 0 &&
-    form.title.trim().length >= 3 &&
-    !similarDismissed &&
-    similar.length > 0;
+    step === 0 && form.title.trim().length >= 3 && !similarDismissed && similar.length > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -159,7 +161,8 @@ export default function CreateQuestionModal({
   const removeEvidenceRow = (index: number) => {
     setForm((prev) => ({
       ...prev,
-      evidence: prev.evidence.length <= 1 ? [emptyEvidence()] : prev.evidence.filter((_, i) => i !== index),
+      evidence:
+        prev.evidence.length <= 1 ? [emptyEvidence()] : prev.evidence.filter((_, i) => i !== index),
     }));
   };
 
@@ -201,7 +204,15 @@ export default function CreateQuestionModal({
             <h2 className="cq-title">Create a forecast</h2>
           </div>
           <button type="button" className="cq-close" aria-label="Close" onClick={onClose}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+            >
               <line x1="6" y1="6" x2="18" y2="18" />
               <line x1="18" y1="6" x2="6" y2="18" />
             </svg>
@@ -210,7 +221,10 @@ export default function CreateQuestionModal({
 
         <div className="cq-progress" aria-hidden="true">
           {STEPS.map((s, i) => (
-            <span key={s.title} className={`cq-progress-dot${i <= step ? " done" : ""}${i === step ? " active" : ""}`} />
+            <span
+              key={s.title}
+              className={`cq-progress-dot${i <= step ? " done" : ""}${i === step ? " active" : ""}`}
+            />
           ))}
         </div>
 
@@ -239,7 +253,15 @@ export default function CreateQuestionModal({
                       aria-label="Dismiss similar questions"
                       onClick={() => setSimilarDismissed(true)}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                      >
                         <line x1="6" y1="6" x2="18" y2="18" />
                         <line x1="18" y1="6" x2="6" y2="18" />
                       </svg>
@@ -254,7 +276,9 @@ export default function CreateQuestionModal({
                           onClick={() => navigate(`/q/${q.id}`)}
                         >
                           <span className="cq-similar-text">{q.title}</span>
-                          <span className="cq-similar-chevron" aria-hidden="true">›</span>
+                          <span className="cq-similar-chevron" aria-hidden="true">
+                            ›
+                          </span>
                         </button>
                       </li>
                     ))}
@@ -369,7 +393,9 @@ export default function CreateQuestionModal({
                       <select
                         className="cq-select"
                         value={row.sourceClass ?? "org_internal"}
-                        onChange={(e) => updateEvidence(index, { sourceClass: e.target.value as SourceClass })}
+                        onChange={(e) =>
+                          updateEvidence(index, { sourceClass: e.target.value as SourceClass })
+                        }
                       >
                         {SOURCE_CLASSES.map((opt) => (
                           <option key={opt.value} value={opt.value}>
@@ -432,7 +458,7 @@ export default function CreateQuestionModal({
         )}
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 

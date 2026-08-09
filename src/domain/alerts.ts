@@ -23,12 +23,7 @@ export type AlertSource =
 
 export type AlertSeverity = "low" | "medium" | "high" | "critical";
 
-export type AlertStatus =
-  | "open"
-  | "investigating"
-  | "confirmed"
-  | "false_positive"
-  | "resolved";
+export type AlertStatus = "open" | "investigating" | "confirmed" | "false_positive" | "resolved";
 
 /** A normalized event/finding from an upstream security tool. */
 export interface SecurityAlert {
@@ -368,35 +363,246 @@ export const alerts: SecurityAlert[] = [
 
 /** Alert -> question impact edges. One alert can move multiple questions. */
 export const alertImpacts: AlertForecastImpact[] = [
-  { alertId: "a-vpn-cve", questionId: "q-cyber-breach", probabilityDelta: 0.032, direction: "increase", confidence: "high", reason: "Internet-facing asset supporting privileged remote access; a viable initial-access path to a material incident." },
-  { alertId: "a-vpn-cve", questionId: "q-cyber-iam", probabilityDelta: 0.024, direction: "increase", confidence: "high", reason: "The appliance fronts authentication flows, raising credential-compromise exposure." },
-  { alertId: "a-vpn-cve", questionId: "q-cyber-zero-day", probabilityDelta: 0.03, direction: "increase", confidence: "high", reason: "A critical CVE with an available patch remains unremediated in the environment." },
-  { alertId: "a-kev-exploit", questionId: "q-cyber-breach", probabilityDelta: 0.014, direction: "increase", confidence: "high", reason: "Active in-the-wild exploitation materially raises the likelihood the exposure is used." },
-  { alertId: "a-kev-exploit", questionId: "q-cyber-zero-day", probabilityDelta: 0.018, direction: "increase", confidence: "high", reason: "KEV listing confirms exploitation is practical, not theoretical." },
-  { alertId: "a-patch-sla", questionId: "q-cyber-breach", probabilityDelta: 0.011, direction: "increase", confidence: "high", reason: "Overdue remediation extends the window of exposure on a critical asset." },
-  { alertId: "a-patch-sla", questionId: "q-cyber-zero-day", probabilityDelta: 0.012, direction: "increase", confidence: "medium", reason: "Missed SLA is the direct condition this question forecasts." },
-  { alertId: "a-okta-impossible-travel", questionId: "q-cyber-iam", probabilityDelta: 0.04, direction: "increase", confidence: "medium", reason: "Privileged account shows anomalous access consistent with credential compromise." },
-  { alertId: "a-okta-impossible-travel", questionId: "q-cyber-breach", probabilityDelta: 0.01, direction: "increase", confidence: "medium", reason: "A privileged-account anomaly is a plausible precursor to a material incident." },
-  { alertId: "a-okta-mfa-fatigue", questionId: "q-cyber-iam", probabilityDelta: 0.015, direction: "increase", confidence: "medium", reason: "MFA-fatigue pattern indicates active attempts to defeat identity controls." },
-  { alertId: "a-okta-mfa-fatigue", questionId: "q-cyber-phishing", probabilityDelta: 0.008, direction: "increase", confidence: "low", reason: "Finance-user targeting aligns with the BEC threat model." },
-  { alertId: "a-crowdstrike-precursor", questionId: "q-cyber-ransomware", probabilityDelta: 0.028, direction: "increase", confidence: "high", reason: "Shadow-copy deletion on a privileged admin host matches known ransomware precursor activity." },
-  { alertId: "a-crowdstrike-precursor", questionId: "q-cyber-breach", probabilityDelta: 0.012, direction: "increase", confidence: "medium", reason: "Credential dumping on an admin endpoint expands the blast radius of any intrusion." },
-  { alertId: "a-crowdstrike-endpoint-spike", questionId: "q-cyber-ransomware", probabilityDelta: 0.01, direction: "increase", confidence: "medium", reason: "A concentrated rise in endpoint detections is a leading indicator of intrusion attempts." },
-  { alertId: "a-wiz-public-bucket", questionId: "q-cyber-cloud", probabilityDelta: 0.045, direction: "increase", confidence: "high", reason: "A publicly exposed bucket with sensitive data is the direct failure this question forecasts." },
-  { alertId: "a-wiz-public-bucket", questionId: "q-cyber-breach", probabilityDelta: 0.015, direction: "increase", confidence: "high", reason: "Exposed PII creates a credible path to a disclosable material incident." },
-  { alertId: "a-wiz-over-permission", questionId: "q-cyber-cloud", probabilityDelta: 0.012, direction: "increase", confidence: "medium", reason: "A toxic IAM combination increases the chance a misconfig becomes exploitable." },
-  { alertId: "a-wiz-over-permission", questionId: "q-cyber-iam", probabilityDelta: 0.01, direction: "increase", confidence: "medium", reason: "Over-permissioned automation identity broadens privileged-access exposure." },
-  { alertId: "a-proofpoint-campaign", questionId: "q-cyber-phishing", probabilityDelta: 0.03, direction: "increase", confidence: "high", reason: "An active credential-harvesting campaign with click-throughs directly raises BEC/wire-fraud risk." },
-  { alertId: "a-proofpoint-campaign", questionId: "q-cyber-breach", probabilityDelta: 0.008, direction: "increase", confidence: "medium", reason: "Successful phishing is a common first stage of material incidents." },
-  { alertId: "a-abnormal-bec", questionId: "q-cyber-phishing", probabilityDelta: 0.02, direction: "increase", confidence: "high", reason: "A confirmed vendor-impersonation attempt on an open >$500K invoice matches the resolution criteria." },
-  { alertId: "a-vendor-disclosure", questionId: "q-cyber-vendor", probabilityDelta: 0.05, direction: "increase", confidence: "medium", reason: "A Tier-1 vendor with access to our data disclosed an incident under investigation." },
-  { alertId: "a-vendor-disclosure", questionId: "q-cyber-breach", probabilityDelta: 0.009, direction: "increase", confidence: "low", reason: "Vendor exposure could cascade into a material incident for us." },
-  { alertId: "a-vendor-darkweb", questionId: "q-cyber-vendor", probabilityDelta: 0.012, direction: "increase", confidence: "low", reason: "Unverified credential listing raises, but does not confirm, vendor-breach likelihood." },
-  { alertId: "a-tenable-kev-count", questionId: "q-cyber-zero-day", probabilityDelta: 0.02, direction: "increase", confidence: "high", reason: "Multiple internet-facing KEV vulns past SLA raise the odds one is exploited before patching." },
-  { alertId: "a-tenable-kev-count", questionId: "q-cyber-breach", probabilityDelta: 0.01, direction: "increase", confidence: "medium", reason: "A backlog of exploitable exposures broadens the overall attack surface." },
-  { alertId: "a-ddos-probe", questionId: "q-cyber-ddos", probabilityDelta: 0.01, direction: "increase", confidence: "low", reason: "Reconnaissance-style probing sometimes precedes a sustained volumetric attack." },
-  { alertId: "a-soc2-control-gap", questionId: "q-cyber-compliance", probabilityDelta: 0.02, direction: "increase", confidence: "medium", reason: "Overdue control gaps ahead of the audit window raise the chance of missing it." },
-  { alertId: "a-ztna-milestone", questionId: "q-cyber-zero-trust", probabilityDelta: -0.03, direction: "decrease", confidence: "medium", reason: "A slipped milestone lowers the probability of an on-schedule completion." },
+  {
+    alertId: "a-vpn-cve",
+    questionId: "q-cyber-breach",
+    probabilityDelta: 0.032,
+    direction: "increase",
+    confidence: "high",
+    reason:
+      "Internet-facing asset supporting privileged remote access; a viable initial-access path to a material incident.",
+  },
+  {
+    alertId: "a-vpn-cve",
+    questionId: "q-cyber-iam",
+    probabilityDelta: 0.024,
+    direction: "increase",
+    confidence: "high",
+    reason: "The appliance fronts authentication flows, raising credential-compromise exposure.",
+  },
+  {
+    alertId: "a-vpn-cve",
+    questionId: "q-cyber-zero-day",
+    probabilityDelta: 0.03,
+    direction: "increase",
+    confidence: "high",
+    reason: "A critical CVE with an available patch remains unremediated in the environment.",
+  },
+  {
+    alertId: "a-kev-exploit",
+    questionId: "q-cyber-breach",
+    probabilityDelta: 0.014,
+    direction: "increase",
+    confidence: "high",
+    reason:
+      "Active in-the-wild exploitation materially raises the likelihood the exposure is used.",
+  },
+  {
+    alertId: "a-kev-exploit",
+    questionId: "q-cyber-zero-day",
+    probabilityDelta: 0.018,
+    direction: "increase",
+    confidence: "high",
+    reason: "KEV listing confirms exploitation is practical, not theoretical.",
+  },
+  {
+    alertId: "a-patch-sla",
+    questionId: "q-cyber-breach",
+    probabilityDelta: 0.011,
+    direction: "increase",
+    confidence: "high",
+    reason: "Overdue remediation extends the window of exposure on a critical asset.",
+  },
+  {
+    alertId: "a-patch-sla",
+    questionId: "q-cyber-zero-day",
+    probabilityDelta: 0.012,
+    direction: "increase",
+    confidence: "medium",
+    reason: "Missed SLA is the direct condition this question forecasts.",
+  },
+  {
+    alertId: "a-okta-impossible-travel",
+    questionId: "q-cyber-iam",
+    probabilityDelta: 0.04,
+    direction: "increase",
+    confidence: "medium",
+    reason: "Privileged account shows anomalous access consistent with credential compromise.",
+  },
+  {
+    alertId: "a-okta-impossible-travel",
+    questionId: "q-cyber-breach",
+    probabilityDelta: 0.01,
+    direction: "increase",
+    confidence: "medium",
+    reason: "A privileged-account anomaly is a plausible precursor to a material incident.",
+  },
+  {
+    alertId: "a-okta-mfa-fatigue",
+    questionId: "q-cyber-iam",
+    probabilityDelta: 0.015,
+    direction: "increase",
+    confidence: "medium",
+    reason: "MFA-fatigue pattern indicates active attempts to defeat identity controls.",
+  },
+  {
+    alertId: "a-okta-mfa-fatigue",
+    questionId: "q-cyber-phishing",
+    probabilityDelta: 0.008,
+    direction: "increase",
+    confidence: "low",
+    reason: "Finance-user targeting aligns with the BEC threat model.",
+  },
+  {
+    alertId: "a-crowdstrike-precursor",
+    questionId: "q-cyber-ransomware",
+    probabilityDelta: 0.028,
+    direction: "increase",
+    confidence: "high",
+    reason:
+      "Shadow-copy deletion on a privileged admin host matches known ransomware precursor activity.",
+  },
+  {
+    alertId: "a-crowdstrike-precursor",
+    questionId: "q-cyber-breach",
+    probabilityDelta: 0.012,
+    direction: "increase",
+    confidence: "medium",
+    reason: "Credential dumping on an admin endpoint expands the blast radius of any intrusion.",
+  },
+  {
+    alertId: "a-crowdstrike-endpoint-spike",
+    questionId: "q-cyber-ransomware",
+    probabilityDelta: 0.01,
+    direction: "increase",
+    confidence: "medium",
+    reason:
+      "A concentrated rise in endpoint detections is a leading indicator of intrusion attempts.",
+  },
+  {
+    alertId: "a-wiz-public-bucket",
+    questionId: "q-cyber-cloud",
+    probabilityDelta: 0.045,
+    direction: "increase",
+    confidence: "high",
+    reason:
+      "A publicly exposed bucket with sensitive data is the direct failure this question forecasts.",
+  },
+  {
+    alertId: "a-wiz-public-bucket",
+    questionId: "q-cyber-breach",
+    probabilityDelta: 0.015,
+    direction: "increase",
+    confidence: "high",
+    reason: "Exposed PII creates a credible path to a disclosable material incident.",
+  },
+  {
+    alertId: "a-wiz-over-permission",
+    questionId: "q-cyber-cloud",
+    probabilityDelta: 0.012,
+    direction: "increase",
+    confidence: "medium",
+    reason: "A toxic IAM combination increases the chance a misconfig becomes exploitable.",
+  },
+  {
+    alertId: "a-wiz-over-permission",
+    questionId: "q-cyber-iam",
+    probabilityDelta: 0.01,
+    direction: "increase",
+    confidence: "medium",
+    reason: "Over-permissioned automation identity broadens privileged-access exposure.",
+  },
+  {
+    alertId: "a-proofpoint-campaign",
+    questionId: "q-cyber-phishing",
+    probabilityDelta: 0.03,
+    direction: "increase",
+    confidence: "high",
+    reason:
+      "An active credential-harvesting campaign with click-throughs directly raises BEC/wire-fraud risk.",
+  },
+  {
+    alertId: "a-proofpoint-campaign",
+    questionId: "q-cyber-breach",
+    probabilityDelta: 0.008,
+    direction: "increase",
+    confidence: "medium",
+    reason: "Successful phishing is a common first stage of material incidents.",
+  },
+  {
+    alertId: "a-abnormal-bec",
+    questionId: "q-cyber-phishing",
+    probabilityDelta: 0.02,
+    direction: "increase",
+    confidence: "high",
+    reason:
+      "A confirmed vendor-impersonation attempt on an open >$500K invoice matches the resolution criteria.",
+  },
+  {
+    alertId: "a-vendor-disclosure",
+    questionId: "q-cyber-vendor",
+    probabilityDelta: 0.05,
+    direction: "increase",
+    confidence: "medium",
+    reason: "A Tier-1 vendor with access to our data disclosed an incident under investigation.",
+  },
+  {
+    alertId: "a-vendor-disclosure",
+    questionId: "q-cyber-breach",
+    probabilityDelta: 0.009,
+    direction: "increase",
+    confidence: "low",
+    reason: "Vendor exposure could cascade into a material incident for us.",
+  },
+  {
+    alertId: "a-vendor-darkweb",
+    questionId: "q-cyber-vendor",
+    probabilityDelta: 0.012,
+    direction: "increase",
+    confidence: "low",
+    reason: "Unverified credential listing raises, but does not confirm, vendor-breach likelihood.",
+  },
+  {
+    alertId: "a-tenable-kev-count",
+    questionId: "q-cyber-zero-day",
+    probabilityDelta: 0.02,
+    direction: "increase",
+    confidence: "high",
+    reason:
+      "Multiple internet-facing KEV vulns past SLA raise the odds one is exploited before patching.",
+  },
+  {
+    alertId: "a-tenable-kev-count",
+    questionId: "q-cyber-breach",
+    probabilityDelta: 0.01,
+    direction: "increase",
+    confidence: "medium",
+    reason: "A backlog of exploitable exposures broadens the overall attack surface.",
+  },
+  {
+    alertId: "a-ddos-probe",
+    questionId: "q-cyber-ddos",
+    probabilityDelta: 0.01,
+    direction: "increase",
+    confidence: "low",
+    reason: "Reconnaissance-style probing sometimes precedes a sustained volumetric attack.",
+  },
+  {
+    alertId: "a-soc2-control-gap",
+    questionId: "q-cyber-compliance",
+    probabilityDelta: 0.02,
+    direction: "increase",
+    confidence: "medium",
+    reason: "Overdue control gaps ahead of the audit window raise the chance of missing it.",
+  },
+  {
+    alertId: "a-ztna-milestone",
+    questionId: "q-cyber-zero-trust",
+    probabilityDelta: -0.03,
+    direction: "decrease",
+    confidence: "medium",
+    reason: "A slipped milestone lowers the probability of an on-schedule completion.",
+  },
 ];
 
 const MATERIAL_DELTA = 0.01;
@@ -452,7 +658,7 @@ export interface AlertImpactFeedItem {
  */
 export function alertImpactFeed(
   questionTitle: (questionId: string) => string | undefined,
-  visibleQuestionIds: Set<string>
+  visibleQuestionIds: Set<string>,
 ): AlertImpactFeedItem[] {
   const items: AlertImpactFeedItem[] = [];
   for (const alert of alerts) {
@@ -469,7 +675,7 @@ export function alertImpactFeed(
     });
   }
   return items.sort(
-    (a, b) => b.alert.timestamp.localeCompare(a.alert.timestamp) || b.topMagnitude - a.topMagnitude
+    (a, b) => b.alert.timestamp.localeCompare(a.alert.timestamp) || b.topMagnitude - a.topMagnitude,
   );
 }
 

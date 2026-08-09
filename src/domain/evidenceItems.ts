@@ -166,12 +166,20 @@ function appMessageText(rng: () => number, subject: string, title: string, dir: 
           `Fresh signal here nudges this one downward, flagging for the model.`,
           `Contact passed along information that supports a lower probability on this.`,
         ],
-        flat: [`Routine check-in on ${t} — nothing material to report this cycle.`, `Monitoring continues on this one; no change worth flagging.`],
+        flat: [
+          `Routine check-in on ${t} — nothing material to report this cycle.`,
+          `Monitoring continues on this one; no change worth flagging.`,
+        ],
       };
   return pick(rng, bank[dir]);
 }
 
-function websiteHeadline(rng: () => number, subject: string, title: string, dir: Direction): string {
+function websiteHeadline(
+  rng: () => number,
+  subject: string,
+  title: string,
+  dir: Direction,
+): string {
   const entity = !isGenericSubject(subject);
   const t = entity ? subject : title;
   const bank: Record<Direction, string[]> = entity
@@ -191,7 +199,10 @@ function websiteHeadline(rng: () => number, subject: string, title: string, dir:
     : {
         up: [`Analysts see rising odds on: ${t}`, `New reporting adds weight to a “yes” on: ${t}`],
         down: [`Analysts trim odds on: ${t}`, `New reporting adds weight to a “no” on: ${t}`],
-        flat: [`Still unresolved: where things stand on ${t}`, `A status update on ${t}, with little new to add`],
+        flat: [
+          `Still unresolved: where things stand on ${t}`,
+          `A status update on ${t}, with little new to add`,
+        ],
       };
   return pick(rng, bank[dir]);
 }
@@ -216,7 +227,10 @@ function websiteSnippet(rng: () => number, subject: string, title: string, dir: 
   return pick(rng, bank[dir]);
 }
 
-function buildAnalysisCode(ctx: EvidenceContext, rng: () => number): { code: string; output: string; narrative: string } {
+function buildAnalysisCode(
+  ctx: EvidenceContext,
+  rng: () => number,
+): { code: string; output: string; narrative: string } {
   const base = Math.max(0.02, Math.min(0.98, ctx.probability - ctx.delta));
   const marketSignal = Math.max(0.02, Math.min(0.98, base + (rng() - 0.5) * 0.12));
   const insideView = Math.max(0.02, Math.min(0.98, ctx.probability + (rng() - 0.5) * 0.08));
@@ -293,7 +307,7 @@ function appIndicates(
   title: string,
   dir: Direction,
   person: { name: string; role: string },
-  channel: string
+  channel: string,
 ): string {
   const entity = !isGenericSubject(subject);
   const t = entity ? subject : title;
@@ -331,7 +345,13 @@ function appIndicates(
   return pick(rng, bank[dir]);
 }
 
-function websiteIndicates(rng: () => number, subject: string, title: string, dir: Direction, publisher: string): string {
+function websiteIndicates(
+  rng: () => number,
+  subject: string,
+  title: string,
+  dir: Direction,
+  publisher: string,
+): string {
   const entity = !isGenericSubject(subject);
   const t = entity ? subject : title;
   const bank: Record<Direction, string[]> = entity

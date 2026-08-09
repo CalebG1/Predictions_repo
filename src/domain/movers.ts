@@ -29,7 +29,8 @@ function sevenDayDelta(history: ProbabilityPoint[]): { prior: number; current: n
   const cutoff = new Date(latest.timestamp);
   cutoff.setDate(cutoff.getDate() - 7);
   const past = [...history].reverse().find((h) => new Date(h.timestamp) <= cutoff);
-  const prior = past?.probability ?? (history.length >= 2 ? history[history.length - 2].probability : current);
+  const prior =
+    past?.probability ?? (history.length >= 2 ? history[history.length - 2].probability : current);
   return { prior, current };
 }
 
@@ -45,7 +46,7 @@ export function driversForQuestion(questionId: string): MovementDriver[] {
 export function forecastMovement(
   q: ForecastQuestion,
   yesOutcome: (id: string) => Outcome | undefined,
-  historyFor: (outcomeId: string) => ProbabilityPoint[]
+  historyFor: (outcomeId: string) => ProbabilityPoint[],
 ): ForecastMovement | null {
   const yes = yesOutcome(q.id);
   if (!yes) return null;
@@ -72,7 +73,7 @@ export function forecastMovements(
   questions: ForecastQuestion[],
   yesOutcome: (id: string) => Outcome | undefined,
   historyFor: (outcomeId: string) => ProbabilityPoint[],
-  opts?: { category?: ForecastQuestion["category"] }
+  opts?: { category?: ForecastQuestion["category"] },
 ): ForecastMovement[] {
   let list = questions;
   if (opts?.category) list = list.filter((q) => q.category === opts.category);
@@ -93,7 +94,7 @@ export function topRiskMovers(
   questions: ForecastQuestion[],
   yesOutcome: (id: string) => Outcome | undefined,
   historyFor: (outcomeId: string) => ProbabilityPoint[],
-  limit = 3
+  limit = 3,
 ): TopMovers {
   const all = forecastMovements(questions, yesOutcome, historyFor, { category: "Security/Cyber" });
   return {

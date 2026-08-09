@@ -1,9 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 
 const tabs = [
-  { label: "Overview", path: "/" },
-  { label: "Movers", path: "/movers" },
-  { label: "Agents", path: "/agents" },
+  { label: "Projects", path: "/" },
+  { label: "Forecasts", path: "/movers" },
+  { label: "Research runs", path: "/agents" },
   { label: "Cybersecurity", path: "/cybersecurity" },
   { label: "Cybersecurity 2", path: "/cybersecurity-2" },
 ];

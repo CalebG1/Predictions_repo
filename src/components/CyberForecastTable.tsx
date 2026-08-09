@@ -36,16 +36,23 @@ function Row({ q }: { q: ForecastQuestion }) {
       </td>
       <td className="cft-prob">
         <span className="cft-prob-val">{pct(p)}</span>
-        <span className={`qt-prob-delta delta ${delta >= 0 ? "up" : "down"}`}>{signedPct(delta)}%</span>
+        <span className={`qt-prob-delta delta ${delta >= 0 ? "up" : "down"}`}>
+          {signedPct(delta)}%
+        </span>
       </td>
       <td className="num">
         <span className="cft-alerts">{alertCount}</span>
       </td>
       <td>
-        <span className={`impact-chip impact-${q.impactLevel}`}>{impactLevelLabel[q.impactLevel]}</span>
+        <span className={`impact-chip impact-${q.impactLevel}`}>
+          {impactLevelLabel[q.impactLevel]}
+        </span>
       </td>
       <td>
-        <span className={`conf-dot conf-${confidence}`} title={`${CONFIDENCE_LABEL[confidence]} confidence`} />
+        <span
+          className={`conf-dot conf-${confidence}`}
+          title={`${CONFIDENCE_LABEL[confidence]} confidence`}
+        />
         {CONFIDENCE_LABEL[confidence]}
       </td>
       <td className="cft-date">{q.resolutionDate}</td>

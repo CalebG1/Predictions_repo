@@ -95,103 +95,113 @@ export default function QuestionFilters({
       <div className="filter-toolbar">
         <div className="filter-actions">
           <div className="filter-menu-wrap" ref={filterRef}>
-          <button
-            type="button"
-            className={`filter-btn${filtersActive ? " active" : ""}`}
-            aria-expanded={filterOpen}
-            onClick={() => {
-              setFilterOpen((o) => !o);
-              setSortOpen(false);
-            }}
-          >
-            <IconFilter />
-            Filter
-          </button>
-          {filterOpen && (
-            <div className="filter-panel" role="dialog" aria-label="Filters">
-              <label className="filter-field">
-                <span>Category</span>
-                <select value={cat} onChange={(e) => onCatChange(e.target.value as Category | "all")}>
-                  <option value="all">All categories</option>
-                  {categories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="filter-field">
-                <span>Owner</span>
-                <select value={owner} onChange={(e) => onOwnerChange(e.target.value)}>
-                  <option value="all">All owners</option>
-                  {owners.map((team) => (
-                    <option key={team} value={team}>
-                      {team}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="filter-field">
-                <span>Visibility</span>
-                <select value={vis} onChange={(e) => onVisChange(e.target.value as "all" | Visibility)}>
-                  <option value="all">All visibility</option>
-                  {visibilityOrder.map((v) => (
-                    <option key={v} value={v}>
-                      {visibilityConfig[v].label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          )}
-        </div>
+            <button
+              type="button"
+              className={`filter-btn${filtersActive ? " active" : ""}`}
+              aria-expanded={filterOpen}
+              onClick={() => {
+                setFilterOpen((o) => !o);
+                setSortOpen(false);
+              }}
+            >
+              <IconFilter />
+              Filter
+            </button>
+            {filterOpen && (
+              <div className="filter-panel" role="dialog" aria-label="Filters">
+                <label className="filter-field">
+                  <span>Category</span>
+                  <select
+                    value={cat}
+                    onChange={(e) => onCatChange(e.target.value as Category | "all")}
+                  >
+                    <option value="all">All categories</option>
+                    {categories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="filter-field">
+                  <span>Owner</span>
+                  <select value={owner} onChange={(e) => onOwnerChange(e.target.value)}>
+                    <option value="all">All owners</option>
+                    {owners.map((team) => (
+                      <option key={team} value={team}>
+                        {team}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="filter-field">
+                  <span>Visibility</span>
+                  <select
+                    value={vis}
+                    onChange={(e) => onVisChange(e.target.value as "all" | Visibility)}
+                  >
+                    <option value="all">All visibility</option>
+                    {visibilityOrder.map((v) => (
+                      <option key={v} value={v}>
+                        {visibilityConfig[v].label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
 
-        <div className="filter-sort-wrap" ref={sortRef}>
-          <button
-            type="button"
-            className="filter-btn"
-            aria-expanded={sortOpen}
-            onClick={() => {
-              setSortOpen((o) => !o);
-              setFilterOpen(false);
-            }}
-          >
-            <IconSort />
-            Sort
-          </button>
-          {sortLabel && (
-            <span className="filter-active-tag">
-              {sortLabel}
-              <button
-                type="button"
-                className="filter-active-tag-clear"
-                aria-label={`Clear sort: ${sortLabel}`}
-                onClick={() => onSortChange(null)}
-              >
-                ×
-              </button>
-            </span>
-          )}
-          {sortOpen && (
-            <div className="filter-panel filter-panel-sort" role="listbox" aria-label="Sort options">
-              {SORTS.map((s) => (
+          <div className="filter-sort-wrap" ref={sortRef}>
+            <button
+              type="button"
+              className="filter-btn"
+              aria-expanded={sortOpen}
+              onClick={() => {
+                setSortOpen((o) => !o);
+                setFilterOpen(false);
+              }}
+            >
+              <IconSort />
+              Sort
+            </button>
+            {sortLabel && (
+              <span className="filter-active-tag">
+                {sortLabel}
                 <button
-                  key={s.key}
                   type="button"
-                  role="option"
-                  aria-selected={sort === s.key}
-                  className={`filter-panel-option${sort === s.key ? " active" : ""}`}
-                  onClick={() => {
-                    onSortChange(s.key);
-                    setSortOpen(false);
-                  }}
+                  className="filter-active-tag-clear"
+                  aria-label={`Clear sort: ${sortLabel}`}
+                  onClick={() => onSortChange(null)}
                 >
-                  {s.label}
+                  ×
                 </button>
-              ))}
-            </div>
-          )}
-        </div>
+              </span>
+            )}
+            {sortOpen && (
+              <div
+                className="filter-panel filter-panel-sort"
+                role="listbox"
+                aria-label="Sort options"
+              >
+                {SORTS.map((s) => (
+                  <button
+                    key={s.key}
+                    type="button"
+                    role="option"
+                    aria-selected={sort === s.key}
+                    className={`filter-panel-option${sort === s.key ? " active" : ""}`}
+                    onClick={() => {
+                      onSortChange(s.key);
+                      setSortOpen(false);
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <label className="filter-horizon">

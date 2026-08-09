@@ -183,7 +183,7 @@ export function trendFrom(history: ProbabilityPoint[]): Trend {
 export function explanationFor(
   question: ForecastQuestion,
   priorProbability: number,
-  currentProbability: number
+  currentProbability: number,
 ): string {
   const from = `${(priorProbability * 100).toFixed(0)}%`;
   const to = `${(currentProbability * 100).toFixed(0)}%`;
@@ -199,7 +199,8 @@ export function explanationFor(
   const rose = currentProbability >= priorProbability;
   const lead =
     `The probability ${rose ? "increased" : "moved"} from ${from} to ${to} primarily because ` +
-    lowerFirst(primary.alert.title) + ".";
+    lowerFirst(primary.alert.title) +
+    ".";
   const detail = ` ${primary.impact.reason}`;
   const extra = secondary
     ? ` This was compounded by ${lowerFirst(secondary.alert.title)}, which ${lowerFirst(secondary.impact.reason)}`
@@ -232,13 +233,55 @@ interface FailureModeDef {
 }
 
 const FAILURE_MODES: FailureModeDef[] = [
-  { failureMode: "Ransomware", questionId: "q-cyber-ransomware", fallbackProbability: 0.19, fallbackImpact: "critical", fallbackConfidence: "medium" },
-  { failureMode: "Credential compromise", questionId: "q-cyber-iam", fallbackProbability: 0.13, fallbackImpact: "high", fallbackConfidence: "high" },
-  { failureMode: "Cloud data exposure", questionId: "q-cyber-cloud", fallbackProbability: 0.21, fallbackImpact: "critical", fallbackConfidence: "medium" },
-  { failureMode: "Vendor breach", questionId: "q-cyber-vendor", fallbackProbability: 0.24, fallbackImpact: "high", fallbackConfidence: "low" },
-  { failureMode: "DDoS outage", questionId: "q-cyber-ddos", fallbackProbability: 0.25, fallbackImpact: "medium", fallbackConfidence: "medium" },
-  { failureMode: "Compliance miss", questionId: "q-cyber-compliance", fallbackProbability: 0.28, fallbackImpact: "medium", fallbackConfidence: "high" },
-  { failureMode: "Insider misuse", questionId: undefined, fallbackProbability: 0.11, fallbackImpact: "high", fallbackConfidence: "low" },
+  {
+    failureMode: "Ransomware",
+    questionId: "q-cyber-ransomware",
+    fallbackProbability: 0.19,
+    fallbackImpact: "critical",
+    fallbackConfidence: "medium",
+  },
+  {
+    failureMode: "Credential compromise",
+    questionId: "q-cyber-iam",
+    fallbackProbability: 0.13,
+    fallbackImpact: "high",
+    fallbackConfidence: "high",
+  },
+  {
+    failureMode: "Cloud data exposure",
+    questionId: "q-cyber-cloud",
+    fallbackProbability: 0.21,
+    fallbackImpact: "critical",
+    fallbackConfidence: "medium",
+  },
+  {
+    failureMode: "Vendor breach",
+    questionId: "q-cyber-vendor",
+    fallbackProbability: 0.24,
+    fallbackImpact: "high",
+    fallbackConfidence: "low",
+  },
+  {
+    failureMode: "DDoS outage",
+    questionId: "q-cyber-ddos",
+    fallbackProbability: 0.25,
+    fallbackImpact: "medium",
+    fallbackConfidence: "medium",
+  },
+  {
+    failureMode: "Compliance miss",
+    questionId: "q-cyber-compliance",
+    fallbackProbability: 0.28,
+    fallbackImpact: "medium",
+    fallbackConfidence: "high",
+  },
+  {
+    failureMode: "Insider misuse",
+    questionId: undefined,
+    fallbackProbability: 0.11,
+    fallbackImpact: "high",
+    fallbackConfidence: "low",
+  },
 ];
 
 /**
@@ -249,7 +292,7 @@ const FAILURE_MODES: FailureModeDef[] = [
 export function enterpriseRiskMap(
   questions: ForecastQuestion[],
   yesOutcome: (id: string) => Outcome | undefined,
-  historyFor: (outcomeId: string) => ProbabilityPoint[]
+  historyFor: (outcomeId: string) => ProbabilityPoint[],
 ): FailureModeRow[] {
   const byId = new Map(questions.map((q) => [q.id, q]));
   return FAILURE_MODES.map((def) => {

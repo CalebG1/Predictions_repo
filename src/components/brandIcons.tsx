@@ -10,7 +10,13 @@ const sizeProps = {
 /** Official Slack octothorpe (slack-edge.com brand assets). */
 export function SlackBrandIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg" {...sizeProps} {...props}>
+    <svg
+      viewBox="0 0 54 54"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...sizeProps}
+      {...props}
+    >
       <path
         d="M11.379 33.9993C11.379 37.1358 8.84512 39.6507 5.7276 39.6507C2.61008 39.6507 0.0572205 37.1168 0.0572205 33.9993C0.0572205 30.8817 2.5911 28.3479 5.70862 28.3479H11.36V33.9993H11.379Z"
         fill="#E01E5A"
@@ -50,7 +56,12 @@ export function SlackBrandIcon(props: SVGProps<SVGSVGElement>) {
 /** Microsoft Teams app icon (Microsoft 365 product icon). */
 export function TeamsBrandIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 2228.833 2073.333" xmlns="http://www.w3.org/2000/svg" {...sizeProps} {...props}>
+    <svg
+      viewBox="0 0 2228.833 2073.333"
+      xmlns="http://www.w3.org/2000/svg"
+      {...sizeProps}
+      {...props}
+    >
       <path
         fill="#5059C9"
         d="M1554.637,777.5h575.713c54.391,0,98.483,44.092,98.483,98.483c0,0,0,0,0,0v524.398 c0,199.901-162.051,361.952-361.952,361.952h0h-1.711c-199.901,0.028-361.975-162-362.004-361.901c0-0.017,0-0.034,0-0.052V828.971 C1503.167,800.544,1526.211,777.5,1554.637,777.5L1554.637,777.5z"
@@ -86,7 +97,10 @@ export function ExcelBrandIcon(props: SVGProps<SVGSVGElement>) {
         fill="#FFF"
         d="M302.3,1382.264l205.332-318.169L319.5,747.683h151.336l102.666,202.35 c19.009,37.685,19.009,82.352,0,120.037L470.836,1272.42L302.3,1382.264z"
       />
-      <path fill="#33C481" d="M2192.143,0H1437.75v532.5h852V97.607C2289.75,43.7,2246.05,0,2192.143,0L2192.143,0z" />
+      <path
+        fill="#33C481"
+        d="M2192.143,0H1437.75v532.5h852V97.607C2289.75,43.7,2246.05,0,2192.143,0L2192.143,0z"
+      />
       <path fill="#107C41" d="M1437.75,1065h852v532.5h-852V1065z" />
     </svg>
   );
@@ -95,7 +109,13 @@ export function ExcelBrandIcon(props: SVGProps<SVGSVGElement>) {
 /** Google Meet app icon (Google Workspace product icon). */
 export function GoogleMeetBrandIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 87.5 72" fill="none" xmlns="http://www.w3.org/2000/svg" {...sizeProps} {...props}>
+    <svg
+      viewBox="0 0 87.5 72"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...sizeProps}
+      {...props}
+    >
       <path fill="#00832d" d="M49.5 36l8.53 9.75 11.47 7.33 2-17.02-2-16.64-11.69 6.44z" />
       <path fill="#0066da" d="M0 51.5V66c0 3.315 2.685 6 6 6h14.5l3-10.96-3-9.54-9.95-3z" />
       <path fill="#e94235" d="M20.5 0L0 20.5l10.55 3 9.95-3 2.95-9.41z" />
@@ -124,17 +144,28 @@ export function GoogleFormsBrandIcon(props: SVGProps<SVGSVGElement>) {
 /** Generic file-upload glyph for the "Uploaded files" source. */
 export function UploadBrandIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...sizeProps} {...props}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...sizeProps}
+      {...props}
+    >
+      <path d="M6 20h12a3 3 0 0 0 .4-5.97 5.5 5.5 0 0 0-10.6-1.64A4 4 0 0 0 6 20z" fill="#8a978f" />
       <path
-        d="M6 20h12a3 3 0 0 0 .4-5.97 5.5 5.5 0 0 0-10.6-1.64A4 4 0 0 0 6 20z"
-        fill="#8a978f"
+        d="M12 15v-5m0 0-2.2 2.2M12 10l2.2 2.2"
+        stroke="#fff"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      <path d="M12 15v-5m0 0-2.2 2.2M12 10l2.2 2.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-const BRAND_ICONS: Partial<Record<TouchpointKind, (props: SVGProps<SVGSVGElement>) => JSX.Element>> = {
+const BRAND_ICONS: Partial<
+  Record<TouchpointKind, (props: SVGProps<SVGSVGElement>) => JSX.Element>
+> = {
   interview: GoogleMeetBrandIcon,
   teams: TeamsBrandIcon,
   excel: ExcelBrandIcon,

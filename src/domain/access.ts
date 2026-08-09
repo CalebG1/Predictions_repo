@@ -11,14 +11,14 @@ function hasGrant(user: User, questionId: string, grants: AccessGrant[]): boolea
   return grants.some(
     (g) =>
       g.questionId === questionId &&
-      ((g.userId && g.userId === user.id) || (g.role && g.role === user.role))
+      ((g.userId && g.userId === user.id) || (g.role && g.role === user.role)),
   );
 }
 
 export function canViewQuestion(
   user: User,
   question: ForecastQuestion,
-  grants: AccessGrant[]
+  grants: AccessGrant[],
 ): boolean {
   switch (question.visibility) {
     case "public":
@@ -36,7 +36,7 @@ export function canViewQuestion(
 export function visibleQuestions(
   user: User,
   questions: ForecastQuestion[],
-  grants: AccessGrant[]
+  grants: AccessGrant[],
 ): ForecastQuestion[] {
   return questions.filter((q) => canViewQuestion(user, q, grants));
 }

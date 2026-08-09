@@ -82,13 +82,33 @@ export default function NotebookCellRow({
       </div>
 
       <div className="ctx-nb-cell-actions">
-        <button type="button" className="ctx-nb-icon-btn" onClick={onMoveUp} disabled={!onMoveUp} aria-label="Move cell up" title="Move up">
+        <button
+          type="button"
+          className="ctx-nb-icon-btn"
+          onClick={onMoveUp}
+          disabled={!onMoveUp}
+          aria-label="Move cell up"
+          title="Move up"
+        >
           ↑
         </button>
-        <button type="button" className="ctx-nb-icon-btn" onClick={onMoveDown} disabled={!onMoveDown} aria-label="Move cell down" title="Move down">
+        <button
+          type="button"
+          className="ctx-nb-icon-btn"
+          onClick={onMoveDown}
+          disabled={!onMoveDown}
+          aria-label="Move cell down"
+          title="Move down"
+        >
           ↓
         </button>
-        <button type="button" className="ctx-nb-icon-btn ctx-nb-icon-btn-danger" onClick={onRemove} aria-label="Delete cell" title="Delete cell">
+        <button
+          type="button"
+          className="ctx-nb-icon-btn ctx-nb-icon-btn-danger"
+          onClick={onRemove}
+          aria-label="Delete cell"
+          title="Delete cell"
+        >
           ×
         </button>
       </div>

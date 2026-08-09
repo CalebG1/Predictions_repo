@@ -48,7 +48,15 @@ function useNow(active: boolean): number {
   return now;
 }
 
-function RunStatusChip({ run, now, questionId }: { run: AgentRun; now: number; questionId: string }) {
+function RunStatusChip({
+  run,
+  now,
+  questionId,
+}: {
+  run: AgentRun;
+  now: number;
+  questionId: string;
+}) {
   const snap = snapshotRun(run, now);
   let label: string;
   if (snap.phase === "planning") label = "Planning…";
@@ -57,7 +65,10 @@ function RunStatusChip({ run, now, questionId }: { run: AgentRun; now: number; q
     label = `Waiting on ${snap.waitingOn.length} ${snap.waitingOn.length === 1 ? "person" : "people"}`;
   else label = "Running";
   return (
-    <Link to={`/q/${questionId}/run/${run.id}`} className={`int-run-chip int-run-chip-${snap.phase}`}>
+    <Link
+      to={`/q/${questionId}/run/${run.id}`}
+      className={`int-run-chip int-run-chip-${snap.phase}`}
+    >
       {snap.phase !== "done" && <span className="int-run-chip-dot" aria-hidden="true" />}
       {label}
       <span className="int-run-chip-arrow" aria-hidden="true">
@@ -101,7 +112,8 @@ function RejectForm({
 }
 
 export default function InterventionsPanel({ questionId }: { questionId: string }) {
-  const { interventionsFor, rejectIntervention, restoreIntervention, launchInterventionRun } = useStore();
+  const { interventionsFor, rejectIntervention, restoreIntervention, launchInterventionRun } =
+    useStore();
   const navigate = useNavigate();
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [launching, setLaunching] = useState<InterventionSuggestion | null>(null);
@@ -113,7 +125,7 @@ export default function InterventionsPanel({ questionId }: { questionId: string 
 
   const hasLiveRun = useMemo(
     () => active.some((r) => r.run && Date.now() - r.run.launchedAt < RUN_TOTAL_MS + 2000),
-    [active]
+    [active],
   );
   const now = useNow(hasLiveRun);
 
@@ -129,7 +141,9 @@ export default function InterventionsPanel({ questionId }: { questionId: string 
         <button
           type="button"
           className="int-btn-ghost"
-          onClick={() => setRejectingId(rejectingId === row.suggestion.id ? null : row.suggestion.id)}
+          onClick={() =>
+            setRejectingId(rejectingId === row.suggestion.id ? null : row.suggestion.id)
+          }
         >
           Reject
         </button>
@@ -142,8 +156,9 @@ export default function InterventionsPanel({ questionId }: { questionId: string 
       <div className="int-panel-head">
         <h4>Drive this outcome</h4>
         <span className="muted small">
-          Agents that get things done — chase owners, file tickets, secure commitments — plus research runs
-          that sharpen the estimate. Monitor them all under <Link to="/agents">Agents</Link>.
+          Agents that get things done — chase owners, file tickets, secure commitments — plus
+          research runs that sharpen the estimate. Monitor them all under{" "}
+          <Link to="/agents">Agents</Link>.
         </span>
       </div>
 
@@ -168,11 +183,15 @@ export default function InterventionsPanel({ questionId }: { questionId: string 
                     <tr className="int-row">
                       <td className="int-cell-main">
                         <span className="int-title">
-                          <span className={`int-intent-badge int-intent-${s.intent}`}>{INTENT_LABELS[s.intent]}</span>
+                          <span className={`int-intent-badge int-intent-${s.intent}`}>
+                            {INTENT_LABELS[s.intent]}
+                          </span>
                           {s.title}
                         </span>
                         <span className="int-sub">
-                          {s.intent === "act" ? `Delivers: ${s.expectedOutcome}` : `Targets: ${s.targets}`}
+                          {s.intent === "act"
+                            ? `Delivers: ${s.expectedOutcome}`
+                            : `Targets: ${s.targets}`}
                         </span>
                         <span className="int-approach">{s.approach}</span>
                       </td>
@@ -222,7 +241,10 @@ export default function InterventionsPanel({ questionId }: { questionId: string 
             aria-expanded={dismissedOpen}
             onClick={() => setDismissedOpen((v) => !v)}
           >
-            <span className={`panel-collapse-chevron${dismissedOpen ? " open" : ""}`} aria-hidden="true" />
+            <span
+              className={`panel-collapse-chevron${dismissedOpen ? " open" : ""}`}
+              aria-hidden="true"
+            />
             Dismissed ({dismissed.length})
           </button>
           {dismissedOpen && (

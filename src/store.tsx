@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   accessGrants,
   organization,
@@ -332,7 +340,7 @@ function loadContextAudit(): ContextAuditEntry[] {
     const stored = JSON.parse(raw) as ContextAuditEntry[];
     const ids = new Set(stored.map((a) => a.id));
     return [...seedContextAudit.filter((a) => !ids.has(a.id)), ...stored].sort((a, b) =>
-      b.timestamp.localeCompare(a.timestamp)
+      b.timestamp.localeCompare(a.timestamp),
     );
   } catch {
     return [...seedContextAudit];
@@ -430,7 +438,7 @@ function saveAssumptionNotes(notes: AssumptionNote[]) {
 function checkAlertCrossing(
   alert: ProbabilityAlert,
   prior: number,
-  current: number
+  current: number,
 ): ProbabilityAlert | null {
   if (alert.triggeredAt) return null;
   const crossed =
@@ -479,7 +487,7 @@ interface StoreCtx {
       visibility?: Visibility;
       tags?: string[];
     },
-    questionId?: string
+    questionId?: string,
   ) => ContextItem;
   /** Import files as document context (creates library item + binding). */
   addUpload: (questionId: string, fileNames: string[]) => void;
@@ -493,7 +501,11 @@ interface StoreCtx {
   restoreContextBinding: (binding: ContextBinding) => void;
   unbindContext: (bindingId: string) => ContextBinding | undefined;
   addContextItem: (input: CreateContextItemInput) => ContextItem;
-  updateContextItem: (id: string, patch: Partial<Pick<ContextItem, "title" | "description" | "body" | "visibility" | "tags">>, changeSummary?: string) => void;
+  updateContextItem: (
+    id: string,
+    patch: Partial<Pick<ContextItem, "title" | "description" | "body" | "visibility" | "tags">>,
+    changeSummary?: string,
+  ) => void;
   approveContextItem: (id: string) => void;
   rejectContextItem: (id: string) => void;
   archiveContextItem: (id: string) => void;
@@ -517,11 +529,15 @@ interface StoreCtx {
   getForecastJob: (jobId: string) => ForecastJob | undefined;
   finishForecastJob: (jobId: string) => ForecastQuestion | null;
   evidenceFor: (questionId: string) => EvidenceSource[];
-  setEvidenceRelevance: (questionId: string, evidenceId: string, relevance: EvidenceRelevance) => void;
+  setEvidenceRelevance: (
+    questionId: string,
+    evidenceId: string,
+    relevance: EvidenceRelevance,
+  ) => void;
   setEvidenceRefreshFrequency: (
     questionId: string,
     evidenceId: string,
-    frequency: EvidenceRefreshFrequency
+    frequency: EvidenceRefreshFrequency,
   ) => void;
   refreshEvidenceRow: (questionId: string, evidenceId: string) => void;
   deleteEvidenceRow: (questionId: string, evidenceId: string) => void;
@@ -538,7 +554,10 @@ interface StoreCtx {
   interventionsFor: (questionId: string) => InterventionRow[];
   rejectIntervention: (questionId: string, suggestionId: string, reason?: string) => void;
   restoreIntervention: (suggestionId: string) => void;
-  launchInterventionRun: (suggestion: InterventionSuggestion, resources: InterventionResources) => AgentRun;
+  launchInterventionRun: (
+    suggestion: InterventionSuggestion,
+    resources: InterventionResources,
+  ) => AgentRun;
   getAgentRun: (runId: string) => AgentRun | undefined;
   /** Every launched run on questions the current user can see (for the ops page). */
   agentRuns: AgentRun[];
@@ -591,7 +610,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [allUsers, setAllUsers] = useState<User[]>(users);
   const [user, setUserState] = useState<User>(users[0]);
   const [preferencesByUser, setPreferencesByUser] = useState<Record<string, UserPreferences>>(() =>
-    loadUserPreferences()
+    loadUserPreferences(),
   );
   const [visibilityOverrides, setVisibilityOverrides] = useState<Record<string, Visibility>>({});
   const [categoryOverrides, setCategoryOverrides] = useState<Record<string, Category>>({});
@@ -602,13 +621,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [extraEvidence, setExtraEvidence] = useState<Record<string, EvidenceSource[]>>({});
   /** Per-question edits (relevance/refresh settings) keyed by questionId -> evidenceId. */
   const [evidenceRowEdits, setEvidenceRowEdits] = useState<
-    Record<string, Record<string, Partial<Pick<EvidenceSource, "relevance" | "refreshFrequency" | "lastRefreshedAt">>>>
+    Record<
+      string,
+      Record<
+        string,
+        Partial<Pick<EvidenceSource, "relevance" | "refreshFrequency" | "lastRefreshedAt">>
+      >
+    >
   >({});
   /** Per-question row deletions, since the same seed evidence is shared across demo questions. */
-  const [deletedEvidenceByQuestion, setDeletedEvidenceByQuestion] = useState<Record<string, string[]>>({});
-  const [touchpointSignals, setTouchpointSignals] = useState<Record<string, TouchpointSignal[]>>(() => ({
-    ...seedTouchpointSignals,
-  }));
+  const [deletedEvidenceByQuestion, setDeletedEvidenceByQuestion] = useState<
+    Record<string, string[]>
+  >({});
+  const [touchpointSignals, setTouchpointSignals] = useState<Record<string, TouchpointSignal[]>>(
+    () => ({
+      ...seedTouchpointSignals,
+    }),
+  );
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const [alerts, setAlerts] = useState<ProbabilityAlert[]>(() => loadAlerts());
   const [hiddenByUser, setHiddenByUser] = useState<Record<string, string[]>>({});
@@ -617,13 +646,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [comments, setComments] = useState<QuestionComment[]>(() => loadComments());
   const [qaMessages, setQaMessages] = useState<QaMessage[]>(() => loadQaMessages());
   const [contextItems, setContextItems] = useState<ContextItem[]>(() => loadContextItems());
-  const [contextBindings, setContextBindings] = useState<ContextBinding[]>(() => loadContextBindings());
-  const [contextRevisions, setContextRevisions] = useState<ContextRevision[]>(() => loadContextRevisions());
-  const [contextAuditLog, setContextAuditLog] = useState<ContextAuditEntry[]>(() => loadContextAudit());
-  const [teamJoinRequests, setTeamJoinRequests] = useState<TeamJoinRequest[]>(() => loadTeamJoinRequests());
-  const [interventionDecisions, setInterventionDecisions] = useState<Record<string, InterventionDecision>>(() =>
-    loadInterventionDecisions()
+  const [contextBindings, setContextBindings] = useState<ContextBinding[]>(() =>
+    loadContextBindings(),
   );
+  const [contextRevisions, setContextRevisions] = useState<ContextRevision[]>(() =>
+    loadContextRevisions(),
+  );
+  const [contextAuditLog, setContextAuditLog] = useState<ContextAuditEntry[]>(() =>
+    loadContextAudit(),
+  );
+  const [teamJoinRequests, setTeamJoinRequests] = useState<TeamJoinRequest[]>(() =>
+    loadTeamJoinRequests(),
+  );
+  const [interventionDecisions, setInterventionDecisions] = useState<
+    Record<string, InterventionDecision>
+  >(() => loadInterventionDecisions());
   const [agentRuns, setAgentRuns] = useState<AgentRun[]>(() => loadAgentRuns());
   const [assumptions, setAssumptions] = useState<QuestionAssumption[]>(() => loadAssumptions());
   const [assumptionEvidenceLinks, setAssumptionEvidenceLinks] = useState<AssumptionEvidenceLink[]>(() =>
@@ -648,7 +685,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    []
+    [],
   );
 
   const addTeamToUser = useCallback((userId: string, team: string) => {
@@ -658,7 +695,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const teams = userTeams(u);
         if (teams.includes(team)) return u;
         return { ...u, teams: [...teams, team] };
-      })
+      }),
     );
     setUserState((prev) => {
       if (prev.id !== userId) return prev;
@@ -674,7 +711,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!trimmed || !orgTeams.includes(trimmed)) return;
       if (userTeams(user).includes(trimmed)) return;
       const duplicate = teamJoinRequests.some(
-        (r) => r.userId === user.id && r.team === trimmed && r.status === "pending"
+        (r) => r.userId === user.id && r.team === trimmed && r.status === "pending",
       );
       if (duplicate) return;
       persistTeamJoinRequests((prev) => [
@@ -688,7 +725,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         },
       ]);
     },
-    [persistTeamJoinRequests, teamJoinRequests, user]
+    [persistTeamJoinRequests, teamJoinRequests, user],
   );
 
   const approveTeamJoinRequest = useCallback(
@@ -705,12 +742,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 resolvedAt: new Date().toISOString(),
                 resolvedBy: user.id,
               }
-            : r
-        )
+            : r,
+        ),
       );
       addTeamToUser(target.userId, target.team);
     },
-    [addTeamToUser, persistTeamJoinRequests, teamJoinRequests, user.id, user.role]
+    [addTeamToUser, persistTeamJoinRequests, teamJoinRequests, user.id, user.role],
   );
 
   const rejectTeamJoinRequest = useCallback(
@@ -725,17 +762,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 resolvedAt: new Date().toISOString(),
                 resolvedBy: user.id,
               }
-            : r
-        )
+            : r,
+        ),
       );
     },
-    [persistTeamJoinRequests, user.id, user.role]
+    [persistTeamJoinRequests, user.id, user.role],
   );
 
-  const setUser = useCallback((next: User) => {
-    const merged = allUsers.find((u) => u.id === next.id) ?? next;
-    setUserState(merged);
-  }, [allUsers]);
+  const setUser = useCallback(
+    (next: User) => {
+      const merged = allUsers.find((u) => u.id === next.id) ?? next;
+      setUserState(merged);
+    },
+    [allUsers],
+  );
 
   const updateUser = useCallback((patch: Partial<User>) => {
     setUserState((prev) => {
@@ -747,7 +787,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const userPreferences = useMemo(
     () => preferencesByUser[user.id] ?? defaultUserPreferences,
-    [preferencesByUser, user.id]
+    [preferencesByUser, user.id],
   );
 
   const updateUserPreferences = useCallback(
@@ -759,40 +799,52 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    [user.id]
+    [user.id],
   );
 
-  const persistAlerts = useCallback((updater: ProbabilityAlert[] | ((prev: ProbabilityAlert[]) => ProbabilityAlert[])) => {
-    setAlerts((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveAlerts(next);
-      return next;
-    });
-  }, []);
+  const persistAlerts = useCallback(
+    (updater: ProbabilityAlert[] | ((prev: ProbabilityAlert[]) => ProbabilityAlert[])) => {
+      setAlerts((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveAlerts(next);
+        return next;
+      });
+    },
+    [],
+  );
 
-  const persistComments = useCallback((updater: QuestionComment[] | ((prev: QuestionComment[]) => QuestionComment[])) => {
-    setComments((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveComments(next);
-      return next;
-    });
-  }, []);
+  const persistComments = useCallback(
+    (updater: QuestionComment[] | ((prev: QuestionComment[]) => QuestionComment[])) => {
+      setComments((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveComments(next);
+        return next;
+      });
+    },
+    [],
+  );
 
-  const persistQaMessages = useCallback((updater: QaMessage[] | ((prev: QaMessage[]) => QaMessage[])) => {
-    setQaMessages((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveQaMessages(next);
-      return next;
-    });
-  }, []);
+  const persistQaMessages = useCallback(
+    (updater: QaMessage[] | ((prev: QaMessage[]) => QaMessage[])) => {
+      setQaMessages((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveQaMessages(next);
+        return next;
+      });
+    },
+    [],
+  );
 
-  const persistContextItems = useCallback((updater: ContextItem[] | ((prev: ContextItem[]) => ContextItem[])) => {
-    setContextItems((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveContextItems(next);
-      return next;
-    });
-  }, []);
+  const persistContextItems = useCallback(
+    (updater: ContextItem[] | ((prev: ContextItem[]) => ContextItem[])) => {
+      setContextItems((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveContextItems(next);
+        return next;
+      });
+    },
+    [],
+  );
 
   const persistContextBindings = useCallback(
     (updater: ContextBinding[] | ((prev: ContextBinding[]) => ContextBinding[])) => {
@@ -802,7 +854,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    []
+    [],
   );
 
   const persistContextRevisions = useCallback(
@@ -813,7 +865,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    []
+    [],
   );
 
   const persistContextAudit = useCallback(
@@ -824,7 +876,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    []
+    [],
   );
 
   const appendAudit = useCallback(
@@ -838,7 +890,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ...prev,
       ]);
     },
-    [persistContextAudit]
+    [persistContextAudit],
   );
 
   const evaluateAlertsForOutcome = useCallback(
@@ -858,7 +910,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return changed ? next : prev;
       });
     },
-    []
+    [],
   );
 
   const mergedQuestions = useMemo(
@@ -870,7 +922,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...(visibilityOverrides[q.id] ? { visibility: visibilityOverrides[q.id] } : {}),
           ...(categoryOverrides[q.id] ? { category: categoryOverrides[q.id] } : {}),
         })),
-    [extraQuestions, deletedQuestionIds, visibilityOverrides, categoryOverrides]
+    [extraQuestions, deletedQuestionIds, visibilityOverrides, categoryOverrides],
   );
 
   const applyOutcomeOverrides = useCallback(
@@ -878,21 +930,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const override = probabilityOverrides[outcome.id];
       return override !== undefined ? { ...outcome, currentProbability: override } : outcome;
     },
-    [probabilityOverrides]
+    [probabilityOverrides],
   );
 
   const historyFor = useCallback(
     (outcomeId: string) =>
-      [...seedHistory.filter((h) => h.outcomeId === outcomeId), ...extraHistory.filter((h) => h.outcomeId === outcomeId)].sort(
-        (a, b) => a.timestamp.localeCompare(b.timestamp)
-      ),
-    [extraHistory]
+      [
+        ...seedHistory.filter((h) => h.outcomeId === outcomeId),
+        ...extraHistory.filter((h) => h.outcomeId === outcomeId),
+      ].sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
+    [extraHistory],
   );
 
-  const allOutcomes = useMemo(
-    () => [...seedOutcomes, ...extraOutcomes],
-    [extraOutcomes]
-  );
+  const allOutcomes = useMemo(() => [...seedOutcomes, ...extraOutcomes], [extraOutcomes]);
 
   const refreshForecast = useCallback(
     (questionId: string) => {
@@ -925,7 +975,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         },
       ]);
     },
-    [mergedQuestions, allOutcomes, probabilityOverrides, evaluateAlertsForOutcome]
+    [mergedQuestions, allOutcomes, probabilityOverrides, evaluateAlertsForOutcome],
   );
 
   const addQuestion = useCallback(
@@ -950,16 +1000,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       return bundle.question;
     },
-    [user]
+    [user],
   );
 
-  const persistForecastJobs = useCallback((updater: ForecastJob[] | ((prev: ForecastJob[]) => ForecastJob[])) => {
-    setForecastJobs((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveForecastJobs(next);
-      return next;
-    });
-  }, []);
+  const persistForecastJobs = useCallback(
+    (updater: ForecastJob[] | ((prev: ForecastJob[]) => ForecastJob[])) => {
+      setForecastJobs((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        saveForecastJobs(next);
+        return next;
+      });
+    },
+    [],
+  );
 
   const startForecastJob = useCallback(
     (input: CreateQuestionInput) => {
@@ -976,12 +1029,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       persistForecastJobs((prev) => [...prev.filter((j) => j.complete), job]);
       return job;
     },
-    [persistForecastJobs]
+    [persistForecastJobs],
   );
 
   const getForecastJob = useCallback(
     (jobId: string) => forecastJobs.find((j) => j.id === jobId),
-    [forecastJobs]
+    [forecastJobs],
   );
 
   const finishForecastJob = useCallback(
@@ -993,11 +1046,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (job.complete) return existing ?? null;
 
       persistForecastJobs((prev) =>
-        prev.map((j) => (j.id === jobId ? { ...j, complete: true } : j))
+        prev.map((j) => (j.id === jobId ? { ...j, complete: true } : j)),
       );
       return addQuestion(job.input, job.questionId);
     },
-    [forecastJobs, extraQuestions, addQuestion, persistForecastJobs]
+    [forecastJobs, extraQuestions, addQuestion, persistForecastJobs],
   );
 
   useEffect(() => {
@@ -1013,14 +1066,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [forecastJobs, finishForecastJob]);
 
   const persistInterventionDecisions = useCallback(
-    (updater: (prev: Record<string, InterventionDecision>) => Record<string, InterventionDecision>) => {
+    (
+      updater: (prev: Record<string, InterventionDecision>) => Record<string, InterventionDecision>,
+    ) => {
       setInterventionDecisions((prev) => {
         const next = updater(prev);
         saveInterventionDecisions(next);
         return next;
       });
     },
-    []
+    [],
   );
 
   const persistAgentRuns = useCallback((updater: (prev: AgentRun[]) => AgentRun[]) => {
@@ -1044,7 +1099,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         },
       }));
     },
-    [persistInterventionDecisions]
+    [persistInterventionDecisions],
   );
 
   const restoreIntervention = useCallback(
@@ -1056,7 +1111,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    [persistInterventionDecisions]
+    [persistInterventionDecisions],
   );
 
   const launchInterventionRun = useCallback(
@@ -1066,7 +1121,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         suggestion,
         q ?? ({ id: suggestion.questionId, title: suggestion.title } as ForecastQuestion),
         resources,
-        Date.now()
+        Date.now(),
       );
       persistAgentRuns((prev) => [...prev, run]);
       persistInterventionDecisions((prev) => ({
@@ -1081,10 +1136,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }));
       return run;
     },
-    [mergedQuestions, persistAgentRuns, persistInterventionDecisions]
+    [mergedQuestions, persistAgentRuns, persistInterventionDecisions],
   );
 
-  const getAgentRun = useCallback((runId: string) => agentRuns.find((r) => r.id === runId), [agentRuns]);
+  const getAgentRun = useCallback(
+    (runId: string) => agentRuns.find((r) => r.id === runId),
+    [agentRuns],
+  );
 
   const interventionsFor = useCallback(
     (questionId: string): InterventionRow[] => {
@@ -1097,7 +1155,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return { suggestion, decision, run };
       });
     },
-    [mergedQuestions, interventionDecisions, agentRuns]
+    [mergedQuestions, interventionDecisions, agentRuns],
   );
 
   // Side effects of a run finishing: "act" runs move the question probability
@@ -1109,7 +1167,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const yes = allOutcomes.find((o) => o.questionId === run.questionId && o.id.endsWith("-yes"));
       if (!yes) return;
       const prior = probabilityOverrides[yes.id] ?? yes.currentProbability;
-      const newP = Number(Math.min(0.99, Math.max(0.01, prior + run.outcomeEffectPp / 100)).toFixed(3));
+      const newP = Number(
+        Math.min(0.99, Math.max(0.01, prior + run.outcomeEffectPp / 100)).toFixed(3),
+      );
       const no = allOutcomes.find((o) => o.questionId === run.questionId && o.id.endsWith("-no"));
       evaluateAlertsForOutcome(yes.id, prior, newP);
       setProbabilityOverrides((prev) => ({
@@ -1129,7 +1189,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         },
       ]);
     },
-    [allOutcomes, probabilityOverrides, evaluateAlertsForOutcome]
+    [allOutcomes, probabilityOverrides, evaluateAlertsForOutcome],
   );
 
   // Tick completed runs: apply outcome effects (once per session — overrides
@@ -1141,7 +1201,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const check = () => {
       const now = Date.now();
       const finished = agentRuns.filter(
-        (r) => runIsComplete(r, now) && (!r.completionApplied || !appliedEffectRunIds.has(r.id))
+        (r) => runIsComplete(r, now) && (!r.completionApplied || !appliedEffectRunIds.has(r.id)),
       );
       if (finished.length === 0) return;
       const needingEffect = finished.filter((r) => !appliedEffectRunIds.has(r.id));
@@ -1156,7 +1216,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const needingFlag = new Set(finished.filter((r) => !r.completionApplied).map((r) => r.id));
       if (needingFlag.size > 0) {
         persistAgentRuns((prev) =>
-          prev.map((r) => (needingFlag.has(r.id) ? { ...r, completionApplied: true } : r))
+          prev.map((r) => (needingFlag.has(r.id) ? { ...r, completionApplied: true } : r)),
         );
       }
     };
@@ -1193,17 +1253,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...edits[e.id],
         }));
     },
-    [extraEvidence, deletedEvidenceByQuestion, evidenceRowEdits, mergedQuestions, contextItems, contextBindings, agentRuns]
+    [
+      extraEvidence,
+      deletedEvidenceByQuestion,
+      evidenceRowEdits,
+      mergedQuestions,
+      contextItems,
+      contextBindings,
+      agentRuns,
+    ],
   );
 
   const setEvidenceRelevance = useCallback(
     (questionId: string, evidenceId: string, relevance: EvidenceRelevance) => {
       setEvidenceRowEdits((prev) => ({
         ...prev,
-        [questionId]: { ...prev[questionId], [evidenceId]: { ...prev[questionId]?.[evidenceId], relevance } },
+        [questionId]: {
+          ...prev[questionId],
+          [evidenceId]: { ...prev[questionId]?.[evidenceId], relevance },
+        },
       }));
     },
-    []
+    [],
   );
 
   const setEvidenceRefreshFrequency = useCallback(
@@ -1216,7 +1287,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         },
       }));
     },
-    []
+    [],
   );
 
   const refreshEvidenceRow = useCallback((questionId: string, evidenceId: string) => {
@@ -1247,7 +1318,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
       setPinnedIds((prev) => prev.filter((id) => id !== questionId));
     },
-    [user.id]
+    [user.id],
   );
 
   const deleteQuestion = useCallback(
@@ -1312,23 +1383,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    [persistAlerts, persistComments, persistQaMessages, persistContextBindings, persistAgentRuns, persistInterventionDecisions]
+    [
+      persistAlerts,
+      persistComments,
+      persistQaMessages,
+      persistContextBindings,
+      persistAgentRuns,
+      persistInterventionDecisions,
+    ],
   );
 
   const visibleContextItemsList = useMemo(
     () => visibleContextItems(user, contextItems),
-    [user, contextItems]
+    [user, contextItems],
   );
 
   const bindingsFor = useCallback(
     (questionId: string) => bindingsForQuestion(questionId, contextBindings),
-    [contextBindings]
+    [contextBindings],
   );
 
   const boundContextFor = useCallback(
-    (questionId: string) =>
-      itemsForQuestion(questionId, visibleContextItemsList, contextBindings),
-    [visibleContextItemsList, contextBindings]
+    (questionId: string) => itemsForQuestion(questionId, visibleContextItemsList, contextBindings),
+    [visibleContextItemsList, contextBindings],
   );
 
   const touchpointSignalsFor = useCallback(
@@ -1336,12 +1413,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const fromBindings = touchpointSignalsFromBindings(
         questionId,
         visibleContextItemsList,
-        contextBindings
+        contextBindings,
       );
       if (fromBindings.length > 0) return fromBindings;
       return touchpointSignals[questionId] ?? [];
     },
-    [visibleContextItemsList, contextBindings, touchpointSignals]
+    [visibleContextItemsList, contextBindings, touchpointSignals],
   );
 
   const bindContext = useCallback(
@@ -1373,7 +1450,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
       return createdId;
     },
-    [contextItems, user.id, persistContextBindings, appendAudit]
+    [contextItems, user.id, persistContextBindings, appendAudit],
   );
 
   const unbindContext = useCallback(
@@ -1395,7 +1472,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
       return target;
     },
-    [contextBindings, contextItems, user.id, persistContextBindings, appendAudit]
+    [contextBindings, contextItems, user.id, persistContextBindings, appendAudit],
   );
 
   const restoreContextBinding = useCallback(
@@ -1405,7 +1482,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           prev.some(
             (b) =>
               b.id === binding.id ||
-              (b.questionId === binding.questionId && b.contextItemId === binding.contextItemId)
+              (b.questionId === binding.questionId && b.contextItemId === binding.contextItemId),
           )
         ) {
           return prev;
@@ -1421,7 +1498,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return [...prev, binding];
       });
     },
-    [contextItems, user.id, persistContextBindings, appendAudit]
+    [contextItems, user.id, persistContextBindings, appendAudit],
   );
 
   const addContextItem = useCallback(
@@ -1451,20 +1528,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       return item;
     },
-    [user, persistContextItems, appendAudit, persistContextRevisions]
+    [user, persistContextItems, appendAudit, persistContextRevisions],
   );
 
   const updateContextItem = useCallback(
     (
       id: string,
       patch: Partial<Pick<ContextItem, "title" | "description" | "body" | "visibility" | "tags">>,
-      changeSummary = "Updated"
+      changeSummary = "Updated",
     ) => {
       const item = contextItems.find((i) => i.id === id);
       if (!item || !canEditContextItem(user, item)) return;
       const now = new Date().toISOString();
       persistContextItems((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, ...patch, updatedAt: now } : i))
+        prev.map((i) => (i.id === id ? { ...i, ...patch, updatedAt: now } : i)),
       );
       if (patch.body && patch.body !== item.body) {
         const body = patch.body;
@@ -1491,7 +1568,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         detail: `${changeSummary}: ${item.title}`,
       });
     },
-    [contextItems, contextRevisions, user, persistContextItems, persistContextRevisions, appendAudit]
+    [
+      contextItems,
+      contextRevisions,
+      user,
+      persistContextItems,
+      persistContextRevisions,
+      appendAudit,
+    ],
   );
 
   const approveContextItem = useCallback(
@@ -1501,8 +1585,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         prev.map((i) =>
           i.id === id && i.status === "pending_approval"
             ? { ...i, status: "active", updatedAt: new Date().toISOString() }
-            : i
-        )
+            : i,
+        ),
       );
       appendAudit({
         actorId: user.id,
@@ -1512,7 +1596,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         detail: "Approved context item for model use",
       });
     },
-    [user, persistContextItems, appendAudit]
+    [user, persistContextItems, appendAudit],
   );
 
   const rejectContextItem = useCallback(
@@ -1522,8 +1606,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         prev.map((i) =>
           i.id === id && i.status === "pending_approval"
             ? { ...i, status: "archived", updatedAt: new Date().toISOString() }
-            : i
-        )
+            : i,
+        ),
       );
       appendAudit({
         actorId: user.id,
@@ -1533,7 +1617,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         detail: "Rejected context item",
       });
     },
-    [user, persistContextItems, appendAudit]
+    [user, persistContextItems, appendAudit],
   );
 
   const archiveContextItem = useCallback(
@@ -1542,8 +1626,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!item || !canArchiveContextItem(user, item)) return;
       persistContextItems((prev) =>
         prev.map((i) =>
-          i.id === id ? { ...i, status: "archived", updatedAt: new Date().toISOString() } : i
-        )
+          i.id === id ? { ...i, status: "archived", updatedAt: new Date().toISOString() } : i,
+        ),
       );
       appendAudit({
         actorId: user.id,
@@ -1553,24 +1637,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         detail: `Archived: ${item.title}`,
       });
     },
-    [contextItems, user, persistContextItems, appendAudit]
+    [contextItems, user, persistContextItems, appendAudit],
   );
 
   const revisionsFor = useCallback(
     (contextItemId: string) => revisionsForItem(contextItemId, contextRevisions),
-    [contextRevisions]
+    [contextRevisions],
   );
 
   const assembleModelContextFor = useCallback(
     (questionId: string) =>
       assembleModelContext(questionId, visibleContextItemsList, contextBindings, mergedQuestions),
-    [visibleContextItemsList, contextBindings, mergedQuestions]
+    [visibleContextItemsList, contextBindings, mergedQuestions],
   );
 
-  const canEditContext = useCallback(
-    (item: ContextItem) => canEditContextItem(user, item),
-    [user]
-  );
+  const canEditContext = useCallback((item: ContextItem) => canEditContextItem(user, item), [user]);
 
   const canApproveContext = useCallback(() => canApproveContextItem(user), [user]);
 
@@ -1579,12 +1660,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const bound = itemsForQuestion(questionId, contextItems, contextBindings);
       return bound.find((i) => i.type === "manual" && i.status === "active");
     },
-    [contextItems, contextBindings]
+    [contextItems, contextBindings],
   );
 
   const manualContextForQuestion = useCallback(
     (questionId: string) => manualContextItemForQuestion(questionId)?.body ?? "",
-    [manualContextItemForQuestion]
+    [manualContextItemForQuestion],
   );
 
   const saveManualContextForQuestion = useCallback(
@@ -1605,7 +1686,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
       bindContext(questionId, item.id);
     },
-    [manualContextItemForQuestion, updateContextItem, addContextItem, bindContext, user.team]
+    [manualContextItemForQuestion, updateContextItem, addContextItem, bindContext, user.team],
   );
 
   const addAppContext = useCallback(
@@ -1618,7 +1699,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         visibility?: Visibility;
         tags?: string[];
       },
-      questionId?: string
+      questionId?: string,
     ): ContextItem => {
       const connector = connectorById(data.connectorId);
       const description = data.sourceRef
@@ -1636,7 +1717,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (questionId) bindContext(questionId, item.id);
       return item;
     },
-    [addContextItem, bindContext]
+    [addContextItem, bindContext],
   );
 
   const addUpload = useCallback(
@@ -1651,14 +1732,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
       bindContext(questionId, item.id);
     },
-    [addContextItem, bindContext]
+    [addContextItem, bindContext],
   );
 
   const isPinned = useCallback((questionId: string) => pinnedIds.includes(questionId), [pinnedIds]);
 
   const togglePin = useCallback((questionId: string) => {
     setPinnedIds((prev) =>
-      prev.includes(questionId) ? prev.filter((id) => id !== questionId) : [...prev, questionId]
+      prev.includes(questionId) ? prev.filter((id) => id !== questionId) : [...prev, questionId],
     );
   }, []);
 
@@ -1674,21 +1755,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         },
       ]);
     },
-    [persistAlerts]
+    [persistAlerts],
   );
 
   const removeAlert = useCallback(
     (alertId: string) => {
       persistAlerts((prev) => prev.filter((a) => a.id !== alertId));
     },
-    [persistAlerts]
+    [persistAlerts],
   );
 
   const markAlertRead = useCallback(
     (alertId: string) => {
       persistAlerts((prev) => prev.map((a) => (a.id === alertId ? { ...a, read: true } : a)));
     },
-    [persistAlerts]
+    [persistAlerts],
   );
 
   const markAllAlertsRead = useCallback(() => {
@@ -1697,12 +1778,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const unreadAlertCount = useMemo(
     () => alerts.filter((a) => a.triggeredAt && !a.read).length,
-    [alerts]
+    [alerts],
   );
 
   const commentsFor = useCallback(
     (questionId: string) => comments.filter((c) => c.questionId === questionId),
-    [comments]
+    [comments],
   );
 
   const addComment = useCallback(
@@ -1729,7 +1810,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ];
       });
     },
-    [user, persistComments]
+    [user, persistComments],
   );
 
   const editComment = useCallback(
@@ -1740,11 +1821,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         prev.map((c) =>
           c.id === commentId && c.authorId === user.id
             ? { ...c, body: trimmed, editedAt: new Date().toISOString() }
-            : c
-        )
+            : c,
+        ),
       );
     },
-    [user.id, persistComments]
+    [user.id, persistComments],
   );
 
   const deleteComment = useCallback(
@@ -1755,12 +1836,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return prev.filter((c) => c.id !== commentId);
       });
     },
-    [user.id, persistComments]
+    [user.id, persistComments],
   );
 
   const qaMessagesFor = useCallback(
     (questionId: string) => qaMessages.filter((m) => m.questionId === questionId),
-    [qaMessages]
+    [qaMessages],
   );
 
   const askQa = useCallback(
@@ -1792,14 +1873,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       };
       persistQaMessages((prev) => [...prev, userMsg, assistantMsg]);
     },
-    [mergedQuestions, persistQaMessages, assembleModelContextFor]
+    [mergedQuestions, persistQaMessages, assembleModelContextFor],
   );
 
   const resetQa = useCallback(
     (questionId: string) => {
       persistQaMessages((prev) => prev.filter((m) => m.questionId !== questionId));
     },
-    [persistQaMessages]
+    [persistQaMessages],
   );
 
   const persistAssumptions = useCallback(
@@ -2411,14 +2492,111 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         allOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
       historyFor,
       yesOutcome: (questionId) => {
-        const list = allOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides);
+        const list = allOutcomes
+          .filter((o) => o.questionId === questionId)
+          .map(applyOutcomeOverrides);
         const yes = list.find((o) => o.id.endsWith("-yes"));
         if (yes) return yes;
         if (list.length === 0) return undefined;
-        return list.reduce((best, o) => (o.currentProbability > best.currentProbability ? o : best));
+        return list.reduce((best, o) =>
+          o.currentProbability > best.currentProbability ? o : best,
+        );
       },
     };
-  }, [user, allUsers, setUser, userPreferences, updateUser, updateUserPreferences, teamJoinRequests, requestTeamJoin, approveTeamJoinRequest, rejectTeamJoinRequest, mergedQuestions, hiddenByUser, forecastJobs, allOutcomes, applyOutcomeOverrides, historyFor, refreshForecast, touchpointSignalsFor, addAppContext, addUpload, visibleContextItemsList, contextItems, contextBindings, contextAuditLog, bindingsFor, boundContextFor, bindContext, restoreContextBinding, unbindContext, addContextItem, updateContextItem, approveContextItem, rejectContextItem, archiveContextItem, revisionsFor, assembleModelContextFor, canEditContext, canApproveContext, saveManualContextForQuestion, manualContextForQuestion, pinnedIds, isPinned, togglePin, alerts, addAlert, removeAlert, markAlertRead, markAllAlertsRead, unreadAlertCount, addQuestion, startForecastJob, getForecastJob, finishForecastJob, evidenceFor, setEvidenceRelevance, setEvidenceRefreshFrequency, refreshEvidenceRow, deleteEvidenceRow, hideQuestion, deleteQuestion, commentsFor, addComment, editComment, deleteComment, qaMessagesFor, askQa, resetQa, interventionsFor, rejectIntervention, restoreIntervention, launchInterventionRun, getAgentRun, agentRuns, assumptionsFor, addAssumption, updateAssumption, deleteAssumption, shareAssumption, unshareAssumption, copyAssumptionToLocal, assumptionEvidenceLinksFor, linkEvidenceToAssumption, unlinkAssumptionEvidence, addEvidenceAndLinkToAssumption, assumptionProposalsFor, requestAssumptionPublish, proposeArchiveSharedAssumption, canApproveAssumptionProposals, approveAssumptionProposal, rejectAssumptionProposal, assumptionNotesFor, addAssumptionNote]);
+  }, [
+    user,
+    allUsers,
+    setUser,
+    userPreferences,
+    updateUser,
+    updateUserPreferences,
+    teamJoinRequests,
+    requestTeamJoin,
+    approveTeamJoinRequest,
+    rejectTeamJoinRequest,
+    mergedQuestions,
+    hiddenByUser,
+    forecastJobs,
+    allOutcomes,
+    applyOutcomeOverrides,
+    historyFor,
+    refreshForecast,
+    touchpointSignalsFor,
+    addAppContext,
+    addUpload,
+    visibleContextItemsList,
+    contextItems,
+    contextBindings,
+    contextAuditLog,
+    bindingsFor,
+    boundContextFor,
+    bindContext,
+    restoreContextBinding,
+    unbindContext,
+    addContextItem,
+    updateContextItem,
+    approveContextItem,
+    rejectContextItem,
+    archiveContextItem,
+    revisionsFor,
+    assembleModelContextFor,
+    canEditContext,
+    canApproveContext,
+    saveManualContextForQuestion,
+    manualContextForQuestion,
+    pinnedIds,
+    isPinned,
+    togglePin,
+    alerts,
+    addAlert,
+    removeAlert,
+    markAlertRead,
+    markAllAlertsRead,
+    unreadAlertCount,
+    addQuestion,
+    startForecastJob,
+    getForecastJob,
+    finishForecastJob,
+    evidenceFor,
+    setEvidenceRelevance,
+    setEvidenceRefreshFrequency,
+    refreshEvidenceRow,
+    deleteEvidenceRow,
+    hideQuestion,
+    deleteQuestion,
+    commentsFor,
+    addComment,
+    editComment,
+    deleteComment,
+    qaMessagesFor,
+    askQa,
+    resetQa,
+    interventionsFor,
+    rejectIntervention,
+    restoreIntervention,
+    launchInterventionRun,
+    getAgentRun,
+    agentRuns,
+    assumptionsFor,
+    addAssumption,
+    updateAssumption,
+    deleteAssumption,
+    shareAssumption,
+    unshareAssumption,
+    copyAssumptionToLocal,
+    assumptionEvidenceLinksFor,
+    linkEvidenceToAssumption,
+    unlinkAssumptionEvidence,
+    addEvidenceAndLinkToAssumption,
+    assumptionProposalsFor,
+    requestAssumptionPublish,
+    proposeArchiveSharedAssumption,
+    canApproveAssumptionProposals,
+    approveAssumptionProposal,
+    rejectAssumptionProposal,
+    assumptionNotesFor,
+    addAssumptionNote,
+  ]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -2445,7 +2623,10 @@ export function riskWeighted(q: ForecastQuestion, p: number): number {
   return p * q.impactScore;
 }
 
-export function sortWithPins(questions: ForecastQuestion[], pinnedIds: string[]): ForecastQuestion[] {
+export function sortWithPins(
+  questions: ForecastQuestion[],
+  pinnedIds: string[],
+): ForecastQuestion[] {
   if (pinnedIds.length === 0) return questions;
   const pinned = pinnedIds
     .map((id) => questions.find((q) => q.id === id))

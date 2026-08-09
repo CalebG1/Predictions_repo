@@ -1,8 +1,8 @@
 # PRD: Collaborative Assumptions on Questions
 
-**Status:** Draft for discussion  
-**Owner:** TBD  
-**Last updated:** August 9, 2026  
+**Status:** Draft for discussion
+**Owner:** TBD
+**Last updated:** August 9, 2026
 **Target surface:** Question detail page (`/q/:id`)
 
 ## Summary

@@ -68,7 +68,10 @@ export interface ProbPointContext {
 }
 
 /** Map probability history into chart-ready points with soft-refresh popup copy. */
-export function buildProbPoints(history: ProbabilityPoint[], context?: ProbPointContext): ProbPoint[] {
+export function buildProbPoints(
+  history: ProbabilityPoint[],
+  context?: ProbPointContext,
+): ProbPoint[] {
   return history.map((h, i) => {
     const prev = i > 0 ? history[i - 1].probability : h.probability;
     const delta = h.probability - prev;
@@ -151,7 +154,7 @@ function absIFromX(
   padL: number,
   plotInnerW: number,
   range: ViewRange,
-  xSpan: number
+  xSpan: number,
 ): number {
   const frac = Math.max(0, Math.min(1, (x - padL) / (plotInnerW || 1)));
   return range.i0 + frac * xSpan;
@@ -186,7 +189,7 @@ function declutterLabelYs(
   blockBelow: number,
   gap: number,
   lo: number,
-  hi: number
+  hi: number,
 ): number[] {
   if (anchorYs.length === 0) return [];
   const ys = [...anchorYs];
@@ -243,7 +246,7 @@ function clientToSvgPoint(
   viewW: number,
   viewH: number,
   clientX: number,
-  clientY: number
+  clientY: number,
 ) {
   const { rect, scale, offsetX, offsetY } = svgRenderMetrics(svg, viewW, viewH);
   return {
@@ -257,7 +260,7 @@ function svgPointToClient(
   viewW: number,
   viewH: number,
   svgX: number,
-  svgY: number
+  svgY: number,
 ) {
   const { rect, scale, offsetX, offsetY } = svgRenderMetrics(svg, viewW, viewH);
   return {
@@ -356,7 +359,10 @@ function zoomRelative(current: ViewRange, direction: 1 | -1, base: ProbPoint[]):
 }
 
 function canZoomIn(current: ViewRange): boolean {
-  return current.i1 - current.i0 > MIN_INDEX_SPAN + 0.05 || current.yHi - current.yLo > MIN_Y_SPAN + 0.005;
+  return (
+    current.i1 - current.i0 > MIN_INDEX_SPAN + 0.05 ||
+    current.yHi - current.yLo > MIN_Y_SPAN + 0.005
+  );
 }
 
 /** Stable colors for common categorical option labels. */
@@ -590,8 +596,9 @@ export function ProbChart({
   useLayoutEffect(() => {
     const selectedProb = selectedDot
       ? selectedDot.seriesId === "primary"
-        ? baseVisible[selectedDot.idx]?.probability ?? null
-        : alignedCompanions.find((s) => s.id === selectedDot.seriesId)?.values[selectedDot.idx] ?? null
+        ? (baseVisible[selectedDot.idx]?.probability ?? null)
+        : (alignedCompanions.find((s) => s.id === selectedDot.seriesId)?.values[selectedDot.idx] ??
+          null)
       : null;
 
     const updateAnchor = () => {
@@ -615,10 +622,7 @@ export function ProbChart({
       const pad = 8;
       const gap = 10;
 
-      const clampedX = Math.max(
-        popupW / 2 + pad,
-        Math.min(chartRect.width - popupW / 2 - pad, x)
-      );
+      const clampedX = Math.max(popupW / 2 + pad, Math.min(chartRect.width - popupW / 2 - pad, x));
       const placeBelow = y - popupH - gap < pad;
 
       setPopupAnchor({ x: clampedX, y, placeBelow, arrowShift: x - clampedX });
@@ -707,7 +711,12 @@ export function ProbChart({
   const onPlotPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (isAnimating) return;
     const target = e.target as Element;
-    if (target.closest(".pc-dot-soft") || target.closest(".pc-popup") || target.closest(".pc-evidence-drawer")) return;
+    if (
+      target.closest(".pc-dot-soft") ||
+      target.closest(".pc-popup") ||
+      target.closest(".pc-evidence-drawer")
+    )
+      return;
 
     const { x, y } = toSvgCoords(e.clientX, e.clientY);
     if (x < padL || x > padL + plotInnerW || y < padT || y > padT + innerH) return;
@@ -777,22 +786,25 @@ export function ProbChart({
   const lastIdx = baseVisible.length - 1;
   const pinnedIdx = selectedDot?.idx ?? null;
   const effFrac =
-    pinnedIdx ?? (hoverX !== null ? absIFromX(hoverX, padL, plotInnerW, displayRange, xSpan) : lastIdx);
+    pinnedIdx ??
+    (hoverX !== null ? absIFromX(hoverX, padL, plotInnerW, displayRange, xSpan) : lastIdx);
   const crosshairActive = (pinnedIdx !== null || hoverX !== null) && !isAnimating;
-  const crosshairX = pinnedIdx !== null ? xAt(pinnedIdx) : hoverX ?? xAt(lastIdx);
+  const crosshairX = pinnedIdx !== null ? xAt(pinnedIdx) : (hoverX ?? xAt(lastIdx));
   const crosshairDate = fmtCrosshairDate(timeAtAbsI(effFrac, baseVisible));
   const primaryAtCrosshair = valueAtAbsI(effFrac, primaryValues);
 
   const selectedPoint: ProbPoint | null = selectedDot
     ? selectedDot.seriesId === "primary"
       ? (baseVisible[selectedDot.idx] ?? null)
-      : (alignedCompanions.find((s) => s.id === selectedDot.seriesId)?.meta[selectedDot.idx] ?? null)
+      : (alignedCompanions.find((s) => s.id === selectedDot.seriesId)?.meta[selectedDot.idx] ??
+        null)
     : null;
 
   const selectedProb: number | null = selectedDot
     ? selectedDot.seriesId === "primary"
       ? primaryValues[selectedDot.idx]
-      : (alignedCompanions.find((s) => s.id === selectedDot.seriesId)?.values[selectedDot.idx] ?? null)
+      : (alignedCompanions.find((s) => s.id === selectedDot.seriesId)?.values[selectedDot.idx] ??
+        null)
     : null;
 
   const selectedKind = selectedPoint ? kindFor(selectedPoint.trigger) : null;
@@ -818,25 +830,22 @@ export function ProbChart({
       color: primaryColor,
       value: primaryAtCrosshair,
     },
-    ...(alignedCompanions.map((s) => ({
+    ...alignedCompanions.map((s) => ({
       id: s.id,
       label: s.label,
       color: s.color,
       value: valueAtAbsI(effFrac, s.values),
-    }))),
+    })),
   ];
 
   const endLabelYs = hasCompanions
     ? declutterLabelYs(
-        [
-          endY,
-          ...alignedCompanions.map((s) => ys(s.values[lastIdx] ?? 0)),
-        ],
+        [endY, ...alignedCompanions.map((s) => ys(s.values[lastIdx] ?? 0))],
         8,
         10,
         4,
         padT + 4,
-        padT + innerH - 2
+        padT + innerH - 2,
       )
     : null;
 
@@ -847,7 +856,7 @@ export function ProbChart({
         15,
         4,
         padT + 2,
-        padT + innerH - 2
+        padT + innerH - 2,
       )
     : null;
 
@@ -869,7 +878,8 @@ export function ProbChart({
         <div className="pc-legend">
           {(Object.keys(KIND_META) as RefreshKind[]).map((k) => (
             <span className="pc-leg-item" key={k}>
-              <span className="pc-leg-dot" style={{ background: KIND_META[k].color }} /> {KIND_META[k].label}
+              <span className="pc-leg-dot" style={{ background: KIND_META[k].color }} />{" "}
+              {KIND_META[k].label}
             </span>
           ))}
         </div>
@@ -916,429 +926,497 @@ export function ProbChart({
 
       <div className={`pc-plot${drawerOpen ? " pc-drawer-open" : ""}`} ref={plotRef}>
         <div className="pc-plot-chart" ref={chartRef} style={{ aspectRatio: `${W} / ${H}` }}>
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${W} ${H}`}
-          width="100%"
-          height="100%"
-          preserveAspectRatio="xMinYMin meet"
-          className={`prob-chart${brushing ? " pc-brushing" : crosshairActive ? " pc-hovering" : ""}${isAnimating ? " pc-animating" : ""}`}
-          role="img"
-          aria-label={
-            endpointPct
-              ? `Probability over time. Current estimate: ${endpointPct}`
-              : "Probability over time"
-          }
-          onPointerDown={onPlotPointerDown}
-          onPointerMove={onPlotPointerMove}
-          onPointerUp={onPlotPointerUp}
-          onPointerCancel={onPlotPointerUp}
-          onPointerLeave={() => setHoverX(null)}
-          onDoubleClick={resetView}
-        >
-          <defs>
-            <clipPath id="pc-clip">
-              <rect
-                x={padL}
-                y={padT - clipBleed}
-                width={plotInnerW + clipBleed}
-                height={innerH + clipBleed * 2}
-              />
-            </clipPath>
-            <linearGradient id="pc-area-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={primaryColor} stopOpacity="0.16" />
-              <stop offset="100%" stopColor={primaryColor} stopOpacity="0" />
-            </linearGradient>
-            <filter id="pc-badge-shadow" x="-60%" y="-60%" width="220%" height="220%">
-              <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="#0e1a16" floodOpacity="0.16" />
-            </filter>
-          </defs>
-
-          {gridY.map((g, i) => (
-            <g key={i}>
-              <line
-                x1={padL}
-                x2={padL + plotInnerW}
-                y1={ys(g)}
-                y2={ys(g)}
-                stroke="#d8dce0"
-                strokeWidth="1"
-                strokeDasharray="2 4"
-              />
-              <text x={padL - 8} y={ys(g) + 3.5} textAnchor="end" fontSize="10.5" fill={CHART_AXIS}>
-                {(g * 100).toFixed(0)}%
-              </text>
-            </g>
-          ))}
-
-          <g clipPath="url(#pc-clip)">
-            {/* soft gradient wash beneath the primary line, single-series charts only */}
-            {!hasCompanions && (
-              <path
-                d={`${pathFromValues(primaryValues, 0, lastIdx)} L${xAt(lastIdx).toFixed(1)},${(padT + innerH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + innerH).toFixed(1)} Z`}
-                fill="url(#pc-area-fill)"
-                stroke="none"
-              />
-            )}
-
-            {/* companion lines (faded future + solid past on hover) */}
-            {(alignedCompanions).map((s) => (
-              <g key={s.id}>
-                {crosshairActive && (
-                  <path
-                    d={pathFromValues(s.values, 0, lastIdx)}
-                    fill="none"
-                    stroke={s.color}
-                    strokeWidth={lineW}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    opacity={0.22}
-                  />
-                )}
-                <path
-                  d={pathToFrac(s.values, 0, crosshairActive ? effFrac : lastIdx)}
-                  fill="none"
-                  stroke={s.color}
-                  strokeWidth={lineW}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${W} ${H}`}
+            width="100%"
+            height="100%"
+            preserveAspectRatio="xMinYMin meet"
+            className={`prob-chart${brushing ? " pc-brushing" : crosshairActive ? " pc-hovering" : ""}${isAnimating ? " pc-animating" : ""}`}
+            role="img"
+            aria-label={
+              endpointPct
+                ? `Probability over time. Current estimate: ${endpointPct}`
+                : "Probability over time"
+            }
+            onPointerDown={onPlotPointerDown}
+            onPointerMove={onPlotPointerMove}
+            onPointerUp={onPlotPointerUp}
+            onPointerCancel={onPlotPointerUp}
+            onPointerLeave={() => setHoverX(null)}
+            onDoubleClick={resetView}
+          >
+            <defs>
+              <clipPath id="pc-clip">
+                <rect
+                  x={padL}
+                  y={padT - clipBleed}
+                  width={plotInnerW + clipBleed}
+                  height={innerH + clipBleed * 2}
                 />
+              </clipPath>
+              <linearGradient id="pc-area-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={primaryColor} stopOpacity="0.16" />
+                <stop offset="100%" stopColor={primaryColor} stopOpacity="0" />
+              </linearGradient>
+              <filter id="pc-badge-shadow" x="-60%" y="-60%" width="220%" height="220%">
+                <feDropShadow
+                  dx="0"
+                  dy="1.5"
+                  stdDeviation="2"
+                  floodColor="#0e1a16"
+                  floodOpacity="0.16"
+                />
+              </filter>
+            </defs>
+
+            {gridY.map((g, i) => (
+              <g key={i}>
+                <line
+                  x1={padL}
+                  x2={padL + plotInnerW}
+                  y1={ys(g)}
+                  y2={ys(g)}
+                  stroke="#d8dce0"
+                  strokeWidth="1"
+                  strokeDasharray="2 4"
+                />
+                <text
+                  x={padL - 8}
+                  y={ys(g) + 3.5}
+                  textAnchor="end"
+                  fontSize="10.5"
+                  fill={CHART_AXIS}
+                >
+                  {(g * 100).toFixed(0)}%
+                </text>
               </g>
             ))}
 
-            {/* primary line */}
-            {(() => {
-              const color = primaryColor;
-              return (
-                <g>
+            <g clipPath="url(#pc-clip)">
+              {/* soft gradient wash beneath the primary line, single-series charts only */}
+              {!hasCompanions && (
+                <path
+                  d={`${pathFromValues(primaryValues, 0, lastIdx)} L${xAt(lastIdx).toFixed(1)},${(padT + innerH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + innerH).toFixed(1)} Z`}
+                  fill="url(#pc-area-fill)"
+                  stroke="none"
+                />
+              )}
+
+              {/* companion lines (faded future + solid past on hover) */}
+              {alignedCompanions.map((s) => (
+                <g key={s.id}>
                   {crosshairActive && (
                     <path
-                      d={pathFromValues(primaryValues, 0, lastIdx)}
+                      d={pathFromValues(s.values, 0, lastIdx)}
                       fill="none"
-                      stroke={color}
-                      strokeWidth={lineWPrimary}
+                      stroke={s.color}
+                      strokeWidth={lineW}
                       strokeLinejoin="round"
                       strokeLinecap="round"
                       opacity={0.22}
                     />
                   )}
                   <path
-                    d={pathToFrac(primaryValues, 0, crosshairActive ? effFrac : lastIdx)}
+                    d={pathToFrac(s.values, 0, crosshairActive ? effFrac : lastIdx)}
                     fill="none"
-                    stroke={color}
-                    strokeWidth={lineWPrimary}
+                    stroke={s.color}
+                    strokeWidth={lineW}
                     strokeLinejoin="round"
                     strokeLinecap="round"
                   />
                 </g>
-              );
-            })()}
+              ))}
 
-            {[
-              { id: "primary", lineColor: primaryColor, values: primaryValues, meta: baseVisible },
-              ...alignedCompanions.map((s) => ({
-                id: s.id,
-                lineColor: s.color,
-                values: s.values,
-                meta: s.meta,
-              })),
-            ].flatMap((series) =>
-              baseVisible.map((_, i) => {
-                const cx = xAt(i);
-                if (cx < padL - 8 || cx > padL + plotInnerW + 8) return null;
-
-                const p = series.meta[i];
-                const prob = series.values[i] ?? 0;
-                const isLast = i === baseVisible.length - 1;
-                const isCompanion = series.id !== "primary";
-                const kind = kindFor(p.trigger);
-                const isSoft = kind === "soft";
-                const isSelected =
-                  selectedDot?.seriesId === series.id && selectedDot?.idx === i;
-                const r = isCompanion
-                  ? isLast
-                    ? dotLastRCompanion
-                    : dotCompanionR
-                  : isLast
-                    ? dotLastR
-                    : isSoft
-                      ? dotSoftR
-                      : dotR;
-                const faded = crosshairActive && i > effFrac;
-                const dotOpacity = faded ? 0.25 : isLast ? 1 : isCompanion ? dotCompanionOpacity : dotHistOpacity;
-                const handleSoftClick =
-                  isSoft && !isAnimating
-                    ? (e: React.MouseEvent) => {
-                        e.stopPropagation();
-                        if (isSelected) {
-                          setSelectedDot(null);
-                          setExpanded(false);
-                        } else {
-                          setSelectedDot({ seriesId: series.id, idx: i });
-                          setExpanded(false);
-                        }
-                      }
-                    : undefined;
-
-                const visibleDot = (
-                  <circle
-                    cx={cx}
-                    cy={ys(prob)}
-                    r={isSelected ? r + 0.75 : r}
-                    fill={isLast || isCompanion ? series.lineColor : KIND_META[kind].color}
-                    stroke="#fff"
-                    strokeWidth={isSelected ? 1.25 : isLast ? 0.85 : isCompanion ? 0 : 0.5}
-                    opacity={dotOpacity}
-                    pointerEvents="none"
-                  />
-                );
-
-                if (isSoft) {
-                  return (
-                    <g key={`${series.id}-${p.id ?? i}`}>
-                      <circle
-                        cx={cx}
-                        cy={ys(prob)}
-                        r={dotHitR}
-                        fill="transparent"
-                        className="pc-dot-soft"
-                        style={{ cursor: !isAnimating ? "pointer" : "default" }}
-                        onClick={handleSoftClick}
-                      />
-                      {visibleDot}
-                    </g>
-                  );
-                }
-
+              {/* primary line */}
+              {(() => {
+                const color = primaryColor;
                 return (
-                  <g key={`${series.id}-${p.id ?? i}`}>
-                    {visibleDot}
-                    <title>{`${fmtDate(p.timestamp)} · ${(prob * 100).toFixed(0)}%${
-                      p.trigger ? ` · ${p.trigger}` : ""
-                    }`}</title>
+                  <g>
+                    {crosshairActive && (
+                      <path
+                        d={pathFromValues(primaryValues, 0, lastIdx)}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth={lineWPrimary}
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        opacity={0.22}
+                      />
+                    )}
+                    <path
+                      d={pathToFrac(primaryValues, 0, crosshairActive ? effFrac : lastIdx)}
+                      fill="none"
+                      stroke={color}
+                      strokeWidth={lineWPrimary}
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
                   </g>
                 );
-              })
-            )}
-          </g>
+              })()}
 
-          {/* endpoint labels at line ends (hidden while crosshair is active) */}
-          {!crosshairActive && hasCompanions && endLabelYs ? (
-            <>
-              <circle cx={endX + labelOffset} cy={endLabelYs[0]} r={3} fill={primaryColor} stroke="#fff" strokeWidth={1} />
-              <text
-                x={endX + labelOffset + 8}
-                y={endLabelYs[0] + 4}
-                fontSize="12"
-                fontWeight="700"
-                fill={primaryColor}
-              >
-                {endpointTag} {(primaryValues[lastIdx] * 100).toFixed(1)}%
-              </text>
-              {alignedCompanions.map((s, i) => (
-                <g key={`el-${s.id}`}>
-                  <circle cx={endX + labelOffset} cy={endLabelYs[i + 1]} r={2.75} fill={s.color} stroke="#fff" strokeWidth={1} />
-                  <text
-                    x={endX + labelOffset + 8}
-                    y={endLabelYs[i + 1] + 4}
-                    fontSize="11.5"
-                    fontWeight="600"
-                    fill={s.color}
-                  >
-                    {s.label} {((s.values[lastIdx] ?? 0) * 100).toFixed(1)}%
-                  </text>
-                </g>
-              ))}
-            </>
-          ) : (
-            !crosshairActive &&
-            endpointLabel &&
-            endpointPct && (
-              <g className="pc-endpoint-label" aria-hidden="true">
-                <circle cx={endX} cy={endY} r={6} fill={primaryColor} fillOpacity="0.14">
-                  <animate attributeName="r" values="6;9;6" dur="2.4s" repeatCount="indefinite" />
-                  <animate attributeName="fill-opacity" values="0.14;0;0.14" dur="2.4s" repeatCount="indefinite" />
-                </circle>
-                <line
-                  x1={endX + dotLastR + 1}
-                  x2={endX + 12}
-                  y1={endY}
-                  y2={endY}
-                  stroke={primaryColor}
-                  strokeWidth="1"
-                  opacity="0.45"
-                />
-                <rect
-                  x={endX + 12}
-                  y={endY - 16}
-                  width={58}
-                  height={32}
-                  rx={7}
-                  fill="#fff"
-                  stroke="#e5e9e7"
-                  strokeWidth="1"
-                  filter="url(#pc-badge-shadow)"
+              {[
+                {
+                  id: "primary",
+                  lineColor: primaryColor,
+                  values: primaryValues,
+                  meta: baseVisible,
+                },
+                ...alignedCompanions.map((s) => ({
+                  id: s.id,
+                  lineColor: s.color,
+                  values: s.values,
+                  meta: s.meta,
+                })),
+              ].flatMap((series) =>
+                baseVisible.map((_, i) => {
+                  const cx = xAt(i);
+                  if (cx < padL - 8 || cx > padL + plotInnerW + 8) return null;
+
+                  const p = series.meta[i];
+                  const prob = series.values[i] ?? 0;
+                  const isLast = i === baseVisible.length - 1;
+                  const isCompanion = series.id !== "primary";
+                  const kind = kindFor(p.trigger);
+                  const isSoft = kind === "soft";
+                  const isSelected = selectedDot?.seriesId === series.id && selectedDot?.idx === i;
+                  const r = isCompanion
+                    ? isLast
+                      ? dotLastRCompanion
+                      : dotCompanionR
+                    : isLast
+                      ? dotLastR
+                      : isSoft
+                        ? dotSoftR
+                        : dotR;
+                  const faded = crosshairActive && i > effFrac;
+                  const dotOpacity = faded
+                    ? 0.25
+                    : isLast
+                      ? 1
+                      : isCompanion
+                        ? dotCompanionOpacity
+                        : dotHistOpacity;
+                  const handleSoftClick =
+                    isSoft && !isAnimating
+                      ? (e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          if (isSelected) {
+                            setSelectedDot(null);
+                            setExpanded(false);
+                          } else {
+                            setSelectedDot({ seriesId: series.id, idx: i });
+                            setExpanded(false);
+                          }
+                        }
+                      : undefined;
+
+                  const visibleDot = (
+                    <circle
+                      cx={cx}
+                      cy={ys(prob)}
+                      r={isSelected ? r + 0.75 : r}
+                      fill={isLast || isCompanion ? series.lineColor : KIND_META[kind].color}
+                      stroke="#fff"
+                      strokeWidth={isSelected ? 1.25 : isLast ? 0.85 : isCompanion ? 0 : 0.5}
+                      opacity={dotOpacity}
+                      pointerEvents="none"
+                    />
+                  );
+
+                  if (isSoft) {
+                    return (
+                      <g key={`${series.id}-${p.id ?? i}`}>
+                        <circle
+                          cx={cx}
+                          cy={ys(prob)}
+                          r={dotHitR}
+                          fill="transparent"
+                          className="pc-dot-soft"
+                          style={{ cursor: !isAnimating ? "pointer" : "default" }}
+                          onClick={handleSoftClick}
+                        />
+                        {visibleDot}
+                      </g>
+                    );
+                  }
+
+                  return (
+                    <g key={`${series.id}-${p.id ?? i}`}>
+                      {visibleDot}
+                      <title>{`${fmtDate(p.timestamp)} · ${(prob * 100).toFixed(0)}%${
+                        p.trigger ? ` · ${p.trigger}` : ""
+                      }`}</title>
+                    </g>
+                  );
+                }),
+              )}
+            </g>
+
+            {/* endpoint labels at line ends (hidden while crosshair is active) */}
+            {!crosshairActive && hasCompanions && endLabelYs ? (
+              <>
+                <circle
+                  cx={endX + labelOffset}
+                  cy={endLabelYs[0]}
+                  r={3}
+                  fill={primaryColor}
+                  stroke="#fff"
+                  strokeWidth={1}
                 />
                 <text
-                  x={endX + 19}
-                  y={endY - 4}
-                  fontSize="9"
-                  fontWeight="700"
-                  letterSpacing="0.4"
-                  fill={CHART_AXIS}
-                >
-                  {endpointTag.toUpperCase()}
-                </text>
-                <text
-                  x={endX + 19}
-                  y={endY + 12}
-                  fontSize="15.5"
+                  x={endX + labelOffset + 8}
+                  y={endLabelYs[0] + 4}
+                  fontSize="12"
                   fontWeight="700"
                   fill={primaryColor}
-                  fontFamily="Roboto Condensed, Arial Narrow, sans-serif"
                 >
-                  {endpointPct}
+                  {endpointTag} {(primaryValues[lastIdx] * 100).toFixed(1)}%
                 </text>
-              </g>
-            )
-          )}
+                {alignedCompanions.map((s, i) => (
+                  <g key={`el-${s.id}`}>
+                    <circle
+                      cx={endX + labelOffset}
+                      cy={endLabelYs[i + 1]}
+                      r={2.75}
+                      fill={s.color}
+                      stroke="#fff"
+                      strokeWidth={1}
+                    />
+                    <text
+                      x={endX + labelOffset + 8}
+                      y={endLabelYs[i + 1] + 4}
+                      fontSize="11.5"
+                      fontWeight="600"
+                      fill={s.color}
+                    >
+                      {s.label} {((s.values[lastIdx] ?? 0) * 100).toFixed(1)}%
+                    </text>
+                  </g>
+                ))}
+              </>
+            ) : (
+              !crosshairActive &&
+              endpointLabel &&
+              endpointPct && (
+                <g className="pc-endpoint-label" aria-hidden="true">
+                  <circle cx={endX} cy={endY} r={6} fill={primaryColor} fillOpacity="0.14">
+                    <animate attributeName="r" values="6;9;6" dur="2.4s" repeatCount="indefinite" />
+                    <animate
+                      attributeName="fill-opacity"
+                      values="0.14;0;0.14"
+                      dur="2.4s"
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+                  <line
+                    x1={endX + dotLastR + 1}
+                    x2={endX + 12}
+                    y1={endY}
+                    y2={endY}
+                    stroke={primaryColor}
+                    strokeWidth="1"
+                    opacity="0.45"
+                  />
+                  <rect
+                    x={endX + 12}
+                    y={endY - 16}
+                    width={58}
+                    height={32}
+                    rx={7}
+                    fill="#fff"
+                    stroke="#e5e9e7"
+                    strokeWidth="1"
+                    filter="url(#pc-badge-shadow)"
+                  />
+                  <text
+                    x={endX + 19}
+                    y={endY - 4}
+                    fontSize="9"
+                    fontWeight="700"
+                    letterSpacing="0.4"
+                    fill={CHART_AXIS}
+                  >
+                    {endpointTag.toUpperCase()}
+                  </text>
+                  <text
+                    x={endX + 19}
+                    y={endY + 12}
+                    fontSize="15.5"
+                    fontWeight="700"
+                    fill={primaryColor}
+                    fontFamily="Roboto Condensed, Arial Narrow, sans-serif"
+                  >
+                    {endpointPct}
+                  </text>
+                </g>
+              )
+            )}
 
-          {/* hover crosshair + date pill + inline tracking labels */}
-          {crosshairActive && trackLabelYs && (
-            <g className="pc-cross" pointerEvents="none">
-              <line
-                x1={crosshairX}
-                x2={crosshairX}
-                y1={padT - 4}
-                y2={padT + innerH}
-                stroke="#9aa5ad"
-                strokeWidth="1"
-              />
-              <circle
-                cx={crosshairX}
-                cy={ys(primaryAtCrosshair)}
-                r={3}
-                fill={hasCompanions ? primaryColor : CHART_LINE}
-                stroke="#fff"
-                strokeWidth="1"
-              />
-              {alignedCompanions.map((s) => (
+            {/* hover crosshair + date pill + inline tracking labels */}
+            {crosshairActive && trackLabelYs && (
+              <g className="pc-cross" pointerEvents="none">
+                <line
+                  x1={crosshairX}
+                  x2={crosshairX}
+                  y1={padT - 4}
+                  y2={padT + innerH}
+                  stroke="#9aa5ad"
+                  strokeWidth="1"
+                />
                 <circle
-                  key={`hc-${s.id}`}
                   cx={crosshairX}
-                  cy={ys(valueAtAbsI(effFrac, s.values))}
+                  cy={ys(primaryAtCrosshair)}
                   r={3}
-                  fill={s.color}
+                  fill={hasCompanions ? primaryColor : CHART_LINE}
                   stroke="#fff"
                   strokeWidth="1"
                 />
-              ))}
+                {alignedCompanions.map((s) => (
+                  <circle
+                    key={`hc-${s.id}`}
+                    cx={crosshairX}
+                    cy={ys(valueAtAbsI(effFrac, s.values))}
+                    r={3}
+                    fill={s.color}
+                    stroke="#fff"
+                    strokeWidth="1"
+                  />
+                ))}
 
-              {readoutSeries.map((s, i) => (
-                <g key={`tl-${s.id}`}>
+                {readoutSeries.map((s, i) => (
+                  <g key={`tl-${s.id}`}>
+                    <text
+                      x={crosshairX + labelOffset}
+                      y={trackLabelYs[i] - 5}
+                      fontSize="9.5"
+                      fontWeight="700"
+                      fill={s.color}
+                      letterSpacing="0.3"
+                    >
+                      {s.label.toUpperCase()}
+                    </text>
+                    <text
+                      x={crosshairX + labelOffset}
+                      y={trackLabelYs[i] + 10}
+                      fontSize="14"
+                      fontWeight="700"
+                      fill={s.color}
+                      fontFamily="Roboto Condensed, Arial Narrow, sans-serif"
+                    >
+                      {(s.value * 100).toFixed(1)}%
+                    </text>
+                  </g>
+                ))}
+
+                <g
+                  className="pc-crosshair-date"
+                  transform={`translate(${Math.max(
+                    padL + 52,
+                    Math.min(padL + plotInnerW - 52, crosshairX),
+                  )}, ${padT - 13})`}
+                >
+                  <rect
+                    x={-52}
+                    y={-10}
+                    width={104}
+                    height={16}
+                    rx={3}
+                    fill="#f4f6f5"
+                    stroke="#dde2df"
+                    strokeWidth="0.75"
+                  />
                   <text
-                    x={crosshairX + labelOffset}
-                    y={trackLabelYs[i] - 5}
-                    fontSize="9.5"
-                    fontWeight="700"
-                    fill={s.color}
-                    letterSpacing="0.3"
+                    x={0}
+                    y={1.5}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fontWeight="600"
+                    fill={CHART_AXIS}
+                    letterSpacing="0.1"
                   >
-                    {s.label.toUpperCase()}
-                  </text>
-                  <text
-                    x={crosshairX + labelOffset}
-                    y={trackLabelYs[i] + 10}
-                    fontSize="14"
-                    fontWeight="700"
-                    fill={s.color}
-                    fontFamily="Roboto Condensed, Arial Narrow, sans-serif"
-                  >
-                    {(s.value * 100).toFixed(1)}%
+                    {crosshairDate}
                   </text>
                 </g>
-              ))}
-
-              <g
-                className="pc-crosshair-date"
-                transform={`translate(${Math.max(
-                  padL + 52,
-                  Math.min(padL + plotInnerW - 52, crosshairX)
-                )}, ${padT - 13})`}
-              >
-                <rect x={-52} y={-10} width={104} height={16} rx={3} fill="#f4f6f5" stroke="#dde2df" strokeWidth="0.75" />
-                <text
-                  x={0}
-                  y={1.5}
-                  textAnchor="middle"
-                  fontSize="10"
-                  fontWeight="600"
-                  fill={CHART_AXIS}
-                  letterSpacing="0.1"
-                >
-                  {crosshairDate}
-                </text>
               </g>
-            </g>
-          )}
-
-          {baseVisible.map((p, i) =>
-            i >= iStart && (i === iEnd || (i - iStart) % labelEvery === 0) ? (
-              <text key={`l-${i}`} x={xAt(i)} y={H - 24} textAnchor="middle" fontSize="9.5" fill={CHART_AXIS}>
-                {fmtDate(p.timestamp)}
-              </text>
-            ) : null
-          )}
-
-          {brush && (
-            <rect
-              className="pc-brush-rect"
-              x={Math.min(brush.x0, brush.x1)}
-              y={Math.min(brush.y0, brush.y1)}
-              width={Math.abs(brush.x1 - brush.x0)}
-              height={Math.abs(brush.y1 - brush.y0)}
-              fill="rgba(22, 52, 92, 0.1)"
-              stroke={CHART_LINE}
-              strokeWidth="1"
-              strokeDasharray="4 3"
-              pointerEvents="none"
-            />
-          )}
-        </svg>
-
-        {selectedPoint && selectedKind === "soft" && selectedDot !== null && selectedProb !== null && (
-          <div
-            ref={popupRef}
-            className={`pc-popup${popupAnchor?.placeBelow ? " pc-popup--below" : ""}`}
-            style={{
-              left: popupAnchor?.x ?? 0,
-              top: popupAnchor?.y ?? 0,
-              visibility: popupAnchor ? "visible" : "hidden",
-              ["--pc-arrow-shift" as string]: popupAnchor ? `${popupAnchor.arrowShift}px` : "0px",
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="pc-popup-close"
-              aria-label="Close"
-              onClick={() => dismissAll()}
-            >
-              ×
-            </button>
-            <div className="pc-popup-head">
-              <span className="pc-popup-prob">{(selectedProb * 100).toFixed(0)}%</span>
-              <span className="pc-popup-date">{fmtDate(selectedPoint.timestamp)}</span>
-            </div>
-            {selectedPoint.trigger && <div className="pc-popup-trigger">{selectedPoint.trigger}</div>}
-            <p className="pc-popup-summary">{selectedPoint.summary}</p>
-            {selectedPoint.detail && (
-              <button type="button" className="pc-popup-toggle" onClick={() => setExpanded((v) => !v)}>
-                {drawerOpen ? "Show less" : "Show more"}
-              </button>
             )}
-          </div>
-        )}
+
+            {baseVisible.map((p, i) =>
+              i >= iStart && (i === iEnd || (i - iStart) % labelEvery === 0) ? (
+                <text
+                  key={`l-${i}`}
+                  x={xAt(i)}
+                  y={H - 24}
+                  textAnchor="middle"
+                  fontSize="9.5"
+                  fill={CHART_AXIS}
+                >
+                  {fmtDate(p.timestamp)}
+                </text>
+              ) : null,
+            )}
+
+            {brush && (
+              <rect
+                className="pc-brush-rect"
+                x={Math.min(brush.x0, brush.x1)}
+                y={Math.min(brush.y0, brush.y1)}
+                width={Math.abs(brush.x1 - brush.x0)}
+                height={Math.abs(brush.y1 - brush.y0)}
+                fill="rgba(22, 52, 92, 0.1)"
+                stroke={CHART_LINE}
+                strokeWidth="1"
+                strokeDasharray="4 3"
+                pointerEvents="none"
+              />
+            )}
+          </svg>
+
+          {selectedPoint &&
+            selectedKind === "soft" &&
+            selectedDot !== null &&
+            selectedProb !== null && (
+              <div
+                ref={popupRef}
+                className={`pc-popup${popupAnchor?.placeBelow ? " pc-popup--below" : ""}`}
+                style={{
+                  left: popupAnchor?.x ?? 0,
+                  top: popupAnchor?.y ?? 0,
+                  visibility: popupAnchor ? "visible" : "hidden",
+                  ["--pc-arrow-shift" as string]: popupAnchor
+                    ? `${popupAnchor.arrowShift}px`
+                    : "0px",
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="pc-popup-close"
+                  aria-label="Close"
+                  onClick={() => dismissAll()}
+                >
+                  ×
+                </button>
+                <div className="pc-popup-head">
+                  <span className="pc-popup-prob">{(selectedProb * 100).toFixed(0)}%</span>
+                  <span className="pc-popup-date">{fmtDate(selectedPoint.timestamp)}</span>
+                </div>
+                {selectedPoint.trigger && (
+                  <div className="pc-popup-trigger">{selectedPoint.trigger}</div>
+                )}
+                <p className="pc-popup-summary">{selectedPoint.summary}</p>
+                {selectedPoint.detail && (
+                  <button
+                    type="button"
+                    className="pc-popup-toggle"
+                    onClick={() => setExpanded((v) => !v)}
+                  >
+                    {drawerOpen ? "Show less" : "Show more"}
+                  </button>
+                )}
+              </div>
+            )}
         </div>
 
         {selectedPoint?.detail && (
@@ -1385,7 +1463,6 @@ export function ProbChart({
           </aside>
         )}
       </div>
-
     </div>
   );
 }
@@ -1436,7 +1513,14 @@ export function ReliabilityDiagram({
       <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="11" fill="#5b6b66">
         Predicted probability
       </text>
-      <text x={12} y={H / 2} textAnchor="middle" fontSize="11" fill="#5b6b66" transform={`rotate(-90 12 ${H / 2})`}>
+      <text
+        x={12}
+        y={H / 2}
+        textAnchor="middle"
+        fontSize="11"
+        fill="#5b6b66"
+        transform={`rotate(-90 12 ${H / 2})`}
+      >
         Observed frequency
       </text>
     </svg>
@@ -1472,7 +1556,7 @@ export function MiniBars({ data }: { data: { date: string; brier: number }[] }) 
           <text key={i} x={xs(i)} y={H - 4} textAnchor="middle" fontSize="9" fill="#8a978f">
             {d.date.slice(2)}
           </text>
-        ) : null
+        ) : null,
       )}
     </svg>
   );
@@ -1506,7 +1590,12 @@ export function RiskMatrixScatter({
 
   return (
     <div className="risk-matrix">
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Risk matrix: probability vs impact">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        width="100%"
+        role="img"
+        aria-label="Risk matrix: probability vs impact"
+      >
         <rect x={pad.left} y={pad.top} width={innerW / 2} height={innerH / 2} fill="#f8faf9" />
         <rect x={midX} y={pad.top} width={innerW / 2} height={innerH / 2} fill="#fef9f0" />
         <rect x={pad.left} y={midY} width={innerW / 2} height={innerH / 2} fill="#f5f8ff" />
@@ -1519,8 +1608,22 @@ export function RiskMatrixScatter({
           </g>
         ))}
 
-        <line x1={midX} x2={midX} y1={pad.top} y2={H - pad.bottom} stroke="#d4ddd8" strokeDasharray="4 4" />
-        <line x1={pad.left} x2={W - pad.right} y1={midY} y2={midY} stroke="#d4ddd8" strokeDasharray="4 4" />
+        <line
+          x1={midX}
+          x2={midX}
+          y1={pad.top}
+          y2={H - pad.bottom}
+          stroke="#d4ddd8"
+          strokeDasharray="4 4"
+        />
+        <line
+          x1={pad.left}
+          x2={W - pad.right}
+          y1={midY}
+          y2={midY}
+          stroke="#d4ddd8"
+          strokeDasharray="4 4"
+        />
 
         {[0, 0.5, 1].map((g) => (
           <text key={`x-${g}`} x={px(g)} y={H - 8} textAnchor="middle" fontSize="10" fill="#8a978f">
@@ -1528,7 +1631,14 @@ export function RiskMatrixScatter({
           </text>
         ))}
         {[0, 0.5, 1].map((g) => (
-          <text key={`y-${g}`} x={pad.left - 8} y={py(g) + 3} textAnchor="end" fontSize="10" fill="#8a978f">
+          <text
+            key={`y-${g}`}
+            x={pad.left - 8}
+            y={py(g) + 3}
+            textAnchor="end"
+            fontSize="10"
+            fill="#8a978f"
+          >
             {g.toFixed(1)}
           </text>
         ))}
@@ -1536,7 +1646,14 @@ export function RiskMatrixScatter({
         <text x={W / 2} y={H - 26} textAnchor="middle" fontSize="11" fill="#5b6b66">
           Probability
         </text>
-        <text x={14} y={H / 2} textAnchor="middle" fontSize="11" fill="#5b6b66" transform={`rotate(-90 14 ${H / 2})`}>
+        <text
+          x={14}
+          y={H / 2}
+          textAnchor="middle"
+          fontSize="11"
+          fill="#5b6b66"
+          transform={`rotate(-90 14 ${H / 2})`}
+        >
           Impact
         </text>
 

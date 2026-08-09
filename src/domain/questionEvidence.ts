@@ -109,7 +109,10 @@ function predictionIndicates(agent: string): string {
 }
 
 /** Builds the full evidence roster for a question: feeds, integrations, analyses, and agent traces. */
-export function buildQuestionEvidence(questionId: string, question?: ForecastQuestion): EvidenceSource[] {
+export function buildQuestionEvidence(
+  questionId: string,
+  question?: ForecastQuestion,
+): EvidenceSource[] {
   const rng = seeded(`${questionId}::table-evidence`);
   const title = question?.title ?? "this forecast";
   const category = question?.category ?? "Macro";
@@ -148,7 +151,10 @@ pooled = 1 / (1 + np.exp(-sum(weights[k] * log_odds(v) for k, v in estimates.ite
 print(f"pooled_probability = {pooled:.3f}")`;
 
   const wsHeadline = websiteHeadline(title);
-  const wsSlug = wsHeadline.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 50);
+  const wsSlug = wsHeadline
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .slice(0, 50);
 
   const rows: EvidenceSource[] = [
     {

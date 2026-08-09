@@ -14,6 +14,7 @@ import AgentRunMonitor from "./pages/AgentRunMonitor";
 import AgentOps from "./pages/AgentOps";
 import Cybersecurity from "./pages/Cybersecurity";
 import Cybersecurity2 from "./pages/Cybersecurity2";
+import ProjectDetail from "./pages/ProjectDetail";
 
 function AppShell() {
   return (
@@ -23,6 +24,7 @@ function AppShell() {
       <Routes>
         <Route path="/" element={<Overview />} />
         <Route path="/forecast/:jobId/processing" element={<ForecastProcessing />} />
+        <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/q/:id" element={<QuestionDetail />} />
         <Route path="/q/:id/run/:runId" element={<AgentRunMonitor />} />
         <Route path="/agents" element={<AgentOps />} />

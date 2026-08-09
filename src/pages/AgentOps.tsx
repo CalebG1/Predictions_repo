@@ -42,17 +42,24 @@ function PhaseChip({ snap }: { snap: RunSnapshot }) {
   else if (snap.waitingOn.length > 0) label = `Waiting on ${snap.waitingOn.length}`;
   else label = "Running";
   return (
-    <span className={`arm-phase arm-phase-${snap.phase === "planning" ? "running" : snap.phase} ops-phase`}>
+    <span
+      className={`arm-phase arm-phase-${snap.phase === "planning" ? "running" : snap.phase} ops-phase`}
+    >
       {snap.phase !== "done" && <span className="int-run-chip-dot" aria-hidden="true" />}
       {label}
     </span>
   );
 }
 
-function RunCard({ run, snap, now, questionTitle }: RunWithSnap & { now: number; questionTitle: string }) {
+function RunCard({
+  run,
+  snap,
+  now,
+  questionTitle,
+}: RunWithSnap & { now: number; questionTitle: string }) {
   const nextStep =
     snap.phase === "done"
-      ? snap.outcome?.headline ?? "Complete"
+      ? (snap.outcome?.headline ?? "Complete")
       : snap.waitingOn.length > 0
         ? `Waiting on ${snap.waitingOn.map((o) => o.person.name.split(" ")[0]).join(", ")}`
         : snap.dataPullsRunning > 0
@@ -64,7 +71,9 @@ function RunCard({ run, snap, now, questionTitle }: RunWithSnap & { now: number;
   return (
     <Link to={`/q/${run.questionId}/run/${run.id}`} className={`ops-card ops-card-${snap.phase}`}>
       <div className="ops-card-top">
-        <span className={`int-intent-badge int-intent-${run.intent}`}>{INTENT_LABELS[run.intent]}</span>
+        <span className={`int-intent-badge int-intent-${run.intent}`}>
+          {INTENT_LABELS[run.intent]}
+        </span>
         <span className="ops-card-question">{questionTitle}</span>
         <PhaseChip snap={snap} />
       </div>
@@ -73,7 +82,10 @@ function RunCard({ run, snap, now, questionTitle }: RunWithSnap & { now: number;
 
       <div className="ops-card-progress">
         <span className="arm-progress ops-progress">
-          <span className="arm-progress-fill" style={{ width: `${Math.round(snap.progress * 100)}%` }} />
+          <span
+            className="arm-progress-fill"
+            style={{ width: `${Math.round(snap.progress * 100)}%` }}
+          />
         </span>
         <span className="ops-card-elapsed">{elapsedLabel(now - run.launchedAt)}</span>
       </div>
@@ -122,7 +134,7 @@ export default function AgentOps() {
       agentRuns
         .map((run) => ({ run, snap: snapshotRun(run, now) }))
         .sort((a, b) => b.run.launchedAt - a.run.launchedAt),
-    [agentRuns, now]
+    [agentRuns, now],
   );
 
   const activeRuns = withSnaps.filter((r) => r.snap.phase !== "done");
@@ -135,10 +147,12 @@ export default function AgentOps() {
   waitingEntries.sort((a, b) => (a.outreach.sentAt ?? 0) - (b.outreach.sentAt ?? 0));
 
   const needsAttention = withSnaps.filter(
-    ({ snap }) => snap.deadEnds > 0 && snap.phase !== "done"
+    ({ snap }) => snap.deadEnds > 0 && snap.phase !== "done",
   ).length;
   const totalWaiting = waitingEntries.length;
-  const effectsApplied = doneRuns.filter(({ run }) => run.intent === "act" && run.completionApplied).length;
+  const effectsApplied = doneRuns.filter(
+    ({ run }) => run.intent === "act" && run.completionApplied,
+  ).length;
 
   return (
     <div className="dash-page ops-page">
@@ -146,8 +160,8 @@ export default function AgentOps() {
         <div>
           <h1 className="detail-title">Agents</h1>
           <p className="arm-goal">
-            Every agent working your forecasts — what they're doing, who they're waiting on, and what they've
-            delivered. Launch new ones from any question page.
+            Every agent working your forecasts — what they're doing, who they're waiting on, and
+            what they've delivered. Launch new ones from any question page.
           </p>
         </div>
       </div>
@@ -158,7 +172,9 @@ export default function AgentOps() {
           <span className="ops-stat-label">Active runs</span>
         </div>
         <div className="ops-stat">
-          <span className={`ops-stat-value${totalWaiting > 0 ? " ops-stat-waiting" : ""}`}>{totalWaiting}</span>
+          <span className={`ops-stat-value${totalWaiting > 0 ? " ops-stat-waiting" : ""}`}>
+            {totalWaiting}
+          </span>
           <span className="ops-stat-label">People being waited on</span>
         </div>
         <div className="ops-stat">
@@ -181,8 +197,8 @@ export default function AgentOps() {
         <div className="panel ops-empty">
           <h4>No agents launched yet</h4>
           <p className="muted">
-            Open any question and use the <b>Drive this outcome</b> panel to launch an action or research
-            agent. Everything launched shows up here, live.
+            Open any question and use the <b>Drive this outcome</b> panel to launch an action or
+            research agent. Everything launched shows up here, live.
           </p>
           <Link to="/" className="ctx-primary-btn arm-finding-link">
             Browse questions
@@ -214,9 +230,14 @@ export default function AgentOps() {
                       {outreach.status === "seen" ? "Seen, no reply" : "Sent"}
                     </span>
                     <span className="ops-waiting-elapsed">
-                      {outreach.sentAt ? `${elapsedLabel(now - outreach.sentAt)} waiting` : "queued"}
+                      {outreach.sentAt
+                        ? `${elapsedLabel(now - outreach.sentAt)} waiting`
+                        : "queued"}
                     </span>
-                    <Link className="int-btn-ghost ops-waiting-link" to={`/q/${run.questionId}/run/${run.id}`}>
+                    <Link
+                      className="int-btn-ghost ops-waiting-link"
+                      to={`/q/${run.questionId}/run/${run.id}`}
+                    >
                       View run
                     </Link>
                   </li>
@@ -230,7 +251,13 @@ export default function AgentOps() {
               <h3 className="ops-section-title">Active</h3>
               <div className="ops-grid">
                 {activeRuns.map(({ run, snap }) => (
-                  <RunCard key={run.id} run={run} snap={snap} now={now} questionTitle={titleFor(run.questionId)} />
+                  <RunCard
+                    key={run.id}
+                    run={run}
+                    snap={snap}
+                    now={now}
+                    questionTitle={titleFor(run.questionId)}
+                  />
                 ))}
               </div>
             </section>
@@ -243,9 +270,13 @@ export default function AgentOps() {
                 {doneRuns.map(({ run, snap }) => (
                   <li key={run.id}>
                     <Link to={`/q/${run.questionId}/run/${run.id}`} className="ops-done-row">
-                      <span className={`int-intent-badge int-intent-${run.intent}`}>{INTENT_LABELS[run.intent]}</span>
+                      <span className={`int-intent-badge int-intent-${run.intent}`}>
+                        {INTENT_LABELS[run.intent]}
+                      </span>
                       <div className="ops-done-main">
-                        <span className="ops-done-headline">{snap.outcome?.headline ?? run.title}</span>
+                        <span className="ops-done-headline">
+                          {snap.outcome?.headline ?? run.title}
+                        </span>
                         <span className="muted small">
                           {titleFor(run.questionId)} · finished{" "}
                           {elapsedLabel(now - (run.launchedAt + RUN_TOTAL_MS))} ago

@@ -29,7 +29,10 @@ function seeded(seed: string): () => number {
 const CATEGORY_KEYWORDS: [Category, string[]][] = [
   ["Security/Cyber", ["cyber", "breach", "hack", "security", "ransomware", "incident", "exfil"]],
   ["Supply Chain", ["supplier", "supply", "shipment", "logistics", "freight", "port", "shipping"]],
-  ["Geopolitical", ["war", "conflict", "sanction", "geopolit", "iran", "china", "russia", "middle east", "wto"]],
+  [
+    "Geopolitical",
+    ["war", "conflict", "sanction", "geopolit", "iran", "china", "russia", "middle east", "wto"],
+  ],
   ["Regulatory", ["regulation", "regulatory", "compliance", "rule", "law", "eu", "sec", "fda"]],
   ["Macro", ["fed", "rate", "cpi", "inflation", "gdp", "recession", "macro", "central bank"]],
   ["Financial", ["revenue", "margin", "acquisition", "m&a", "fx", "earnings", "budget"]],
@@ -49,7 +52,17 @@ function inferCategory(title: string): Category {
 
 function inferRiskOrOpportunity(title: string): RiskOrOpportunity {
   const lower = title.toLowerCase();
-  const riskWords = ["risk", "disruption", "breach", "fail", "decline", "conflict", "overrun", "exceed", "drop"];
+  const riskWords = [
+    "risk",
+    "disruption",
+    "breach",
+    "fail",
+    "decline",
+    "conflict",
+    "overrun",
+    "exceed",
+    "drop",
+  ];
   const oppWords = ["launch", "close", "hit", "meet", "grow", "win", "fill", "ship", "cut rates"];
   const riskScore = riskWords.filter((w) => lower.includes(w)).length;
   const oppScore = oppWords.filter((w) => lower.includes(w)).length;
@@ -78,7 +91,7 @@ function tokenize(text: string): Set<string> {
       .toLowerCase()
       .replace(/[^\w\s]/g, " ")
       .split(/\s+/)
-      .filter((w) => w.length > 2)
+      .filter((w) => w.length > 2),
   );
 }
 
@@ -105,7 +118,7 @@ export interface CreateQuestionInput {
 export function findSimilarQuestions(
   query: string,
   existing: ForecastQuestion[],
-  limit = 5
+  limit = 5,
 ): ForecastQuestion[] {
   const qTokens = tokenize(query);
   if (qTokens.size === 0) return existing.slice(0, limit);
@@ -138,14 +151,15 @@ export interface GeneratedQuestionBundle {
 export function createQuestionFromInput(
   input: CreateQuestionInput,
   user: User,
-  questionId?: string
+  questionId?: string,
 ): GeneratedQuestionBundle {
   const title = formatTitle(input.title);
   const id = questionId ?? `q-user-${Date.now()}`;
   const rng = seeded(id + input.title);
   const category = input.category ?? inferCategory(input.title);
   const riskOrOpportunity = input.riskOrOpportunity ?? inferRiskOrOpportunity(input.title);
-  const resolutionDate = input.resolutionDate?.trim() || resolutionDateFromNow(6 + Math.floor(rng() * 6));
+  const resolutionDate =
+    input.resolutionDate?.trim() || resolutionDateFromNow(6 + Math.floor(rng() * 6));
   const openDate = new Date().toISOString().slice(0, 10);
 
   const preciseDefinition =
@@ -156,7 +170,8 @@ export function createQuestionFromInput(
     input.resolutionCriteria?.trim() ||
     `Resolves YES when the stated condition in the question is met before ${resolutionDate}.`;
 
-  const resolutionSource = input.resolutionSource?.trim() || "Primary source verification + internal review";
+  const resolutionSource =
+    input.resolutionSource?.trim() || "Primary source verification + internal review";
 
   const priorBaseRate = Number((0.25 + rng() * 0.35).toFixed(2));
   const impactScore = Number((0.35 + rng() * 0.45).toFixed(2));
@@ -172,7 +187,9 @@ export function createQuestionFromInput(
     riskOrOpportunity,
     impactEstimate:
       input.impactEstimate?.trim() ||
-      (riskOrOpportunity === "risk" ? "Material operational or financial exposure" : "Meaningful upside to plan"),
+      (riskOrOpportunity === "risk"
+        ? "Material operational or financial exposure"
+        : "Meaningful upside to plan"),
     impactLevel,
     impactScore,
     resolutionCriteria,
@@ -233,7 +250,8 @@ export function createQuestionFromInput(
       probability: yesProb,
       timestamp: openDate,
       source: "agent-ensemble",
-      updateTrigger: evidence.length > 0 ? "Initial forecast with submitted evidence" : "Question created",
+      updateTrigger:
+        evidence.length > 0 ? "Initial forecast with submitted evidence" : "Question created",
     },
   ];
 

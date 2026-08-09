@@ -37,9 +37,13 @@ function loadScriptOnce(src: string): Promise<void> {
         return;
       }
       existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(new Error("Failed to load the Pyodide runtime script.")), {
-        once: true,
-      });
+      existing.addEventListener(
+        "error",
+        () => reject(new Error("Failed to load the Pyodide runtime script.")),
+        {
+          once: true,
+        },
+      );
       return;
     }
     const script = document.createElement("script");
@@ -91,7 +95,10 @@ function stringifyResult(value: unknown): string {
 }
 
 /** Runs one snippet to completion. Calls are queued so cells never interleave stdout. */
-export function runInSandbox(code: string, onStatus?: (status: string) => void): Promise<SandboxRunResult> {
+export function runInSandbox(
+  code: string,
+  onStatus?: (status: string) => void,
+): Promise<SandboxRunResult> {
   const run = async (): Promise<SandboxRunResult> => {
     const started = performance.now();
     try {
@@ -130,6 +137,6 @@ export function runInSandbox(code: string, onStatus?: (status: string) => void):
 export async function restartSandbox(): Promise<void> {
   if (!instance) return;
   await runInSandbox(
-    "for _n in list(globals().keys()):\n    if not _n.startswith('_'):\n        del globals()[_n]\n"
+    "for _n in list(globals().keys()):\n    if not _n.startswith('_'):\n        del globals()[_n]\n",
   );
 }

@@ -76,11 +76,17 @@ function SubForecastTableRow({ sub }: { sub: SubForecast }) {
       <td className="qt-prob">
         <div className="qt-prob-inner">
           <span className="qt-prob-val">{pct(sub.probability)}</span>
-          <span className={`qt-prob-delta delta ${up ? "up" : "down"}`}>{signedPct(sub.delta)}%</span>
+          <span className={`qt-prob-delta delta ${up ? "up" : "down"}`}>
+            {signedPct(sub.delta)}%
+          </span>
         </div>
       </td>
       <td className="qt-sources-col">
-        {sub.source ? <span className="qt-child-source">{sub.source}</span> : <span className="muted">—</span>}
+        {sub.source ? (
+          <span className="qt-child-source">{sub.source}</span>
+        ) : (
+          <span className="muted">—</span>
+        )}
       </td>
       <td className="qt-date-col">{sub.resolves}</td>
       <td className="qt-vis-col">
@@ -137,7 +143,10 @@ function CyberQuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boo
                 setExpanded((open) => !open);
               }}
             >
-              <span className={`panel-collapse-chevron${expanded ? " open" : ""}`} aria-hidden="true" />
+              <span
+                className={`panel-collapse-chevron${expanded ? " open" : ""}`}
+                aria-hidden="true"
+              />
             </button>
           )}
         </td>
@@ -167,7 +176,9 @@ function CyberQuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boo
         <td className="qt-prob">
           <div className="qt-prob-inner">
             <span className="qt-prob-val">{pct(p)}</span>
-            <span className={`qt-prob-delta delta ${delta >= 0 ? "up" : "down"}`}>{signedPct(delta)}%</span>
+            <span className={`qt-prob-delta delta ${delta >= 0 ? "up" : "down"}`}>
+              {signedPct(delta)}%
+            </span>
           </div>
         </td>
         <td className="qt-sources-col">

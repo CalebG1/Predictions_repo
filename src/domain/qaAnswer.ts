@@ -8,7 +8,7 @@ function pct(p: number): string {
 export function answerForecastQuestion(
   prompt: string,
   forecast: ForecastObject,
-  q: ForecastQuestion
+  q: ForecastQuestion,
 ): string {
   const text = prompt.toLowerCase().trim();
   if (!text) {
@@ -33,7 +33,8 @@ export function answerForecastQuestion(
   }
 
   if (/driver.*down|move.*down|push.*lower|decrease|bearish|why.*down/.test(text)) {
-    if (forecast.driversDown.length === 0) return "No downward drivers are flagged for this question.";
+    if (forecast.driversDown.length === 0)
+      return "No downward drivers are flagged for this question.";
     return `Drivers pushing the estimate down:\n${forecast.driversDown.map((d) => `• ${d}`).join("\n")}`;
   }
 
@@ -76,7 +77,9 @@ export function answerForecastQuestion(
   }
 
   if (/agent|ensemble|dragonfly|synthesis|panel/.test(text)) {
-    const agents = forecast.agentPanel.filter((a) => a.agent !== "synthesis" && a.agent !== "extremizer");
+    const agents = forecast.agentPanel.filter(
+      (a) => a.agent !== "synthesis" && a.agent !== "extremizer",
+    );
     const spread = agents.map((a) => a.estimate);
     const min = Math.min(...spread);
     const max = Math.max(...spread);

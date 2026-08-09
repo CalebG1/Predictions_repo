@@ -65,9 +65,17 @@ export default function ReasoningThread({
   }
 
   return (
-    <section className={`forecast-reasoning${view === "one-page" ? " fr-wide" : ""}`} aria-label="Forecast reasoning">
+    <section
+      className={`forecast-reasoning${view === "one-page" ? " fr-wide" : ""}`}
+      aria-label="Forecast reasoning"
+    >
       <div className="fr-view-nav">
-        <button type="button" className="fr-view-arrow" aria-label="Previous view" onClick={() => shiftView(-1)}>
+        <button
+          type="button"
+          className="fr-view-arrow"
+          aria-label="Previous view"
+          onClick={() => shiftView(-1)}
+        >
           ‹
         </button>
         <div className="fr-view-tabs" role="tablist" aria-label="Reasoning view">
@@ -84,7 +92,12 @@ export default function ReasoningThread({
             </button>
           ))}
         </div>
-        <button type="button" className="fr-view-arrow" aria-label="Next view" onClick={() => shiftView(1)}>
+        <button
+          type="button"
+          className="fr-view-arrow"
+          aria-label="Next view"
+          onClick={() => shiftView(1)}
+        >
           ›
         </button>
       </div>
@@ -162,11 +175,16 @@ export default function ReasoningThread({
                     <span>Forecast history</span>
                     <span className="muted">{history.length} updates</span>
                   </span>
-                  <span className={`panel-collapse-chevron${historyOpen ? " open" : ""}`} aria-hidden="true" />
+                  <span
+                    className={`panel-collapse-chevron${historyOpen ? " open" : ""}`}
+                    aria-hidden="true"
+                  />
                 </button>
                 {historyOpen && (
                   <div className="panel-collapse-body">
-                    <p className="muted small panel-collapse-note">Immutable once locked for resolution.</p>
+                    <p className="muted small panel-collapse-note">
+                      Immutable once locked for resolution.
+                    </p>
                     <table className="hist-table">
                       <thead>
                         <tr>
