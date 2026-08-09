@@ -510,3 +510,88 @@ export interface CreateContextItemInput {
   notebookCells?: NotebookCell[];
   runtime?: string;
 }
+
+// --- Question assumptions (private local view, shared working view, per-person perspectives) ---
+
+/**
+ * `local` = private to one user, one per (question, user), always exists.
+ * `shared` = the team's approved working view, one per question, always exists.
+ * `person` = a user's assumptions that they have explicitly chosen to share; only
+ * exists once that user has shared at least one assumption on the question.
+ */
+export type AssumptionPerspectiveType = "local" | "shared" | "person";
+
+export type AssumptionStatus =
+  | "active"
+  | "pending_review"
+  | "uncertain"
+  | "challenged"
+  | "invalidated"
+  | "archived";
+export type AssumptionConfidence = "low" | "medium" | "high";
+export type AssumptionEvidenceRelationship = "supports" | "contradicts" | "context";
+export type AssumptionChangeType = "add" | "edit" | "status" | "archive" | "publish_viewing";
+export type AssumptionProposalStatus = "pending" | "approved" | "rejected";
+
+/** A single belief used when reasoning about a question, scoped to a perspective (see AssumptionPerspectiveType). */
+export interface QuestionAssumption {
+  id: string;
+  questionId: string;
+  /** Deterministic id — see domain/assumptions.ts perspective id helpers. */
+  perspectiveId: string;
+  statement: string;
+  rationale?: string;
+  status: AssumptionStatus;
+  confidence?: AssumptionConfidence;
+  createdBy: string;
+  createdAt: string; // ISO
+  updatedBy: string;
+  updatedAt: string; // ISO
+  /** Set when this assumption was copied or approved from another assumption, to preserve provenance. */
+  originAssumptionId?: string;
+}
+
+/** Relates an assumption to a piece of question evidence (see EvidenceSource). */
+export interface AssumptionEvidenceLink {
+  id: string;
+  assumptionId: string;
+  evidenceId: string;
+  relationship: AssumptionEvidenceRelationship;
+  note?: string;
+  createdBy: string;
+  createdAt: string; // ISO
+}
+
+/** A contributor's request to add, edit, change the status of, or archive a Shared working view assumption. */
+export interface AssumptionProposal {
+  id: string;
+  questionId: string;
+  /** The contributor's own assumption this proposal is based on (for provenance + attribution). */
+  sourceAssumptionId: string;
+  /** Set for edit/status/archive proposals — the existing shared assumption being changed. */
+  targetAssumptionId?: string;
+  changeType: AssumptionChangeType;
+  proposedStatement?: string;
+  proposedRationale?: string;
+  proposedConfidence?: AssumptionConfidence;
+  proposedStatus?: AssumptionStatus;
+  rationale?: string;
+  status: AssumptionProposalStatus;
+  proposedBy: string;
+  proposedAt: string; // ISO
+  decidedBy?: string;
+  decidedAt?: string; // ISO
+  decisionNote?: string;
+}
+
+/** A lightweight discussion entry on an assumption; `isChallenge` also drives the Challenged status. */
+export interface AssumptionNote {
+  id: string;
+  assumptionId: string;
+  authorId: string;
+  authorName: string;
+  body: string;
+  isChallenge: boolean;
+  evidenceId?: string;
+  createdAt: string; // ISO
+}

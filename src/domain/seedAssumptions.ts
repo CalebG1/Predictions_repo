@@ -1,0 +1,243 @@
+// Demo seed data for the Assumptions section — a couple of questions with local,
+// shared, and per-person perspectives so the feature shows real collaboration on
+// first load instead of only empty states.
+
+import { localPerspectiveId, personPerspectiveId, sharedPerspectiveId } from "./assumptions";
+import type { AssumptionEvidenceLink, AssumptionNote, AssumptionProposal, QuestionAssumption } from "./types";
+
+const GEO = "q-geo";
+const VENDOR = "q-cyber-vendor";
+
+export const seedAssumptions: QuestionAssumption[] = [
+  // --- q-geo: u-risk's local view, one shared to their perspective + approved into the shared view ---
+  {
+    id: "asum-geo-1",
+    questionId: GEO,
+    perspectiveId: localPerspectiveId(GEO, "u-risk"),
+    statement:
+      "Houthi attacks in the Red Sea continue at a similar tempo through Q4, keeping most carriers on the Cape of Good Hope reroute.",
+    rationale: "No sign of a negotiated de-escalation as of the last IMO PortWatch update.",
+    status: "active",
+    confidence: "medium",
+    createdBy: "u-risk",
+    createdAt: "2026-06-18T15:00:00Z",
+    updatedBy: "u-risk",
+    updatedAt: "2026-06-18T15:00:00Z",
+  },
+  {
+    id: "asum-geo-2",
+    questionId: GEO,
+    perspectiveId: localPerspectiveId(GEO, "u-risk"),
+    statement: "Suez Canal Authority pricing concessions will not be enough to bring major carriers back before October.",
+    rationale: "Discount alone doesn't offset war-risk insurance premiums for most tier-1 carriers.",
+    status: "challenged",
+    confidence: "low",
+    createdBy: "u-risk",
+    createdAt: "2026-06-20T09:30:00Z",
+    updatedBy: "u-risk",
+    updatedAt: "2026-06-20T09:30:00Z",
+  },
+  {
+    id: "asum-geo-3",
+    questionId: GEO,
+    perspectiveId: personPerspectiveId(GEO, "u-risk"),
+    statement:
+      "Houthi attacks in the Red Sea continue at a similar tempo through Q4, keeping most carriers on the Cape of Good Hope reroute.",
+    rationale: "No sign of a negotiated de-escalation as of the last IMO PortWatch update.",
+    status: "active",
+    confidence: "medium",
+    createdBy: "u-risk",
+    createdAt: "2026-06-19T10:00:00Z",
+    updatedBy: "u-risk",
+    updatedAt: "2026-06-19T10:00:00Z",
+    originAssumptionId: "asum-geo-1",
+  },
+  {
+    id: "asum-geo-4",
+    questionId: GEO,
+    perspectiveId: sharedPerspectiveId(GEO),
+    statement:
+      "Reroute around the Cape of Good Hope remains the dominant routing choice for major carriers through the resolution date.",
+    rationale: "No sign of a negotiated de-escalation as of the last IMO PortWatch update.",
+    status: "active",
+    confidence: "high",
+    createdBy: "u-risk",
+    createdAt: "2026-06-21T11:00:00Z",
+    updatedBy: "u-risk",
+    updatedAt: "2026-06-21T11:00:00Z",
+    originAssumptionId: "asum-geo-1",
+  },
+  // --- q-geo: u-analyst's local view + shared perspective, with a proposal still pending ---
+  {
+    id: "asum-geo-5",
+    questionId: GEO,
+    perspectiveId: localPerspectiveId(GEO, "u-analyst"),
+    statement: "Panama Canal draft restrictions have already eased and are not a material driver of continued disruption.",
+    rationale: "Lock levels recovered faster than the seasonal forecast expected.",
+    status: "pending_review",
+    confidence: "medium",
+    createdBy: "u-analyst",
+    createdAt: "2026-06-22T13:00:00Z",
+    updatedBy: "u-analyst",
+    updatedAt: "2026-06-23T09:10:00Z",
+  },
+
+  // --- q-cyber-vendor: u-risk's local view, shared + approved into the shared view ---
+  {
+    id: "asum-vendor-1",
+    questionId: VENDOR,
+    perspectiveId: localPerspectiveId(VENDOR, "u-risk"),
+    statement: "Our top-10 vendor completes its SOC 2 remediation items before the Q4 renewal review.",
+    rationale: "Their last status call put remediation at 80% complete with two items outstanding.",
+    status: "active",
+    confidence: "medium",
+    createdBy: "u-risk",
+    createdAt: "2026-06-10T14:00:00Z",
+    updatedBy: "u-risk",
+    updatedAt: "2026-06-10T14:00:00Z",
+  },
+  {
+    id: "asum-vendor-2",
+    questionId: VENDOR,
+    perspectiveId: personPerspectiveId(VENDOR, "u-risk"),
+    statement: "Our top-10 vendor completes its SOC 2 remediation items before the Q4 renewal review.",
+    rationale: "Their last status call put remediation at 80% complete with two items outstanding.",
+    status: "active",
+    confidence: "medium",
+    createdBy: "u-risk",
+    createdAt: "2026-06-11T09:00:00Z",
+    updatedBy: "u-risk",
+    updatedAt: "2026-06-11T09:00:00Z",
+    originAssumptionId: "asum-vendor-1",
+  },
+  {
+    id: "asum-vendor-3",
+    questionId: VENDOR,
+    perspectiveId: sharedPerspectiveId(VENDOR),
+    statement: "Vendor's SOC 2 remediation is on track to close before the Q4 renewal review.",
+    rationale: "Their last status call put remediation at 80% complete with two items outstanding.",
+    status: "active",
+    confidence: "medium",
+    createdBy: "u-risk",
+    createdAt: "2026-06-12T10:00:00Z",
+    updatedBy: "u-risk",
+    updatedAt: "2026-06-12T10:00:00Z",
+    originAssumptionId: "asum-vendor-1",
+  },
+  {
+    id: "asum-vendor-4",
+    questionId: VENDOR,
+    perspectiveId: localPerspectiveId(VENDOR, "u-analyst"),
+    statement:
+      "Vendor's 72-hour breach-notification SLA is unlikely to be tested this cycle given no known incidents in their environment.",
+    status: "uncertain",
+    confidence: "low",
+    createdBy: "u-analyst",
+    createdAt: "2026-06-14T16:00:00Z",
+    updatedBy: "u-analyst",
+    updatedAt: "2026-06-14T16:00:00Z",
+  },
+];
+
+export const seedAssumptionEvidenceLinks: AssumptionEvidenceLink[] = [
+  {
+    id: "aslink-geo-1",
+    assumptionId: "asum-geo-4",
+    evidenceId: "q-geo-ev-teams",
+    relationship: "supports",
+    note: "Ops standup notes corroborate continued Cape rerouting.",
+    createdBy: "u-risk",
+    createdAt: "2026-06-21T11:05:00Z",
+  },
+  {
+    id: "aslink-geo-2",
+    assumptionId: "asum-geo-2",
+    evidenceId: "q-geo-ev-website",
+    relationship: "contradicts",
+    note: "Recent pricing reporting suggests some carriers are testing return trips.",
+    createdBy: "u-exec",
+    createdAt: "2026-06-24T08:00:00Z",
+  },
+  {
+    id: "aslink-geo-3",
+    assumptionId: "asum-geo-1",
+    evidenceId: "q-geo-ev-analysis",
+    relationship: "supports",
+    createdBy: "u-risk",
+    createdAt: "2026-06-18T15:10:00Z",
+  },
+  {
+    id: "aslink-vendor-1",
+    assumptionId: "asum-vendor-3",
+    evidenceId: "q-cyber-vendor-ev-teams",
+    relationship: "supports",
+    createdBy: "u-risk",
+    createdAt: "2026-06-12T10:05:00Z",
+  },
+  {
+    id: "aslink-vendor-2",
+    assumptionId: "asum-vendor-3",
+    evidenceId: "q-cyber-vendor-ev-analysis",
+    relationship: "context",
+    createdBy: "u-risk",
+    createdAt: "2026-06-12T10:06:00Z",
+  },
+];
+
+export const seedAssumptionProposals: AssumptionProposal[] = [
+  {
+    id: "aprop-geo-1",
+    questionId: GEO,
+    sourceAssumptionId: "asum-geo-1",
+    changeType: "add",
+    proposedStatement:
+      "Reroute around the Cape of Good Hope remains the dominant routing choice for major carriers through the resolution date.",
+    proposedRationale: "No sign of a negotiated de-escalation as of the last IMO PortWatch update.",
+    proposedConfidence: "high",
+    status: "approved",
+    proposedBy: "u-risk",
+    proposedAt: "2026-06-19T10:05:00Z",
+    decidedBy: "u-risk",
+    decidedAt: "2026-06-21T11:00:00Z",
+    decisionNote: "Matches what we're telling the freight desk — adopting as the working view.",
+  },
+  {
+    id: "aprop-vendor-1",
+    questionId: VENDOR,
+    sourceAssumptionId: "asum-vendor-1",
+    changeType: "add",
+    proposedStatement: "Vendor's SOC 2 remediation is on track to close before the Q4 renewal review.",
+    proposedConfidence: "medium",
+    status: "approved",
+    proposedBy: "u-risk",
+    proposedAt: "2026-06-11T09:05:00Z",
+    decidedBy: "u-risk",
+    decidedAt: "2026-06-12T10:00:00Z",
+  },
+  {
+    id: "aprop-geo-2",
+    questionId: GEO,
+    sourceAssumptionId: "asum-geo-5",
+    changeType: "add",
+    proposedStatement: "Panama Canal draft restrictions have already eased and are not a material driver of continued disruption.",
+    proposedRationale: "Lock levels recovered faster than the seasonal forecast expected.",
+    proposedConfidence: "medium",
+    rationale: "Worth reflecting in the shared view now that Red Sea routing is the dominant driver.",
+    status: "pending",
+    proposedBy: "u-analyst",
+    proposedAt: "2026-06-23T09:10:00Z",
+  },
+];
+
+export const seedAssumptionNotes: AssumptionNote[] = [
+  {
+    id: "anote-geo-1",
+    assumptionId: "asum-geo-2",
+    authorId: "u-exec",
+    authorName: "D. Alvarez (CFO)",
+    body: "Have we checked whether any carrier already resumed Suez transit this month? The pricing move looks bigger than we're crediting.",
+    isChallenge: true,
+    evidenceId: "q-geo-ev-website",
+    createdAt: "2026-06-24T08:05:00Z",
+  },
+];
