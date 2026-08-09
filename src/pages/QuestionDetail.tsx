@@ -17,6 +17,8 @@ import {
 } from "../components/charts";
 import VisibilityPicker from "../components/VisibilityPicker";
 import { overviewHref } from "../components/ui";
+import { competitorForQuestion } from "../domain/competitors";
+import { CompetitorAvatar } from "../components/competitors";
 
 export default function QuestionDetail() {
   const { id } = useParams();
@@ -25,6 +27,7 @@ export default function QuestionDetail() {
 
   const forecast = useMemo(() => (q ? runForecast(q) : null), [q]);
   const evidence = useMemo(() => (q ? evidenceFor(q.id) : []), [q, evidenceFor]);
+  const competitor = q ? competitorForQuestion(q.id) : undefined;
 
   const chartConfig = useMemo(() => {
     if (!q) return null;
@@ -137,6 +140,17 @@ export default function QuestionDetail() {
               >
                 {q.owningTeam}
               </Link>
+              {competitor && (
+                <>
+                  <span className="detail-crumb-sep" aria-hidden="true">
+                    ·
+                  </span>
+                  <Link to={`/competitors/${competitor.id}`} className="detail-crumb-company">
+                    <CompetitorAvatar competitor={competitor} />
+                    {competitor.name}
+                  </Link>
+                </>
+              )}
             </nav>
             <h1 className="detail-title">{q.title}</h1>
           </div>

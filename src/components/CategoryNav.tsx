@@ -4,6 +4,7 @@ const tabs = [
   { label: "Overview", path: "/" },
   { label: "Projects", path: "/projects" },
   { label: "Forecasts", path: "/movers" },
+  { label: "Competitors", path: "/competitors" },
   { label: "Research runs", path: "/agents" },
   { label: "Cybersecurity", path: "/cybersecurity" },
   { label: "Cybersecurity 2", path: "/cybersecurity-2" },

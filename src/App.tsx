@@ -16,6 +16,8 @@ import AgentOps from "./pages/AgentOps";
 import Cybersecurity from "./pages/Cybersecurity";
 import Cybersecurity2 from "./pages/Cybersecurity2";
 import ProjectDetail from "./pages/ProjectDetail";
+import Competitors from "./pages/Competitors";
+import CompetitorProfile from "./pages/CompetitorProfile";
 
 function AppShell() {
   return (
@@ -31,6 +33,8 @@ function AppShell() {
         <Route path="/q/:id/run/:runId" element={<AgentRunMonitor />} />
         <Route path="/agents" element={<AgentOps />} />
         <Route path="/movers" element={<Movers />} />
+        <Route path="/competitors" element={<Competitors />} />
+        <Route path="/competitors/:competitorId" element={<CompetitorProfile />} />
         <Route path="/cybersecurity" element={<Cybersecurity />} />
         <Route path="/cybersecurity-2" element={<Cybersecurity2 />} />
         <Route path="/settings" element={<Settings />}>

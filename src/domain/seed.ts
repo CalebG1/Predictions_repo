@@ -15,6 +15,7 @@ import {
   TeamJoinRequest,
 } from "./types";
 import { calibrationBins } from "./scoring";
+import { competitorQuestionSeeds } from "./competitors";
 
 export const organization = { id: "org-1", name: "Northwind Industries" };
 
@@ -232,7 +233,13 @@ export const evidenceSources: EvidenceSource[] = [
   },
 ];
 
-type QSeed = Omit<ForecastQuestion, "id"> & { id: string; initial: number; options?: string[] };
+type QSeed = Omit<ForecastQuestion, "id"> & {
+  id: string;
+  initial: number;
+  options?: string[];
+  /** Optional evidence-flavored update reasons used instead of the generic trigger pool. */
+  triggers?: string[];
+};
 
 const Q: QSeed[] = [
   {
@@ -924,11 +931,14 @@ const Q: QSeed[] = [
     initial: 0.45,
     options: ["OpenAI", "Google", "Anthropic", "Meta"],
   },
+  // Competitive-forecasting universe (Competitors tab) — see domain/competitors.ts.
+  ...competitorQuestionSeeds,
 ];
 
-export const questions: ForecastQuestion[] = Q.map(({ initial, options, ...q }) => {
+export const questions: ForecastQuestion[] = Q.map(({ initial, options, triggers, ...q }) => {
   void initial;
   void options;
+  void triggers;
   return q;
 });
 
@@ -941,8 +951,13 @@ const HARD_TRIGGERS = [
   "Internal status change",
 ];
 
-function pickTrigger(rng: () => number): string {
+function pickTrigger(rng: () => number, custom?: string[]): string {
   const r = rng();
+  if (custom?.length) {
+    if (r < 0.7) return custom[Math.floor(rng() * custom.length)];
+    if (r < 0.88) return "Scheduled weekly monitoring run";
+    return "Base-rate refresh";
+  }
   if (r < 0.62) return SOFT_TRIGGERS[Math.floor(rng() * SOFT_TRIGGERS.length)];
   if (r < 0.82) return HARD_TRIGGERS[Math.floor(rng() * HARD_TRIGGERS.length)];
   return "Base-rate refresh";
@@ -995,7 +1010,7 @@ Q.forEach((q) => {
           probability: Number(weights[idx].toFixed(3)),
           timestamp: t.toISOString(),
           source: idx === 0 && i % 3 === 0 ? "human-risk" : "agent-ensemble",
-          updateTrigger: pickTrigger(rng),
+          updateTrigger: pickTrigger(rng, q.triggers),
           rationaleId: `${q.id}-r-${idx}-${i}`,
         });
       });
@@ -1024,7 +1039,7 @@ Q.forEach((q) => {
       probability: Number(p.toFixed(3)),
       timestamp: t.toISOString(),
       source: i % 3 === 0 ? "human-risk" : "agent-ensemble",
-      updateTrigger: pickTrigger(rng),
+      updateTrigger: pickTrigger(rng, q.triggers),
       rationaleId: `${q.id}-r-${i}`,
     });
   }
