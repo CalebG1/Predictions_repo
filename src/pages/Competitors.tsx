@@ -1,9 +1,9 @@
-// Competitors tab: an Overview-style question table scoped to the competitive
-// universe. Every row is a competitor forecast with a company indicator;
-// clicking the company opens its profile, clicking the row opens the forecast.
+// Competitors tab: Kalshi-style market cards grouped by company, with a
+// top-movers sidebar. Click a company header to open its profile; click a
+// card (or its probability pill) to open the forecast.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { probabilityDelta, useStore } from "../store";
 import {
   competitors,
@@ -36,59 +36,86 @@ interface Row {
   delta7: number | null;
 }
 
-function CompetitorRow({ row }: { row: Row }) {
+function ForecastCard({ row }: { row: Row }) {
   const navigate = useNavigate();
   const delta = row.delta7 ?? 0;
-
-  const goToQuestion = () => navigate(`/q/${row.question.id}`);
+  const barWidth = Math.max(4, Math.round(row.probability * 100));
 
   return (
-    <tr
-      className="qt-row"
+    <article
+      className="comp-mkt-card"
       role="link"
       tabIndex={0}
-      onClick={goToQuestion}
+      onClick={() => navigate(`/q/${row.question.id}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          goToQuestion();
+          navigate(`/q/${row.question.id}`);
         }
       }}
     >
-      <td className="qt-company-col">
+      <div className="comp-mkt-cat">
+        <CompetitorAvatar competitor={row.competitor} />
+        <span>{row.move.moveCategory}</span>
+        {row.move.newlyIdentified && <span className="comp-new-flag">New</span>}
+      </div>
+
+      <h3 className="comp-mkt-title">{row.question.title}</h3>
+
+      <div className="comp-mkt-outcome">
+        <div className="comp-mkt-outcome-main">
+          <span className="comp-mkt-outcome-label">{row.move.expectedHorizon}</span>
+          <div className="comp-mkt-bar" aria-hidden="true">
+            <span className="comp-mkt-bar-fill" style={{ width: `${barWidth}%` }} />
+          </div>
+        </div>
+        <span className={`comp-mkt-mult delta ${delta >= 0 ? "up" : "down"}`}>
+          {signedPct(row.delta7)}% 7d
+        </span>
         <button
           type="button"
-          className="qt-company"
-          title={`View ${row.competitor.name} profile`}
+          className="comp-mkt-pill"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/q/${row.question.id}`);
+          }}
+        >
+          {pct(row.probability)}
+        </button>
+      </div>
+
+      <div className="comp-mkt-foot">
+        <span>Resolves {row.question.resolutionDate}</span>
+        <span
+          className="comp-mkt-foot-link"
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/competitors/${row.competitor.id}`);
           }}
         >
-          <CompetitorAvatar competitor={row.competitor} />
-          <span className="qt-company-name">{row.competitor.name}</span>
-        </button>
-      </td>
-      <td className="qt-question-col">
-        <div className="qt-question-cell">
-          <span className="qt-title">
-            {row.question.title}
-            {row.move.newlyIdentified && <span className="comp-new-flag">New</span>}
-          </span>
-        </div>
-      </td>
-      <td className="qt-prob">
-        <div className="qt-prob-inner">
-          <span className="qt-prob-val">{pct(row.probability)}</span>
-          <span className={`qt-prob-delta delta ${delta >= 0 ? "up" : "down"}`}>{signedPct(row.delta7)}% 7d</span>
-        </div>
-      </td>
-      <td className="qt-move-col">
-        <span className="comp-badge">{row.move.moveCategory}</span>
-      </td>
-      <td className="qt-date-col">{row.move.expectedHorizon}</td>
-      <td className="qt-date-col">{row.question.resolutionDate}</td>
-    </tr>
+          {row.competitor.name} →
+        </span>
+      </div>
+    </article>
+  );
+}
+
+function MoverRow({ row }: { row: Row }) {
+  const delta = row.delta7 ?? 0;
+  const up = delta >= 0;
+  return (
+    <Link to={`/q/${row.question.id}`} className="comp-side-row">
+      <div className="comp-side-row-main">
+        <span className="comp-side-row-title">{row.question.title}</span>
+        <span className="comp-side-row-sub">{row.competitor.name}</span>
+      </div>
+      <div className="comp-side-row-stats">
+        <span className="comp-side-row-pct">{pct(row.probability)}</span>
+        <span className={`comp-side-row-delta ${up ? "up" : "down"}`}>
+          {up ? "▲" : "▼"} {Math.abs(Math.round(delta * 100))}
+        </span>
+      </div>
+    </Link>
   );
 }
 
@@ -144,7 +171,13 @@ export default function Competitors() {
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
     let list = allRows.filter((r) => {
-      if (query && !r.question.title.toLowerCase().includes(query)) return false;
+      if (
+        query &&
+        !r.question.title.toLowerCase().includes(query) &&
+        !r.competitor.name.toLowerCase().includes(query)
+      ) {
+        return false;
+      }
       if (company !== "all" && r.competitor.id !== company) return false;
       if (moveCat !== "all" && r.move.moveCategory !== moveCat) return false;
       return true;
@@ -163,6 +196,30 @@ export default function Competitors() {
       }
     });
   }, [allRows, search, company, moveCat, sort]);
+
+  const sections = useMemo(() => {
+    const byId = new Map<string, Row[]>();
+    for (const r of rows) {
+      const list = byId.get(r.competitor.id) ?? [];
+      list.push(r);
+      byId.set(r.competitor.id, list);
+    }
+    // Preserve the seed competitor order; drop companies with no matching rows.
+    return competitors
+      .filter((c) => byId.has(c.id))
+      .map((c) => ({ competitor: c, rows: byId.get(c.id)! }));
+  }, [rows]);
+
+  const topMovers = useMemo(
+    () =>
+      [...allRows]
+        .filter((r) => r.delta7 != null && Math.abs(r.delta7) > 0)
+        .sort((a, b) => Math.abs(b.delta7 ?? 0) - Math.abs(a.delta7 ?? 0))
+        .slice(0, 6),
+    [allRows],
+  );
+
+  const trending = useMemo(() => [...allRows].sort((a, b) => b.probability - a.probability).slice(0, 5), [allRows]);
 
   const newCount = useMemo(() => newlyIdentifiedCount(questions), [questions]);
   const filtersActive = company !== "all" || moveCat !== "all";
@@ -306,25 +363,56 @@ export default function Competitors() {
       </div>
 
       <div className="dash-page-body">
-        <div className="qtable-wrap">
-          <table className="qtable">
-            <thead>
-              <tr>
-                <th className="qt-company-col">Company</th>
-                <th className="qt-question-col">Forecast</th>
-                <th className="qt-prob-col">Probability</th>
-                <th className="qt-move-col">Move type</th>
-                <th className="qt-date-col">Expected</th>
-                <th className="qt-date-col">Resolves</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <CompetitorRow key={r.question.id} row={r} />
-              ))}
-            </tbody>
-          </table>
-          {rows.length === 0 && <p className="dash-sub comp-empty">No forecasts match the current filters.</p>}
+        <div className="comp-markets">
+          <div className="comp-markets-main">
+            {sections.map(({ competitor, rows: sectionRows }) => (
+              <section key={competitor.id} className="comp-mkt-section">
+                <div className="comp-mkt-section-head">
+                  <Link to={`/competitors/${competitor.id}`} className="comp-mkt-section-link">
+                    <CompetitorAvatar competitor={competitor} />
+                    <h2>{competitor.name}</h2>
+                    <span className="comp-mkt-section-chev" aria-hidden="true">
+                      ›
+                    </span>
+                  </Link>
+                  <span className="comp-mkt-section-count">
+                    {sectionRows.length} forecast{sectionRows.length === 1 ? "" : "s"}
+                  </span>
+                </div>
+                <div className="comp-mkt-grid">
+                  {sectionRows.map((r) => (
+                    <ForecastCard key={r.question.id} row={r} />
+                  ))}
+                </div>
+              </section>
+            ))}
+            {rows.length === 0 && <p className="dash-sub comp-empty">No forecasts match the current filters.</p>}
+          </div>
+
+          <aside className="comp-markets-side">
+            <div className="comp-side-block">
+              <Link to="/competitors" className="comp-side-head" onClick={() => setSort("movers")}>
+                <span>Top movers</span>
+                <span aria-hidden="true">›</span>
+              </Link>
+              <div className="comp-side-list">
+                {topMovers.map((r) => (
+                  <MoverRow key={r.question.id} row={r} />
+                ))}
+              </div>
+            </div>
+
+            <div className="comp-side-block">
+              <div className="comp-side-head">
+                <span>Most likely</span>
+              </div>
+              <div className="comp-side-list">
+                {trending.map((r) => (
+                  <MoverRow key={r.question.id} row={r} />
+                ))}
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
