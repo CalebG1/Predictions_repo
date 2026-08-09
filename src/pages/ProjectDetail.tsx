@@ -502,7 +502,7 @@ export default function ProjectDetail() {
   return (
     <main className="project-page">
       <div className="project-breadcrumb">
-        <Link to="/">Projects</Link>
+        <Link to="/projects">Projects</Link>
         <Icon name="chevron" size={13} />
         <span>{project.name}</span>
       </div>

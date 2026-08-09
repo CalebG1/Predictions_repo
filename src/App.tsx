@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header";
 import CategoryNav from "./components/CategoryNav";
 import Overview from "./pages/Overview";
+import Projects from "./pages/Projects";
 import QuestionDetail from "./pages/QuestionDetail";
 import QuestionEmbed from "./pages/QuestionEmbed";
 import Movers from "./pages/Movers";
@@ -23,6 +24,7 @@ function AppShell() {
       <CategoryNav />
       <Routes>
         <Route path="/" element={<Overview />} />
+        <Route path="/projects" element={<Projects />} />
         <Route path="/forecast/:jobId/processing" element={<ForecastProcessing />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/q/:id" element={<QuestionDetail />} />
