@@ -20,8 +20,18 @@ const base: Omit<ContextItem, "id" | "visibility" | "title"> = {
 
 const pub: ContextItem = { ...base, id: "ctx-pub", title: "Public", visibility: "public" };
 const team: ContextItem = { ...base, id: "ctx-team", title: "Team", visibility: "team" };
-const lead: ContextItem = { ...base, id: "ctx-lead", title: "Leadership", visibility: "leadership" };
-const restricted: ContextItem = { ...base, id: "ctx-rest", title: "Restricted", visibility: "restricted" };
+const lead: ContextItem = {
+  ...base,
+  id: "ctx-lead",
+  title: "Leadership",
+  visibility: "leadership",
+};
+const restricted: ContextItem = {
+  ...base,
+  id: "ctx-rest",
+  title: "Restricted",
+  visibility: "restricted",
+};
 
 const exec: User = { id: "u-exec", name: "Exec", role: "executive", team: "Executive" };
 const analyst: User = { id: "u-analyst", name: "Analyst", role: "analyst", team: "Strategy" };

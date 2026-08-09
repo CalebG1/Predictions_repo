@@ -29,5 +29,7 @@ export function orgIntegrationConnector(integration: OrgIntegration): Connector 
 }
 
 export function provisionedConnectors(): Connector[] {
-  return ORG_INTEGRATIONS.map((i) => orgIntegrationConnector(i)).filter((c): c is Connector => c !== undefined);
+  return ORG_INTEGRATIONS.map((i) => orgIntegrationConnector(i)).filter(
+    (c): c is Connector => c !== undefined,
+  );
 }

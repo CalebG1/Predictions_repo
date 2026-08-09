@@ -39,7 +39,12 @@ describe("brier", () => {
     expect(brierMulticlass([0.7, 0.3], 0)).toBeCloseTo(0.09 + 0.09);
   });
   it("mean brier averages across forecasts", () => {
-    expect(meanBrier([{ p: 0.5, outcome: 1 }, { p: 0.5, outcome: 0 }])).toBeCloseTo(0.25);
+    expect(
+      meanBrier([
+        { p: 0.5, outcome: 1 },
+        { p: 0.5, outcome: 0 },
+      ]),
+    ).toBeCloseTo(0.25);
   });
 });
 

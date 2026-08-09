@@ -402,7 +402,13 @@ export interface ProbabilityAlert {
 
 // --- Context registry (org-wide library + per-forecast bindings) ---
 
-export type ContextItemType = "connector" | "document" | "manual" | "evidence" | "instruction" | "analysis";
+export type ContextItemType =
+  | "connector"
+  | "document"
+  | "manual"
+  | "evidence"
+  | "instruction"
+  | "analysis";
 export type ContextItemStatus = "active" | "pending_approval" | "archived" | "error";
 
 /** A single cell in a hosted-notebook "Add analysis" context item. */

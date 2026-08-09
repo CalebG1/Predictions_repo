@@ -50,10 +50,7 @@ export default function Cybersecurity2() {
   const [horizon, setHorizon] = useState<HorizonKey>("all");
 
   const cyber = useMemo(() => cyberQuestions(questions), [questions]);
-  const owners = useMemo(
-    () => Array.from(new Set(cyber.map((q) => q.owningTeam))).sort(),
-    [cyber]
-  );
+  const owners = useMemo(() => Array.from(new Set(cyber.map((q) => q.owningTeam))).sort(), [cyber]);
   const visibleIds = useMemo(() => new Set(cyber.map((q) => q.id)), [cyber]);
   const titleFor = useMemo(() => {
     const map = new Map(cyber.map((q) => [q.id, q.title]));
@@ -101,7 +98,7 @@ export default function Cybersecurity2() {
   const riskMap = useMemo(() => {
     const query = search.trim().toLowerCase();
     return enterpriseRiskMap(questions, yesOutcome, historyFor).filter(
-      (r) => !query || r.failureMode.toLowerCase().includes(query)
+      (r) => !query || r.failureMode.toLowerCase().includes(query),
     );
   }, [questions, yesOutcome, historyFor, search]);
 
@@ -212,7 +209,9 @@ export default function Cybersecurity2() {
                       <td className="num rmt-prob">{pct(row.probability)}</td>
                       <td className={`rmt-trend trend-${row.trend}`}>{TREND_GLYPH[row.trend]}</td>
                       <td>
-                        <span className={`impact-chip impact-${row.impact}`}>{impactLevelLabel[row.impact]}</span>
+                        <span className={`impact-chip impact-${row.impact}`}>
+                          {impactLevelLabel[row.impact]}
+                        </span>
                       </td>
                       <td>
                         <span className={`conf-dot conf-${row.confidence}`} />
@@ -300,29 +299,43 @@ export default function Cybersecurity2() {
               </thead>
               <tbody>
                 {feed.map((item) => {
-                  const maxImpact = Math.max(...item.impacts.map((i) => Math.abs(i.probabilityDelta)));
-                  const topImpact = item.impacts.find((i) => Math.abs(i.probabilityDelta) === maxImpact)!;
+                  const maxImpact = Math.max(
+                    ...item.impacts.map((i) => Math.abs(i.probabilityDelta)),
+                  );
+                  const topImpact = item.impacts.find(
+                    (i) => Math.abs(i.probabilityDelta) === maxImpact,
+                  )!;
                   return (
                     <tr key={item.alert.id}>
                       <td className="alert-time">{formatTs(item.alert.timestamp)}</td>
                       <td className="alert-title-cell">{item.alert.title}</td>
                       <td>{item.alert.source}</td>
                       <td>
-                        <span className={severityClass(item.alert.severity)}>{item.alert.severity}</span>
+                        <span className={severityClass(item.alert.severity)}>
+                          {item.alert.severity}
+                        </span>
                       </td>
                       <td>
                         <div className="alert-feed-affected inline">
                           {item.impacts.map((imp) => (
-                            <Link key={imp.questionId} to={`/q/${imp.questionId}`} className="affected-q">
+                            <Link
+                              key={imp.questionId}
+                              to={`/q/${imp.questionId}`}
+                              className="affected-q"
+                            >
                               <span className="affected-title">{imp.questionTitle}</span>
-                              <span className={`affected-delta ${imp.direction === "increase" ? "up" : "down"}`}>
+                              <span
+                                className={`affected-delta ${imp.direction === "increase" ? "up" : "down"}`}
+                              >
                                 {signedPct(imp.probabilityDelta)}%
                               </span>
                             </Link>
                           ))}
                         </div>
                       </td>
-                      <td className={`num alert-impact ${topImpact.direction === "increase" ? "up" : "down"}`}>
+                      <td
+                        className={`num alert-impact ${topImpact.direction === "increase" ? "up" : "down"}`}
+                      >
                         {signedPct(topImpact.probabilityDelta)}%
                       </td>
                     </tr>

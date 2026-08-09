@@ -41,21 +41,81 @@ interface DomainDef {
 }
 
 const DOMAIN_DEFS: DomainDef[] = [
-  { domain: "Identity", questionId: "q-cyber-iam", fallbackProbability: 0.13, fallbackRemediation: 2, fallbackControlCoverage: 78 },
-  { domain: "Endpoint", questionId: "q-cyber-ransomware", fallbackProbability: 0.19, fallbackRemediation: 4, fallbackControlCoverage: 82 },
-  { domain: "Cloud", questionId: "q-cyber-cloud", fallbackProbability: 0.21, fallbackRemediation: 3, fallbackControlCoverage: 71 },
-  { domain: "Network", questionId: "q-cyber-ddos", fallbackProbability: 0.25, fallbackRemediation: 1, fallbackControlCoverage: 85 },
-  { domain: "Email", questionId: "q-cyber-phishing", fallbackProbability: 0.14, fallbackRemediation: 2, fallbackControlCoverage: 76 },
-  { domain: "Application security", questionId: "q-cyber-zero-day", fallbackProbability: 0.17, fallbackRemediation: 12, fallbackControlCoverage: 68 },
-  { domain: "Data security", questionId: "q-cyber-breach", fallbackProbability: 0.22, fallbackRemediation: 3, fallbackControlCoverage: 74 },
-  { domain: "Vendor risk", questionId: "q-cyber-vendor", fallbackProbability: 0.24, fallbackRemediation: 2, fallbackControlCoverage: 65 },
-  { domain: "Compliance", questionId: "q-cyber-compliance", fallbackProbability: 0.28, fallbackRemediation: 3, fallbackControlCoverage: 72 },
-  { domain: "Incident response readiness", questionId: "q-cyber-zero-trust", fallbackProbability: 0.48, fallbackRemediation: 1, fallbackControlCoverage: 80 },
+  {
+    domain: "Identity",
+    questionId: "q-cyber-iam",
+    fallbackProbability: 0.13,
+    fallbackRemediation: 2,
+    fallbackControlCoverage: 78,
+  },
+  {
+    domain: "Endpoint",
+    questionId: "q-cyber-ransomware",
+    fallbackProbability: 0.19,
+    fallbackRemediation: 4,
+    fallbackControlCoverage: 82,
+  },
+  {
+    domain: "Cloud",
+    questionId: "q-cyber-cloud",
+    fallbackProbability: 0.21,
+    fallbackRemediation: 3,
+    fallbackControlCoverage: 71,
+  },
+  {
+    domain: "Network",
+    questionId: "q-cyber-ddos",
+    fallbackProbability: 0.25,
+    fallbackRemediation: 1,
+    fallbackControlCoverage: 85,
+  },
+  {
+    domain: "Email",
+    questionId: "q-cyber-phishing",
+    fallbackProbability: 0.14,
+    fallbackRemediation: 2,
+    fallbackControlCoverage: 76,
+  },
+  {
+    domain: "Application security",
+    questionId: "q-cyber-zero-day",
+    fallbackProbability: 0.17,
+    fallbackRemediation: 12,
+    fallbackControlCoverage: 68,
+  },
+  {
+    domain: "Data security",
+    questionId: "q-cyber-breach",
+    fallbackProbability: 0.22,
+    fallbackRemediation: 3,
+    fallbackControlCoverage: 74,
+  },
+  {
+    domain: "Vendor risk",
+    questionId: "q-cyber-vendor",
+    fallbackProbability: 0.24,
+    fallbackRemediation: 2,
+    fallbackControlCoverage: 65,
+  },
+  {
+    domain: "Compliance",
+    questionId: "q-cyber-compliance",
+    fallbackProbability: 0.28,
+    fallbackRemediation: 3,
+    fallbackControlCoverage: 72,
+  },
+  {
+    domain: "Incident response readiness",
+    questionId: "q-cyber-zero-trust",
+    fallbackProbability: 0.48,
+    fallbackRemediation: 1,
+    fallbackControlCoverage: 80,
+  },
 ];
 
 /** Map forecast question id → security domain (for filters). */
 export const QUESTION_TO_DOMAIN: Record<string, SecurityDomain> = Object.fromEntries(
-  DOMAIN_DEFS.filter((d) => d.questionId).map((d) => [d.questionId!, d.domain])
+  DOMAIN_DEFS.filter((d) => d.questionId).map((d) => [d.questionId!, d.domain]),
 ) as Record<string, SecurityDomain>;
 
 export type PeerPosition = "above" | "at" | "below";
@@ -85,7 +145,7 @@ function peerPosition(questionId: string, ourProb: number): PeerPosition {
 export function securityDomainRows(
   questions: ForecastQuestion[],
   yesOutcome: (id: string) => Outcome | undefined,
-  _historyFor: (outcomeId: string) => ProbabilityPoint[]
+  _historyFor: (outcomeId: string) => ProbabilityPoint[],
 ): SecurityDomainRow[] {
   const byId = new Map(questions.map((q) => [q.id, q]));
 
@@ -105,7 +165,7 @@ export function securityDomainRows(
 
     const openRemediation = def.questionId
       ? alertsForQuestion(def.questionId).filter(
-          (a) => a.alert.status === "open" || a.alert.status === "investigating"
+          (a) => a.alert.status === "open" || a.alert.status === "investigating",
         ).length
       : def.fallbackRemediation;
 

@@ -174,11 +174,21 @@ function seeded(seed: string): () => number {
 }
 
 const ROSTER: InterventionPerson[] = [
-  { name: "Priya Natarajan", role: "Competitive Intelligence", channel: "slack", target: "#competitive-intel" },
+  {
+    name: "Priya Natarajan",
+    role: "Competitive Intelligence",
+    channel: "slack",
+    target: "#competitive-intel",
+  },
   { name: "Marcus Webb", role: "Data Science", channel: "email", target: "m.webb@northwind.com" },
   { name: "Elena Ruiz", role: "Corporate Strategy", channel: "teams", target: "Leadership Sync" },
   { name: "Sam O'Connor", role: "Platform Engineering", channel: "slack", target: "#eng-updates" },
-  { name: "Dana Whitfield", role: "Research", channel: "email", target: "d.whitfield@northwind.com" },
+  {
+    name: "Dana Whitfield",
+    role: "Research",
+    channel: "email",
+    target: "d.whitfield@northwind.com",
+  },
   { name: "Wei Chen", role: "Product Analytics", channel: "teams", target: "Product Strategy" },
 ];
 
@@ -210,7 +220,8 @@ export function resourcePreview(r: InterventionResources): string {
     parts.push(`${CHANNEL_LABELS[channel]}: ${n} ${n === 1 ? "person" : "people"}`);
   }
   if (r.tasks.length > 0) parts.push(`${r.tasks.length} task${r.tasks.length === 1 ? "" : "s"}`);
-  if (r.dataPulls.length > 0) parts.push(`${r.dataPulls.length} data pull${r.dataPulls.length === 1 ? "" : "s"}`);
+  if (r.dataPulls.length > 0)
+    parts.push(`${r.dataPulls.length} data pull${r.dataPulls.length === 1 ? "" : "s"}`);
   if (r.docs.length > 0) parts.push(`${r.docs.length} doc${r.docs.length === 1 ? "" : "s"}`);
   return parts.join(" · ");
 }
@@ -229,7 +240,7 @@ export function effectLabel(pp: number): string {
  */
 export function buildInterventionSuggestions(
   question: ForecastQuestion,
-  forecast: ForecastObject
+  forecast: ForecastObject,
 ): InterventionSuggestion[] {
   const rng = seeded(`${question.id}::interventions`);
   const isRisk = question.riskOrOpportunity === "risk";
@@ -239,7 +250,9 @@ export function buildInterventionSuggestions(
   const uncertainties = forecast.keyUncertainties;
   const uncertaintyCount = uncertainties.length;
 
-  const estimating = forecast.agentPanel.filter((a) => a.agent !== "synthesis" && a.agent !== "extremizer");
+  const estimating = forecast.agentPanel.filter(
+    (a) => a.agent !== "synthesis" && a.agent !== "extremizer",
+  );
   const estimates = estimating.map((a) => a.estimate);
   const spreadPp = Math.max(1, Math.round((Math.max(...estimates) - Math.min(...estimates)) * 100));
   const tightenedPp = Math.max(2, Math.round(spreadPp * 0.45));
@@ -258,7 +271,9 @@ export function buildInterventionSuggestions(
       id: `${question.id}-int-workstream`,
       questionId: question.id,
       intent: "act",
-      title: isRisk ? `Neutralize the top driver: shut down "${topDriver.toLowerCase()}"` : `Accelerate the top driver: "${topDriver.toLowerCase()}"`,
+      title: isRisk
+        ? `Neutralize the top driver: shut down "${topDriver.toLowerCase()}"`
+        : `Accelerate the top driver: "${topDriver.toLowerCase()}"`,
       approach: `The agent files the change ticket, chases the responsible owners over Slack/Teams until someone commits, and books the work into a dated window.`,
       expectedOutcome: isRisk
         ? "The leading risk driver has an owner, a ticket, and a dated remediation window."
@@ -285,7 +300,8 @@ export function buildInterventionSuggestions(
       title: `Get ${question.owningTeam} to a dated, written plan`,
       approach: `The agent pushes for a concrete plan with dates — not a status update — and posts the commitment where leadership can see it.`,
       expectedOutcome: `${question.owningTeam} has published a dated plan against this line, visible to leadership.`,
-      targets: forecast.updateTriggers[2] ?? `Internal ${question.owningTeam} status change or incident`,
+      targets:
+        forecast.updateTriggers[2] ?? `Internal ${question.owningTeam} status change or incident`,
       estimatedGain: "medium",
       gainFraming: `Converts a soft intention into a tracked commitment; applies ${sign(commitmentEffect)} on completion`,
       outcomeEffectPp: commitmentEffect,
@@ -351,7 +367,7 @@ export function createAgentRun(
   suggestion: InterventionSuggestion,
   question: ForecastQuestion,
   resources: InterventionResources,
-  launchedAt: number
+  launchedAt: number,
 ): AgentRun {
   return {
     id: `run-${suggestion.id}-${launchedAt}`,
@@ -359,7 +375,10 @@ export function createAgentRun(
     suggestionId: suggestion.id,
     intent: suggestion.intent,
     title: suggestion.title,
-    goal: suggestion.intent === "act" ? `Deliver: ${suggestion.expectedOutcome}` : `Narrow: ${suggestion.targets}`,
+    goal:
+      suggestion.intent === "act"
+        ? `Deliver: ${suggestion.expectedOutcome}`
+        : `Narrow: ${suggestion.targets}`,
     targets: suggestion.targets,
     expectedOutcome: suggestion.expectedOutcome,
     outcomeEffectPp: suggestion.outcomeEffectPp,
@@ -563,16 +582,31 @@ export function snapshotRun(run: AgentRun, nowMs: number): RunSnapshot {
 
   for (const [i, task] of t.tasks.entries()) {
     if (elapsed >= task.startAt) {
-      events.push({ id: `ev-tk-${i}`, at: abs(task.startAt), text: `Task started: ${task.display}`, kind: "task" });
+      events.push({
+        id: `ev-tk-${i}`,
+        at: abs(task.startAt),
+        text: `Task started: ${task.display}`,
+        kind: "task",
+      });
     }
     if (elapsed >= task.doneAt) {
-      events.push({ id: `ev-tkd-${i}`, at: abs(task.doneAt), text: `Task completed: ${task.display}`, kind: "task" });
+      events.push({
+        id: `ev-tkd-${i}`,
+        at: abs(task.doneAt),
+        text: `Task completed: ${task.display}`,
+        kind: "task",
+      });
     }
   }
 
   for (const [j, d] of t.dataPulls.entries()) {
     if (elapsed >= d.startAt) {
-      events.push({ id: `ev-dp-${j}`, at: abs(d.startAt), text: `Started data pull: ${d.label}`, kind: "data" });
+      events.push({
+        id: `ev-dp-${j}`,
+        at: abs(d.startAt),
+        text: `Started data pull: ${d.label}`,
+        kind: "data",
+      });
     }
     if (elapsed >= d.doneAt) {
       events.push({
@@ -586,7 +620,12 @@ export function snapshotRun(run: AgentRun, nowMs: number): RunSnapshot {
 
   for (const [k, doc] of t.docReads.entries()) {
     if (elapsed >= doc.at) {
-      events.push({ id: `ev-doc-${k}`, at: abs(doc.at), text: `Reviewed document: ${doc.label}`, kind: "data" });
+      events.push({
+        id: `ev-doc-${k}`,
+        at: abs(doc.at),
+        text: `Reviewed document: ${doc.label}`,
+        kind: "data",
+      });
     }
   }
 
@@ -596,7 +635,10 @@ export function snapshotRun(run: AgentRun, nowMs: number): RunSnapshot {
     events.push({
       id: "ev-syn",
       at: abs(t.synthesisStart),
-      text: run.intent === "act" ? "Consolidating commitments and tickets" : "Synthesizing findings across branches",
+      text:
+        run.intent === "act"
+          ? "Consolidating commitments and tickets"
+          : "Synthesizing findings across branches",
       kind: "plan",
     });
   }
@@ -624,7 +666,10 @@ export function snapshotRun(run: AgentRun, nowMs: number): RunSnapshot {
     else if (elapsed >= o.sentAt) status = "active";
     nodes.push({
       id: `n-out-${i}`,
-      label: run.intent === "act" ? `Chase ${first} via ${CHANNEL_LABELS[o.person.channel]}` : `Ask ${first} via ${CHANNEL_LABELS[o.person.channel]}`,
+      label:
+        run.intent === "act"
+          ? `Chase ${first} via ${CHANNEL_LABELS[o.person.channel]}`
+          : `Ask ${first} via ${CHANNEL_LABELS[o.person.channel]}`,
       detail: o.person.role,
       kind: "outreach",
       status,
@@ -660,20 +705,29 @@ export function snapshotRun(run: AgentRun, nowMs: number): RunSnapshot {
   nodes.push({
     id: "n-syn",
     label: run.intent === "act" ? "Confirm delivery" : "Synthesize findings",
-    detail: run.intent === "act" ? "Verify commitments landed" : "Pool branch results into a finding",
+    detail:
+      run.intent === "act" ? "Verify commitments landed" : "Pool branch results into a finding",
     kind: "synthesis",
-    status: elapsed >= t.synthesisDone ? "done" : elapsed >= t.synthesisStart ? "active" : "pending",
+    status:
+      elapsed >= t.synthesisDone ? "done" : elapsed >= t.synthesisStart ? "active" : "pending",
   });
 
   const waitingOn = outreach.filter((o) => o.status === "sent" || o.status === "seen");
-  const dataPullsRunning = t.dataPulls.filter((d) => elapsed >= d.startAt && elapsed < d.doneAt).length;
+  const dataPullsRunning = t.dataPulls.filter(
+    (d) => elapsed >= d.startAt && elapsed < d.doneAt,
+  ).length;
   const tasksDone = t.tasks.filter((task) => elapsed >= task.doneAt).length;
   const deadEnds = nodes.filter((n) => n.status === "dead_end").length;
 
   let phase: RunPhase;
   if (elapsed < RUN_PLANNING_MS) phase = "planning";
   else if (done) phase = "done";
-  else if (waitingOn.length > 0 && dataPullsRunning === 0 && tasksDone === t.tasks.length && elapsed < t.synthesisStart)
+  else if (
+    waitingOn.length > 0 &&
+    dataPullsRunning === 0 &&
+    tasksDone === t.tasks.length &&
+    elapsed < t.synthesisStart
+  )
     phase = "waiting";
   else phase = "running";
 

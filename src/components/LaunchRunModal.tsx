@@ -40,21 +40,23 @@ export default function LaunchRunModal({
       boundContextFor(questionId)
         .filter((i) => i.status === "active" && (i.type === "document" || i.type === "manual"))
         .map((i) => i.title),
-    [boundContextFor, questionId]
+    [boundContextFor, questionId],
   );
   const allDocs = useMemo(
     () => Array.from(new Set([...defaults.docs, ...boundDocs])),
-    [defaults.docs, boundDocs]
+    [defaults.docs, boundDocs],
   );
 
   const [channels, setChannels] = useState<Set<OutreachChannel>>(
-    () => new Set(defaults.people.map((p) => p.channel))
+    () => new Set(defaults.people.map((p) => p.channel)),
   );
   const [selectedPeople, setSelectedPeople] = useState<Set<string>>(
-    () => new Set(defaults.people.map((p) => p.name))
+    () => new Set(defaults.people.map((p) => p.name)),
   );
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(() => new Set(allDocs));
-  const [selectedPulls, setSelectedPulls] = useState<Set<string>>(() => new Set(defaults.dataPulls));
+  const [selectedPulls, setSelectedPulls] = useState<Set<string>>(
+    () => new Set(defaults.dataPulls),
+  );
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(() => new Set(defaults.tasks));
   const [maxPeople, setMaxPeople] = useState(defaults.maxPeople);
   const [maxWaitHours, setMaxWaitHours] = useState(defaults.maxWaitHours);
@@ -118,7 +120,19 @@ export default function LaunchRunModal({
       maxPeople,
       maxWaitHours,
     }),
-    [defaults.people, defaults.dataPulls, defaults.tasks, selectedPeople, channels, allDocs, selectedDocs, selectedPulls, selectedTasks, maxPeople, maxWaitHours]
+    [
+      defaults.people,
+      defaults.dataPulls,
+      defaults.tasks,
+      selectedPeople,
+      channels,
+      allDocs,
+      selectedDocs,
+      selectedPulls,
+      selectedTasks,
+      maxPeople,
+      maxWaitHours,
+    ],
   );
 
   const nothingSelected =
@@ -147,7 +161,15 @@ export default function LaunchRunModal({
             </p>
           </div>
           <button type="button" className="asrc-close" aria-label="Close" onClick={onClose}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+            >
               <line x1="6" y1="6" x2="18" y2="18" />
               <line x1="18" y1="6" x2="6" y2="18" />
             </svg>
@@ -159,7 +181,10 @@ export default function LaunchRunModal({
             <h3>Channels in scope</h3>
             <div className="int-channel-toggles">
               {CHANNELS.map((channel) => (
-                <label key={channel} className={`int-channel-toggle${channels.has(channel) ? " on" : ""}`}>
+                <label
+                  key={channel}
+                  className={`int-channel-toggle${channels.has(channel) ? " on" : ""}`}
+                >
                   <input
                     type="checkbox"
                     checked={channels.has(channel)}
@@ -272,7 +297,10 @@ export default function LaunchRunModal({
               </label>
               <label>
                 Max wait per person
-                <select value={maxWaitHours} onChange={(e) => setMaxWaitHours(Number(e.target.value))}>
+                <select
+                  value={maxWaitHours}
+                  onChange={(e) => setMaxWaitHours(Number(e.target.value))}
+                >
                   {WAIT_OPTIONS.map((h) => (
                     <option key={h} value={h}>
                       {h}h
@@ -285,7 +313,9 @@ export default function LaunchRunModal({
         </div>
 
         <footer className="int-launch-foot">
-          <span className="muted small">{nothingSelected ? "Select at least one resource" : resourcePreview(resources)}</span>
+          <span className="muted small">
+            {nothingSelected ? "Select at least one resource" : resourcePreview(resources)}
+          </span>
           <button
             type="button"
             className="ctx-primary-btn"
@@ -297,6 +327,6 @@ export default function LaunchRunModal({
         </footer>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

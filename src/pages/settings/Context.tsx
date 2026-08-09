@@ -61,20 +61,32 @@ export default function Context() {
   const [undoBinding, setUndoBinding] = useState<ContextBinding | null>(null);
   const [undoFading, setUndoFading] = useState(false);
 
-  const userName = (id: string) => users.find((u) => u.id === id)?.name ?? allUsers.find((u) => u.id === id)?.name ?? id;
+  const userName = (id: string) =>
+    users.find((u) => u.id === id)?.name ?? allUsers.find((u) => u.id === id)?.name ?? id;
 
   const pendingCount = useMemo(
     () => contextItems.filter((i) => i.status === "pending_approval").length,
-    [contextItems]
+    [contextItems],
   );
 
   const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase();
     return contextItems.filter((item) => {
       if (typeFilter === "app" && !(item.type === "manual" && item.connectorId)) return false;
-      if (typeFilter === "notes" && !((item.type === "manual" && !item.connectorId) || item.type === "instruction")) return false;
-      if (typeFilter !== "all" && typeFilter !== "app" && typeFilter !== "notes" && item.type !== typeFilter) return false;
-      if (q && !item.title.toLowerCase().includes(q) && !item.owningTeam.toLowerCase().includes(q)) return false;
+      if (
+        typeFilter === "notes" &&
+        !((item.type === "manual" && !item.connectorId) || item.type === "instruction")
+      )
+        return false;
+      if (
+        typeFilter !== "all" &&
+        typeFilter !== "app" &&
+        typeFilter !== "notes" &&
+        item.type !== typeFilter
+      )
+        return false;
+      if (q && !item.title.toLowerCase().includes(q) && !item.owningTeam.toLowerCase().includes(q))
+        return false;
       return true;
     });
   }, [contextItems, query, typeFilter]);
@@ -100,14 +112,16 @@ export default function Context() {
 
   const bindableItems = useMemo(
     () => contextItems.filter((i) => i.status !== "archived"),
-    [contextItems]
+    [contextItems],
   );
 
   useEffect(() => {
     const q = bindingsSearch.trim().toLowerCase();
     if (!q) return;
 
-    const matchingForecasts = questions.filter((question) => question.title.toLowerCase().includes(q));
+    const matchingForecasts = questions.filter((question) =>
+      question.title.toLowerCase().includes(q),
+    );
     const matchingItems = bindableItems.filter((item) => item.title.toLowerCase().includes(q));
 
     if (matchingForecasts.length === 1) {
@@ -123,9 +137,7 @@ export default function Context() {
   const forecastComboboxOptions = useMemo(() => {
     const boundToItem = newBindItemId
       ? new Set(
-          contextBindings
-            .filter((b) => b.contextItemId === newBindItemId)
-            .map((b) => b.questionId)
+          contextBindings.filter((b) => b.contextItemId === newBindItemId).map((b) => b.questionId),
         )
       : null;
 
@@ -141,7 +153,7 @@ export default function Context() {
       ? new Set(
           contextBindings
             .filter((b) => b.questionId === newBindForecastId)
-            .map((b) => b.contextItemId)
+            .map((b) => b.contextItemId),
         )
       : null;
 
@@ -184,9 +196,7 @@ export default function Context() {
   const newBindingDuplicate = useMemo(() => {
     if (!resolvedBindForecast || !resolvedBindItem) return false;
     return contextBindings.some(
-      (b) =>
-        b.questionId === resolvedBindForecast.id &&
-        b.contextItemId === resolvedBindItem.id
+      (b) => b.questionId === resolvedBindForecast.id && b.contextItemId === resolvedBindItem.id,
     );
   }, [contextBindings, resolvedBindForecast, resolvedBindItem]);
 
@@ -198,7 +208,7 @@ export default function Context() {
     const bindingId = bindContext(
       resolvedBindForecast.id,
       resolvedBindItem.id,
-      newBindNotes.trim() || undefined
+      newBindNotes.trim() || undefined,
     );
     if (bindingId) {
       setBindingsSearch("");
@@ -276,7 +286,7 @@ export default function Context() {
       (a) =>
         a.detail.toLowerCase().includes(q) ||
         a.action.includes(q) ||
-        userName(a.actorId).toLowerCase().includes(q)
+        userName(a.actorId).toLowerCase().includes(q),
     );
   }, [contextAuditLog, auditQuery]);
 
@@ -329,7 +339,12 @@ export default function Context() {
                 onChange={(e) => setQuery(e.target.value)}
                 className="ctx-search"
               />
-              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as ContextItemType | "all" | "app" | "notes")}>
+              <select
+                value={typeFilter}
+                onChange={(e) =>
+                  setTypeFilter(e.target.value as ContextItemType | "all" | "app" | "notes")
+                }
+              >
                 <option value="all">All types</option>
                 <option value="document">Document</option>
                 <option value="app">App context</option>
@@ -337,7 +352,11 @@ export default function Context() {
                 <option value="evidence">Evidence</option>
                 <option value="analysis">Analysis</option>
               </select>
-              <button type="button" className="ctx-primary-btn" onClick={() => setAddModalOpen(true)}>
+              <button
+                type="button"
+                className="ctx-primary-btn"
+                onClick={() => setAddModalOpen(true)}
+              >
                 Add context
               </button>
             </div>
@@ -369,10 +388,18 @@ export default function Context() {
                         onClick={() => setDetailItem(item)}
                       >
                         <td className="ctx-name-cell">{item.title}</td>
-                        <td><span className="ctx-type-badge">{typeLabel(item)}</span></td>
-                        <td><VisibilityBadge value={item.visibility} /></td>
+                        <td>
+                          <span className="ctx-type-badge">{typeLabel(item)}</span>
+                        </td>
+                        <td>
+                          <VisibilityBadge value={item.visibility} />
+                        </td>
                         <td className="muted">{item.owningTeam}</td>
-                        <td><span className={`ctx-status ctx-status-${item.status}`}>{item.status.replace("_", " ")}</span></td>
+                        <td>
+                          <span className={`ctx-status ctx-status-${item.status}`}>
+                            {item.status.replace("_", " ")}
+                          </span>
+                        </td>
                         <td>{bindingCountForItem(item.id, contextBindings)}</td>
                       </tr>
                     ))
@@ -449,7 +476,9 @@ export default function Context() {
                   {filteredBindingRows.length === 0 ? (
                     <tr>
                       <td colSpan={3} className="ctx-empty-cell muted">
-                        {bindingsSearch.trim() ? "No bindings match your search." : "No bindings yet."}
+                        {bindingsSearch.trim()
+                          ? "No bindings match your search."
+                          : "No bindings yet."}
                       </td>
                     </tr>
                   ) : (
@@ -474,7 +503,11 @@ export default function Context() {
                         </td>
                         <td>
                           {item ? (
-                            <button type="button" className="ctx-bind-cell-link" onClick={() => setDetailItem(item)}>
+                            <button
+                              type="button"
+                              className="ctx-bind-cell-link"
+                              onClick={() => setDetailItem(item)}
+                            >
                               {item.title}
                             </button>
                           ) : (
@@ -517,7 +550,7 @@ export default function Context() {
                         onValueChange={(text) => {
                           setNewBindForecast(text);
                           const match = forecastComboboxOptions.find(
-                            (o) => o.label.toLowerCase() === text.trim().toLowerCase()
+                            (o) => o.label.toLowerCase() === text.trim().toLowerCase(),
                           );
                           setNewBindForecastId(match && !match.disabled ? match.id : "");
                         }}
@@ -536,7 +569,7 @@ export default function Context() {
                         onValueChange={(text) => {
                           setNewBindItem(text);
                           const match = contextItemComboboxOptions.find(
-                            (o) => o.label.toLowerCase() === text.trim().toLowerCase()
+                            (o) => o.label.toLowerCase() === text.trim().toLowerCase(),
                           );
                           setNewBindItemId(match && !match.disabled ? match.id : "");
                         }}
@@ -594,13 +627,23 @@ export default function Context() {
                     <tr key={item.id}>
                       <td>{item.title}</td>
                       <td>{typeLabel(item)}</td>
-                      <td><VisibilityBadge value={item.visibility} /></td>
+                      <td>
+                        <VisibilityBadge value={item.visibility} />
+                      </td>
                       <td>{item.owningTeam}</td>
                       <td className="ctx-actions-cell">
-                        <button type="button" className="ctx-primary-btn" onClick={() => approveContextItem(item.id)}>
+                        <button
+                          type="button"
+                          className="ctx-primary-btn"
+                          onClick={() => approveContextItem(item.id)}
+                        >
                           Approve
                         </button>
-                        <button type="button" className="ctx-secondary-btn" onClick={() => rejectContextItem(item.id)}>
+                        <button
+                          type="button"
+                          className="ctx-secondary-btn"
+                          onClick={() => rejectContextItem(item.id)}
+                        >
                           Reject
                         </button>
                       </td>
@@ -636,7 +679,9 @@ export default function Context() {
                   <tr key={entry.id}>
                     <td className="muted">{entry.timestamp.slice(0, 16).replace("T", " ")}</td>
                     <td>{userName(entry.actorId)}</td>
-                    <td><span className="ctx-type-badge">{entry.action}</span></td>
+                    <td>
+                      <span className="ctx-type-badge">{entry.action}</span>
+                    </td>
                     <td>{entry.detail}</td>
                   </tr>
                 ))}

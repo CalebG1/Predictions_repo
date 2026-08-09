@@ -110,7 +110,9 @@ export function titleFromFilename(name: string): string {
   return base.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export async function importNotebookFile(file: File): Promise<{ cells: NotebookCell[]; title: string }> {
+export async function importNotebookFile(
+  file: File,
+): Promise<{ cells: NotebookCell[]; title: string }> {
   const text = await file.text();
   const lower = file.name.toLowerCase();
 

@@ -101,7 +101,9 @@ function AppMessageBody({ evidence }: { evidence: EvidenceSource }) {
         </span>
         <div>
           <span className="evidence-detail-app-channel">{app.channel}</span>
-          <span className="evidence-detail-app-name">{app.app === "teams" ? "Microsoft Teams" : "Slack"}</span>
+          <span className="evidence-detail-app-name">
+            {app.app === "teams" ? "Microsoft Teams" : "Slack"}
+          </span>
         </div>
       </div>
       <div className="evidence-detail-message">
@@ -171,7 +173,13 @@ function PredictionBody({ evidence }: { evidence: EvidenceSource }) {
   );
 }
 
-function EvidenceDetailModal({ evidence, onClose }: { evidence: EvidenceSource; onClose: () => void }) {
+function EvidenceDetailModal({
+  evidence,
+  onClose,
+}: {
+  evidence: EvidenceSource;
+  onClose: () => void;
+}) {
   const relevance = evidence.relevance ?? "medium";
   const frequency = evidence.refreshFrequency ?? "default";
   const kind = evidence.kind ?? "feed";
@@ -184,7 +192,12 @@ function EvidenceDetailModal({ evidence, onClose }: { evidence: EvidenceSource; 
             <span className="evidence-detail-class">{kindBadge(evidence)}</span>
             <h3>{evidence.title}</h3>
           </div>
-          <button type="button" className="evidence-detail-close" onClick={onClose} aria-label="Close">
+          <button
+            type="button"
+            className="evidence-detail-close"
+            onClick={onClose}
+            aria-label="Close"
+          >
             ×
           </button>
         </header>
@@ -206,7 +219,9 @@ function EvidenceDetailModal({ evidence, onClose }: { evidence: EvidenceSource; 
             </div>
             <div className="evidence-detail-field">
               <span className="evidence-detail-label">Relevance</span>
-              <span className={`evidence-detail-pill rel-${relevance}`}>{RELEVANCE_LABELS[relevance]}</span>
+              <span className={`evidence-detail-pill rel-${relevance}`}>
+                {RELEVANCE_LABELS[relevance]}
+              </span>
             </div>
             <div className="evidence-detail-field">
               <span className="evidence-detail-label">Refresh schedule</span>
@@ -235,7 +250,8 @@ function EvidenceDetailModal({ evidence, onClose }: { evidence: EvidenceSource; 
 
           {evidence.disconfirming && (
             <p className="evidence-detail-disconfirming">
-              ⚖︎ Deliberately sourced to challenge the lead view, to guard against one-sided evidence gathering.
+              ⚖︎ Deliberately sourced to challenge the lead view, to guard against one-sided evidence
+              gathering.
             </p>
           )}
 
@@ -281,7 +297,7 @@ export default function EvidenceTable({
 
   const boundItemIds = useMemo(
     () => new Set(bindingsFor(questionId).map((b) => b.contextItemId)),
-    [bindingsFor, questionId]
+    [bindingsFor, questionId],
   );
 
   const stop = (e: MouseEvent) => e.stopPropagation();
@@ -304,7 +320,11 @@ export default function EvidenceTable({
             ? "No evidence sources yet"
             : `${evidence.length} source${evidence.length === 1 ? "" : "s"} · click a row for details`}
         </span>
-        <button type="button" className="ctx-primary-btn evidence-add-btn" onClick={() => setAddOpen(true)}>
+        <button
+          type="button"
+          className="ctx-primary-btn evidence-add-btn"
+          onClick={() => setAddOpen(true)}
+        >
           <IconPlus />
           Add evidence
         </button>
@@ -378,7 +398,11 @@ export default function EvidenceTable({
                         value={relevance}
                         aria-label={`Relevance for ${e.title}`}
                         onChange={(ev) =>
-                          setEvidenceRelevance(questionId, e.id, ev.target.value as EvidenceRelevance)
+                          setEvidenceRelevance(
+                            questionId,
+                            e.id,
+                            ev.target.value as EvidenceRelevance,
+                          )
                         }
                       >
                         <option value="high">High</option>
@@ -397,7 +421,7 @@ export default function EvidenceTable({
                             setEvidenceRefreshFrequency(
                               questionId,
                               e.id,
-                              ev.target.value as EvidenceRefreshFrequency
+                              ev.target.value as EvidenceRefreshFrequency,
                             )
                           }
                         >
@@ -457,7 +481,7 @@ export default function EvidenceTable({
               visibility: data.visibility as Visibility,
               tags: data.tags,
             },
-            questionId
+            questionId,
           );
         }}
         onImport={(fileNames) => addUpload(questionId, fileNames)}

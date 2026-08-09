@@ -30,7 +30,7 @@ describe("alert → forecast impact mapping", () => {
     const impacts = impactsForQuestion("q-cyber-breach");
     for (let i = 1; i < impacts.length; i++) {
       expect(Math.abs(impacts[i - 1].probabilityDelta)).toBeGreaterThanOrEqual(
-        Math.abs(impacts[i].probabilityDelta)
+        Math.abs(impacts[i].probabilityDelta),
       );
     }
   });
@@ -43,14 +43,30 @@ describe("alert → forecast impact mapping", () => {
   });
 
   it("counts related alerts", () => {
-    expect(relatedAlertCount("q-cyber-breach")).toBe(
-      impactsForQuestion("q-cyber-breach").length
-    );
+    expect(relatedAlertCount("q-cyber-breach")).toBe(impactsForQuestion("q-cyber-breach").length);
   });
 
   it("materiality threshold is 1pp", () => {
-    expect(isMaterialMover({ alertId: "x", questionId: "q", probabilityDelta: 0.01, direction: "increase", confidence: "high", reason: "" })).toBe(true);
-    expect(isMaterialMover({ alertId: "x", questionId: "q", probabilityDelta: 0.004, direction: "increase", confidence: "high", reason: "" })).toBe(false);
+    expect(
+      isMaterialMover({
+        alertId: "x",
+        questionId: "q",
+        probabilityDelta: 0.01,
+        direction: "increase",
+        confidence: "high",
+        reason: "",
+      }),
+    ).toBe(true);
+    expect(
+      isMaterialMover({
+        alertId: "x",
+        questionId: "q",
+        probabilityDelta: 0.004,
+        direction: "increase",
+        confidence: "high",
+        reason: "",
+      }),
+    ).toBe(false);
   });
 });
 
@@ -97,12 +113,14 @@ describe("peer benchmarking", () => {
   });
 
   it("builds a matrix with our-company and cohort rows", () => {
-    const visible = new Set(PEER_MATRIX_MODES.map(() => "").concat([
-      "q-cyber-ransomware",
-      "q-cyber-cloud",
-      "q-cyber-vendor",
-      "q-cyber-compliance",
-    ]));
+    const visible = new Set(
+      PEER_MATRIX_MODES.map(() => "").concat([
+        "q-cyber-ransomware",
+        "q-cyber-cloud",
+        "q-cyber-vendor",
+        "q-cyber-compliance",
+      ]),
+    );
     const matrix = peerMatrix(visible);
     const labels = matrix.map((r) => r.label);
     expect(labels).toContain("Our company");
@@ -132,8 +150,22 @@ describe("forecast decomposition & trend", () => {
 
   it("detects trend direction from history", () => {
     const rising: ProbabilityPoint[] = [
-      { id: "1", outcomeId: "o", probability: 0.2, timestamp: "2026-06-01T00:00:00Z", source: "s", updateTrigger: "t" },
-      { id: "2", outcomeId: "o", probability: 0.3, timestamp: "2026-06-20T00:00:00Z", source: "s", updateTrigger: "t" },
+      {
+        id: "1",
+        outcomeId: "o",
+        probability: 0.2,
+        timestamp: "2026-06-01T00:00:00Z",
+        source: "s",
+        updateTrigger: "t",
+      },
+      {
+        id: "2",
+        outcomeId: "o",
+        probability: 0.3,
+        timestamp: "2026-06-20T00:00:00Z",
+        source: "s",
+        updateTrigger: "t",
+      },
     ];
     expect(trendFrom(rising)).toBe("up");
   });
@@ -165,7 +197,13 @@ describe("enterprise risk map & summary", () => {
     const questions = [q("q-cyber-ransomware", 0.25)];
     const yes = (id: string): Outcome | undefined =>
       id === "q-cyber-ransomware"
-        ? { id: `${id}-yes`, questionId: id, label: "Yes", currentProbability: 0.25, isResolved: false }
+        ? {
+            id: `${id}-yes`,
+            questionId: id,
+            label: "Yes",
+            currentProbability: 0.25,
+            isResolved: false,
+          }
         : undefined;
     const map = enterpriseRiskMap(questions, yes, () => []);
     const ransomware = map.find((r) => r.failureMode === "Ransomware")!;
@@ -174,7 +212,11 @@ describe("enterprise risk map & summary", () => {
   });
 
   it("falls back to a static estimate for modes with no visible question", () => {
-    const map = enterpriseRiskMap([], () => undefined, () => []);
+    const map = enterpriseRiskMap(
+      [],
+      () => undefined,
+      () => [],
+    );
     const insider = map.find((r) => r.failureMode === "Insider misuse")!;
     expect(insider.questionId).toBeUndefined();
     expect(insider.probability).toBeGreaterThan(0);
@@ -200,9 +242,12 @@ import { questions as seedQuestions } from "./seed";
 import { outcomes as seedOutcomes, probabilityHistory as seedHistory } from "./seed";
 
 describe("forecast movements (PRD §6.2)", () => {
-  const yesOutcome = (id: string) => seedOutcomes.find((o) => o.questionId === id && o.id.endsWith("-yes"));
+  const yesOutcome = (id: string) =>
+    seedOutcomes.find((o) => o.questionId === id && o.id.endsWith("-yes"));
   const historyFor = (outcomeId: string) =>
-    seedHistory.filter((h) => h.outcomeId === outcomeId).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    seedHistory
+      .filter((h) => h.outcomeId === outcomeId)
+      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
   it("builds driver breakdown from alerts", () => {
     const drivers = driversForQuestion("q-cyber-breach");
@@ -227,9 +272,12 @@ describe("forecast movements (PRD §6.2)", () => {
 });
 
 describe("security domains (PRD §6.3.B)", () => {
-  const yesOutcome = (id: string) => seedOutcomes.find((o) => o.questionId === id && o.id.endsWith("-yes"));
+  const yesOutcome = (id: string) =>
+    seedOutcomes.find((o) => o.questionId === id && o.id.endsWith("-yes"));
   const historyFor = (outcomeId: string) =>
-    seedHistory.filter((h) => h.outcomeId === outcomeId).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    seedHistory
+      .filter((h) => h.outcomeId === outcomeId)
+      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
   it("returns all ten PRD security domains", () => {
     const rows = securityDomainRows(seedQuestions, yesOutcome, historyFor);

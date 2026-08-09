@@ -250,7 +250,9 @@ export function renderNotebookAsText(cells: NotebookCell[]): string {
 }
 
 export function initialStatus(input: CreateContextItemInput): ContextItem["status"] {
-  if (requiresApproval({ visibility: input.visibility ?? "team", evidenceClass: input.evidenceClass })) {
+  if (
+    requiresApproval({ visibility: input.visibility ?? "team", evidenceClass: input.evidenceClass })
+  ) {
     return "pending_approval";
   }
   return "active";
@@ -259,9 +261,11 @@ export function initialStatus(input: CreateContextItemInput): ContextItem["statu
 export function createContextItemFromInput(
   input: CreateContextItemInput,
   user: User,
-  now = new Date().toISOString()
+  now = new Date().toISOString(),
 ): ContextItem {
-  const connector = input.connectorId ? CONNECTORS.find((c) => c.id === input.connectorId) : undefined;
+  const connector = input.connectorId
+    ? CONNECTORS.find((c) => c.id === input.connectorId)
+    : undefined;
   const status = initialStatus(input);
   return {
     id: newId("ctx"),
@@ -353,30 +357,31 @@ export function bindingCountForItem(itemId: string, bindings: ContextBinding[]):
   return bindings.filter((b) => b.contextItemId === itemId).length;
 }
 
-export function bindingsForQuestion(questionId: string, bindings: ContextBinding[]): ContextBinding[] {
+export function bindingsForQuestion(
+  questionId: string,
+  bindings: ContextBinding[],
+): ContextBinding[] {
   return bindings.filter((b) => b.questionId === questionId);
 }
 
 export function itemsForQuestion(
   questionId: string,
   items: ContextItem[],
-  bindings: ContextBinding[]
+  bindings: ContextBinding[],
 ): ContextItem[] {
   const ids = new Set(bindingsForQuestion(questionId, bindings).map((b) => b.contextItemId));
   return items.filter((i) => ids.has(i.id) && i.status !== "archived");
 }
 
 export function revisionsForItem(itemId: string, revisions: ContextRevision[]): ContextRevision[] {
-  return revisions
-    .filter((r) => r.contextItemId === itemId)
-    .sort((a, b) => b.version - a.version);
+  return revisions.filter((r) => r.contextItemId === itemId).sort((a, b) => b.version - a.version);
 }
 
 export function assembleModelContext(
   questionId: string,
   items: ContextItem[],
   bindings: ContextBinding[],
-  questions: ForecastQuestion[]
+  questions: ForecastQuestion[],
 ): ModelContextBundle {
   const bound = itemsForQuestion(questionId, items, bindings).filter((i) => i.status === "active");
   const question = questions.find((q) => q.id === questionId);
@@ -389,7 +394,7 @@ export function assembleModelContext(
     .filter((i) => i.type === "document")
     .map((i) => ({
       title: i.title,
-      summary: i.description ?? (i.fileNames?.join(", ") ?? "Uploaded document"),
+      summary: i.description ?? i.fileNames?.join(", ") ?? "Uploaded document",
     }));
 
   const connectors = bound
@@ -438,31 +443,35 @@ export function formatModelContextPreview(bundle: ModelContextBundle): string {
   if (bundle.connectors.length) {
     sections.push(
       "## Connectors\n" +
-        bundle.connectors.map((c) => `- ${c.name} (${c.lastSync}): ${c.summary}`).join("\n")
+        bundle.connectors.map((c) => `- ${c.name} (${c.lastSync}): ${c.summary}`).join("\n"),
     );
   }
   if (bundle.documents.length) {
     sections.push(
-      "## Documents\n" + bundle.documents.map((d) => `- ${d.title}: ${d.summary}`).join("\n")
+      "## Documents\n" + bundle.documents.map((d) => `- ${d.title}: ${d.summary}`).join("\n"),
     );
   }
   if (bundle.evidence.length) {
     sections.push(
-      "## Evidence\n" +
-        bundle.evidence.map((e) => `- ${e.title} [${e.sourceClass}]`).join("\n")
+      "## Evidence\n" + bundle.evidence.map((e) => `- ${e.title} [${e.sourceClass}]`).join("\n"),
     );
   }
   return sections.join("\n\n") || "No context bound to this forecast.";
 }
 
-export function connectorItemForId(connectorId: string, items: ContextItem[]): ContextItem | undefined {
-  return items.find((i) => i.type === "connector" && i.connectorId === connectorId && i.status !== "archived");
+export function connectorItemForId(
+  connectorId: string,
+  items: ContextItem[],
+): ContextItem | undefined {
+  return items.find(
+    (i) => i.type === "connector" && i.connectorId === connectorId && i.status !== "archived",
+  );
 }
 
 export function touchpointSignalsFromBindings(
   questionId: string,
   items: ContextItem[],
-  bindings: ContextBinding[]
+  bindings: ContextBinding[],
 ): import("./types").TouchpointSignal[] {
   const bound = itemsForQuestion(questionId, items, bindings);
   return bound
@@ -476,7 +485,9 @@ export function touchpointSignalsFromBindings(
           updatedAt: item.updatedAt.slice(0, 10),
         };
       }
-      const connector = item.connectorId ? CONNECTORS.find((c) => c.id === item.connectorId) : undefined;
+      const connector = item.connectorId
+        ? CONNECTORS.find((c) => c.id === item.connectorId)
+        : undefined;
       if (connector?.kind) {
         return {
           kind: connector.kind,

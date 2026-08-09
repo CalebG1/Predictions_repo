@@ -10,11 +10,7 @@ import {
   recommendedAction,
   explanationFor,
 } from "../domain/cyberForecast";
-import {
-  peerBenchmarkFor,
-  PEER_CAVEAT,
-  PEER_SOURCE_LABEL,
-} from "../domain/peers";
+import { peerBenchmarkFor, PEER_CAVEAT, PEER_SOURCE_LABEL } from "../domain/peers";
 
 function severityClass(sev: AlertSeverity): string {
   return `sev-chip sev-${sev}`;
@@ -91,9 +87,14 @@ export default function CyberQuestionInsights({ q }: { q: ForecastQuestion }) {
               <div className="decomp-row" key={f.factor}>
                 <span className="decomp-label">{f.factor}</span>
                 <span className="decomp-bar-wrap">
-                  <span className={`decomp-bar ${up ? "up" : "down"}`} style={{ width: `${width}%` }} />
+                  <span
+                    className={`decomp-bar ${up ? "up" : "down"}`}
+                    style={{ width: `${width}%` }}
+                  />
                 </span>
-                <span className={`decomp-val ${up ? "up" : "down"}`}>{signedPct(f.contribution)}%</span>
+                <span className={`decomp-val ${up ? "up" : "down"}`}>
+                  {signedPct(f.contribution)}%
+                </span>
               </div>
             );
           })}
@@ -126,7 +127,12 @@ export default function CyberQuestionInsights({ q }: { q: ForecastQuestion }) {
                     <td className="alert-time">{formatTs(alert.timestamp)}</td>
                     <td className="alert-title-cell">
                       {alert.sourceUrl ? (
-                        <a href={alert.sourceUrl} target="_blank" rel="noreferrer" className="alert-link">
+                        <a
+                          href={alert.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="alert-link"
+                        >
                           {alert.title}
                         </a>
                       ) : (
@@ -137,7 +143,9 @@ export default function CyberQuestionInsights({ q }: { q: ForecastQuestion }) {
                     <td>
                       <span className={severityClass(alert.severity)}>{alert.severity}</span>
                     </td>
-                    <td className={`num alert-impact ${impact.direction === "increase" ? "up" : "down"}`}>
+                    <td
+                      className={`num alert-impact ${impact.direction === "increase" ? "up" : "down"}`}
+                    >
                       {signedPct(impact.probabilityDelta)}%
                     </td>
                     <td className="alert-status">{ALERT_STATUS_LABEL[alert.status]}</td>
@@ -153,7 +161,9 @@ export default function CyberQuestionInsights({ q }: { q: ForecastQuestion }) {
         <div className="panel">
           <div className="panel-head">
             <span>Timeline of probability-changing events</span>
-            <span className="muted">What happened, why it mattered, and how much it moved the line</span>
+            <span className="muted">
+              What happened, why it mattered, and how much it moved the line
+            </span>
           </div>
           <div className="event-timeline">
             {alerts.map(({ alert, impact }) => (
@@ -162,7 +172,9 @@ export default function CyberQuestionInsights({ q }: { q: ForecastQuestion }) {
                 <div className="event-body">
                   <div className="event-head">
                     <span className="event-time">{formatTs(alert.timestamp)}</span>
-                    <span className={`event-delta ${impact.direction === "increase" ? "up" : "down"}`}>
+                    <span
+                      className={`event-delta ${impact.direction === "increase" ? "up" : "down"}`}
+                    >
                       {signedPct(impact.probabilityDelta)}%
                     </span>
                   </div>
@@ -197,7 +209,12 @@ export default function CyberQuestionInsights({ q }: { q: ForecastQuestion }) {
           <div className="peer-bars">
             <PeerBar label="Our company" value={peer.ourCompany} highlight />
             <PeerBar label="Industry median" value={peer.industryMedian} />
-            <PeerBar label="Similar companies" value={peer.similarHigh} rangeLow={peer.similarLow} isRange />
+            <PeerBar
+              label="Similar companies"
+              value={peer.similarHigh}
+              rangeLow={peer.similarLow}
+              isRange
+            />
             <PeerBar label="Top quartile" value={peer.topQuartile} />
             <PeerBar label="Bottom quartile" value={peer.bottomQuartile} />
           </div>
@@ -239,7 +256,10 @@ function PeerBar({
             style={{ left: `${rangeStart}%`, width: `${width - rangeStart}%` }}
           />
         ) : (
-          <span className={`peer-bar-fill${highlight ? " highlight" : ""}`} style={{ width: `${width}%` }} />
+          <span
+            className={`peer-bar-fill${highlight ? " highlight" : ""}`}
+            style={{ width: `${width}%` }}
+          />
         )}
       </span>
       <span className="peer-bar-val">

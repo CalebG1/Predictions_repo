@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { newId, renderNotebookAsText } from "../../domain/context";
 import type { NotebookCell, Visibility } from "../../domain/types";
 import { importNotebookFile } from "../../lib/notebookImport";
-import { ensureSandbox, restartSandbox, runInSandbox, sandboxRuntimeLabel } from "../../lib/pyodideSandbox";
+import {
+  ensureSandbox,
+  restartSandbox,
+  runInSandbox,
+  sandboxRuntimeLabel,
+} from "../../lib/pyodideSandbox";
 import { visibilityOrder } from "../ui";
 import NotebookCellRow from "./NotebookCellRow";
 
@@ -107,7 +112,9 @@ export default function AnalysisPanel({
     setStatusText("Restarting…");
     await restartSandbox();
     setCells((prev) =>
-      prev.map((c) => (c.kind === "code" ? { ...c, status: "idle", output: undefined, error: undefined } : c))
+      prev.map((c) =>
+        c.kind === "code" ? { ...c, status: "idle", output: undefined, error: undefined } : c,
+      ),
     );
     setPhase("ready");
     setStatusText("Ready");
@@ -153,7 +160,11 @@ export default function AnalysisPanel({
         </div>
 
         <div className="ctx-analysis-toolbar">
-          <button type="button" className="ctx-secondary-btn" onClick={() => fileInputRef.current?.click()}>
+          <button
+            type="button"
+            className="ctx-secondary-btn"
+            onClick={() => fileInputRef.current?.click()}
+          >
             Import
           </button>
           <input
@@ -169,10 +180,20 @@ export default function AnalysisPanel({
           <button type="button" className="ctx-secondary-btn" onClick={() => addCell("markdown")}>
             + Text cell
           </button>
-          <button type="button" className="ctx-secondary-btn" onClick={runAll} disabled={phase !== "ready"}>
+          <button
+            type="button"
+            className="ctx-secondary-btn"
+            onClick={runAll}
+            disabled={phase !== "ready"}
+          >
             Run all
           </button>
-          <button type="button" className="ctx-link-btn ctx-analysis-restart" onClick={handleRestart} disabled={phase === "loading"}>
+          <button
+            type="button"
+            className="ctx-link-btn ctx-analysis-restart"
+            onClick={handleRestart}
+            disabled={phase === "loading"}
+          >
             Restart kernel
           </button>
         </div>
@@ -214,7 +235,12 @@ export default function AnalysisPanel({
             ))}
           </select>
         </label>
-        <button type="button" className="ctx-primary-btn" disabled={!canSubmit} onClick={handleSubmit}>
+        <button
+          type="button"
+          className="ctx-primary-btn"
+          disabled={!canSubmit}
+          onClick={handleSubmit}
+        >
           {submitLabel}
         </button>
       </div>

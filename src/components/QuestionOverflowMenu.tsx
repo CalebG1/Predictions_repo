@@ -133,7 +133,12 @@ export default function QuestionOverflowMenu({
         </div>
       )}
 
-      <CreateAlertModal open={alertOpen} q={q} probability={probability} onClose={() => setAlertOpen(false)} />
+      <CreateAlertModal
+        open={alertOpen}
+        q={q}
+        probability={probability}
+        onClose={() => setAlertOpen(false)}
+      />
       <DeleteQuestionModal open={deleteOpen} q={q} onClose={() => setDeleteOpen(false)} />
     </div>
   );

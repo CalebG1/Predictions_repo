@@ -27,9 +27,11 @@ export default function TouchpointIcons({
   signals: TouchpointSignal[];
   maxVisible?: number;
 }) {
-  const { contextItems, bindingsFor, bindContext, addAppContext, addUpload, addContextItem } = useStore();
+  const { contextItems, bindingsFor, bindContext, addAppContext, addUpload, addContextItem } =
+    useStore();
   const [modalOpen, setModalOpen] = useState(false);
-  const overflow = maxVisible != null && signals.length > maxVisible ? signals.length - maxVisible : 0;
+  const overflow =
+    maxVisible != null && signals.length > maxVisible ? signals.length - maxVisible : 0;
   const visible = overflow > 0 ? signals.slice(0, maxVisible) : signals;
   const hidden = overflow > 0 ? signals.slice(maxVisible) : [];
   const boundItemIds = new Set(bindingsFor(questionId).map((b) => b.contextItemId));
@@ -100,7 +102,7 @@ export default function TouchpointIcons({
               visibility: data.visibility as Visibility,
               tags: data.tags,
             },
-            questionId
+            questionId,
           );
         }}
         onImport={(fileNames) => addUpload(questionId, fileNames)}

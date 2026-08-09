@@ -150,8 +150,8 @@ export default function AgentRunMonitor() {
         <div className="locked-card">
           <h2>🔒 Not available</h2>
           <p>
-            This agent run is outside your visibility level, or doesn't exist. Runs inherit the visibility of
-            the question they improve.
+            This agent run is outside your visibility level, or doesn't exist. Runs inherit the
+            visibility of the question they improve.
           </p>
           <Link to="/" className="btn">
             Back to overview
@@ -191,12 +191,17 @@ export default function AgentRunMonitor() {
   const blockedParts: string[] = [];
   if (snap.phase === "done") blockedParts.push("Run complete");
   if (snap.waitingOn.length > 0)
-    blockedParts.push(`Waiting on ${snap.waitingOn.length} ${snap.waitingOn.length === 1 ? "person" : "people"}`);
+    blockedParts.push(
+      `Waiting on ${snap.waitingOn.length} ${snap.waitingOn.length === 1 ? "person" : "people"}`,
+    );
   if (snap.tasksTotal > 0 && snap.phase !== "done")
     blockedParts.push(`${snap.tasksDone}/${snap.tasksTotal} tasks done`);
   if (snap.dataPullsRunning > 0)
-    blockedParts.push(`${snap.dataPullsRunning} data pull${snap.dataPullsRunning === 1 ? "" : "s"} running`);
-  if (snap.deadEnds > 0) blockedParts.push(`${snap.deadEnds} branch${snap.deadEnds === 1 ? "" : "es"} dead-ended`);
+    blockedParts.push(
+      `${snap.dataPullsRunning} data pull${snap.dataPullsRunning === 1 ? "" : "s"} running`,
+    );
+  if (snap.deadEnds > 0)
+    blockedParts.push(`${snap.deadEnds} branch${snap.deadEnds === 1 ? "" : "es"} dead-ended`);
   if (blockedParts.length === 0) blockedParts.push("All branches progressing");
 
   return (
@@ -222,7 +227,10 @@ export default function AgentRunMonitor() {
         {snap.phase !== "done" && <span className="int-run-chip-dot" aria-hidden="true" />}
         {blockedParts.join(" · ")}
         <span className="arm-progress" aria-hidden="true">
-          <span className="arm-progress-fill" style={{ width: `${Math.round(snap.progress * 100)}%` }} />
+          <span
+            className="arm-progress-fill"
+            style={{ width: `${Math.round(snap.progress * 100)}%` }}
+          />
         </span>
       </div>
 
@@ -230,7 +238,9 @@ export default function AgentRunMonitor() {
         <div className="panel arm-finding">
           <div className="arm-finding-head">
             <h4>{snap.outcome.headline}</h4>
-            {snap.outcome.effectLabel && <span className="arm-effect-chip">{snap.outcome.effectLabel}</span>}
+            {snap.outcome.effectLabel && (
+              <span className="arm-effect-chip">{snap.outcome.effectLabel}</span>
+            )}
           </div>
           <p>{snap.outcome.detail}</p>
           <Link to={`/q/${q.id}`} className="ctx-primary-btn arm-finding-link">
@@ -241,7 +251,9 @@ export default function AgentRunMonitor() {
 
       <div className="panel arm-graph-panel">
         <h4>Plan</h4>
-        <p className="muted small">Directions the agent is pursuing — dead-ended branches stay visible.</p>
+        <p className="muted small">
+          Directions the agent is pursuing — dead-ended branches stay visible.
+        </p>
         <PlanGraph nodes={snap.nodes} />
       </div>
 
@@ -270,7 +282,9 @@ export default function AgentRunMonitor() {
                     <p className="arm-outreach-message">{o.message}</p>
                   </div>
                   <div className="arm-outreach-side">
-                    <span className={`arm-outreach-chip st-${o.status}`}>{OUTREACH_LABELS[o.status]}</span>
+                    <span className={`arm-outreach-chip st-${o.status}`}>
+                      {OUTREACH_LABELS[o.status]}
+                    </span>
                     <span className="muted small">{waitLabel(o, now)}</span>
                     <button
                       type="button"
@@ -301,7 +315,11 @@ export default function AgentRunMonitor() {
                   </span>
                   <span className="arm-feed-text">{ev.text}</span>
                   <span className="arm-feed-time">
-                    {new Date(ev.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                    {new Date(ev.at).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
                   </span>
                 </li>
               ))}

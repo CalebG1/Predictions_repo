@@ -20,7 +20,7 @@ describe("notebookImport", () => {
             outputs: [{ output_type: "stream", name: "stdout", text: "1\n" }],
           },
         ],
-      })
+      }),
     );
     expect(cells).toHaveLength(2);
     expect(cells[0].kind).toBe("markdown");

@@ -20,8 +20,8 @@ export default function Methodology() {
       <div className="settings-section-head">
         <h2>Methodology</h2>
         <p className="dash-sub">
-          How forecasts are scored and validated. Proper scoring rules apply once questions resolve; private lines are
-          excluded from org-wide metrics.
+          How forecasts are scored and validated. Proper scoring rules apply once questions resolve;
+          private lines are excluded from org-wide metrics.
         </p>
       </div>
 
@@ -48,12 +48,14 @@ export default function Methodology() {
         <div className="panel">
           <div className="panel-head">
             <span>Reliability diagram</span>
-            <span className="muted">predicted vs observed by bucket · n={calibrationData.length}</span>
+            <span className="muted">
+              predicted vs observed by bucket · n={calibrationData.length}
+            </span>
           </div>
           <ReliabilityDiagram bins={calibrationCurve} />
           <p className="muted small">
-            Points below the diagonal = overconfident; above = underconfident. Bubble size = sample count in the bucket.
-            Uncertainty (base-rate variance): {uncertainty.toFixed(3)}.
+            Points below the diagonal = overconfident; above = underconfident. Bubble size = sample
+            count in the bucket. Uncertainty (base-rate variance): {uncertainty.toFixed(3)}.
           </p>
         </div>
 
@@ -79,7 +81,9 @@ export default function Methodology() {
                   <td>{b.name}</td>
                   <td>{b.brier.toFixed(3)}</td>
                   <td className={b.brier <= brier ? "down" : "up"}>
-                    {b.name === "Model (engine)" ? "—" : `${b.brier <= brier ? "" : "+"}${(b.brier - b.brier).toFixed(3)}`}
+                    {b.name === "Model (engine)"
+                      ? "—"
+                      : `${b.brier <= brier ? "" : "+"}${(b.brier - b.brier).toFixed(3)}`}
                   </td>
                 </tr>
               ))}

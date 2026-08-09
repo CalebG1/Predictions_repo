@@ -11,15 +11,19 @@ export default function AgentPanel({ panel }: { panel: AgentEstimate[] }) {
   return (
     <div className="agent-panel">
       <div className="ap-note">
-        Each agent's estimate is recorded <b>independently</b>, before seeing the others (anti-anchoring). The
-        synthesis pools them with log-odds averaging.
+        Each agent's estimate is recorded <b>independently</b>, before seeing the others
+        (anti-anchoring). The synthesis pools them with log-odds averaging.
       </div>
       {estimating.map((a) => (
         <div key={a.agent} className="ap-row">
           <span className="ap-name">{a.agent}</span>
           <div className="ap-bar">
             <div className="ap-bar-track">
-              <div className="ap-bar-fill" style={{ left: `${a.estimate * 100}%` }} title={pct(a.estimate)} />
+              <div
+                className="ap-bar-fill"
+                style={{ left: `${a.estimate * 100}%` }}
+                title={pct(a.estimate)}
+              />
             </div>
           </div>
           <span className="ap-val">{pct(a.estimate)}</span>

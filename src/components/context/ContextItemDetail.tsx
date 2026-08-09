@@ -11,7 +11,9 @@ function typeLabel(item: ContextItem): string {
 }
 
 function statusLabel(status: ContextItem["status"]): string {
-  return status === "pending_approval" ? "Pending approval" : status.charAt(0).toUpperCase() + status.slice(1);
+  return status === "pending_approval"
+    ? "Pending approval"
+    : status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 export default function ContextItemDetail({
@@ -45,7 +47,9 @@ export default function ContextItemDetail({
             <div className="ctx-detail-meta">
               <span className="ctx-type-badge">{typeLabel(item)}</span>
               <VisibilityBadge value={item.visibility} />
-              <span className={`ctx-status ctx-status-${item.status}`}>{statusLabel(item.status)}</span>
+              <span className={`ctx-status ctx-status-${item.status}`}>
+                {statusLabel(item.status)}
+              </span>
             </div>
             <p className="ctx-detail-submeta">
               {item.owningTeam} · {item.updatedAt.slice(0, 10)}
@@ -126,7 +130,10 @@ export default function ContextItemDetail({
                       <span className="muted small">{r.changedAt.slice(0, 10)}</span>
                     </div>
                     {r.body.length > 0 && (
-                      <pre className="ctx-rev-body">{r.body.slice(0, 160)}{r.body.length > 160 ? "…" : ""}</pre>
+                      <pre className="ctx-rev-body">
+                        {r.body.slice(0, 160)}
+                        {r.body.length > 160 ? "…" : ""}
+                      </pre>
                     )}
                   </li>
                 ))}

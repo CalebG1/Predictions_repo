@@ -167,7 +167,10 @@ export default function CyberFilters({
                 </label>
                 <label className="filter-field">
                   <span>Visibility</span>
-                  <select value={vis} onChange={(e) => onVisChange(e.target.value as "all" | Visibility)}>
+                  <select
+                    value={vis}
+                    onChange={(e) => onVisChange(e.target.value as "all" | Visibility)}
+                  >
                     <option value="all">All visibility</option>
                     {visibilityOrder.map((v) => (
                       <option key={v} value={v}>
@@ -207,7 +210,11 @@ export default function CyberFilters({
               </span>
             )}
             {sortOpen && (
-              <div className="filter-panel filter-panel-sort" role="listbox" aria-label="Sort options">
+              <div
+                className="filter-panel filter-panel-sort"
+                role="listbox"
+                aria-label="Sort options"
+              >
                 {SORTS.map((s) => (
                   <button
                     key={s.key}

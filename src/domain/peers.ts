@@ -218,9 +218,7 @@ export const PEER_MATRIX_MODES: FailureMode[] = [
  * column so private lines never leak into shared benchmarks.
  */
 export function peerMatrix(visibleQuestionIds: Set<string>): PeerMatrixRow[] {
-  const modeValue = (
-    pick: (b: PeerBenchmark) => number
-  ): Partial<Record<FailureMode, number>> => {
+  const modeValue = (pick: (b: PeerBenchmark) => number): Partial<Record<FailureMode, number>> => {
     const values: Partial<Record<FailureMode, number>> = {};
     for (const mode of PEER_MATRIX_MODES) {
       const qid = FAILURE_MODE_QUESTION[mode];

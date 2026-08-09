@@ -1,9 +1,4 @@
-import type {
-  EvidenceSource,
-  ForecastObject,
-  ForecastQuestion,
-  ProbabilityPoint,
-} from "./types";
+import type { EvidenceSource, ForecastObject, ForecastQuestion, ProbabilityPoint } from "./types";
 
 function formatPct(p: number): string {
   return `${(p * 100).toFixed(0)}%`;
@@ -67,7 +62,8 @@ const REASONING_OVERRIDES: Record<string, Partial<ForecastReasoning>> = {
     ],
     latestRefresh: {
       trigger: "news article",
-      headline: "Saudi Red Sea oil exports set to jump to 3.8 million bpd in March, shipping data shows",
+      headline:
+        "Saudi Red Sea oil exports set to jump to 3.8 million bpd in March, shipping data shows",
       url: "https://example.com/saudi-red-sea-exports",
       explanation:
         "The article states that Saudi Arabia's crude oil loadings at Yanbu are set to reach a record, 'following the effective closure of exports via the Strait of Hormuz due to the U.S.-Israeli war on Iran.' This confirms the effective closure of the Strait, which is directly relevant to a forecast about whether it will be reopened.",

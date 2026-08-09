@@ -66,11 +66,11 @@ export function extremize(p: number, a = 1.0): number {
  */
 export function calibrationBins(
   data: { p: number; outcome: 0 | 1 }[],
-  nBins = 10
+  nBins = 10,
 ): CalibrationBin[] {
   const bins: { sumP: number; sumO: number; count: number }[] = Array.from(
     { length: nBins },
-    () => ({ sumP: 0, sumO: 0, count: 0 })
+    () => ({ sumP: 0, sumO: 0, count: 0 }),
   );
   for (const { p, outcome } of data) {
     let idx = Math.floor(p * nBins);
@@ -98,7 +98,7 @@ export function rmsCalibrationError(bins: CalibrationBin[]): number {
   if (totalN === 0) return 0;
   const weighted = used.reduce(
     (acc, b) => acc + b.count * (b.predictedMean - b.observedFrequency) ** 2,
-    0
+    0,
   );
   return Math.sqrt(weighted / totalN);
 }

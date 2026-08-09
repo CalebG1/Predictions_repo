@@ -40,7 +40,7 @@ export default function InlineCombobox({
           (o) =>
             o.label.toLowerCase().includes(q) ||
             o.meta?.toLowerCase().includes(q) ||
-            o.id.toLowerCase().includes(q)
+            o.id.toLowerCase().includes(q),
         )
       : options;
     return list.slice(0, 10);

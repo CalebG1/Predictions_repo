@@ -29,7 +29,9 @@ function AppMessageBody({ item }: { item: EvidenceItem }) {
         </span>
         <div className="pc-evc-app-headtext">
           <span className="pc-evc-app-channel">{app.channel}</span>
-          <span className="pc-evc-app-name">{app.app === "teams" ? "Microsoft Teams" : "Slack"}</span>
+          <span className="pc-evc-app-name">
+            {app.app === "teams" ? "Microsoft Teams" : "Slack"}
+          </span>
         </div>
       </div>
       <div className="pc-evc-message">

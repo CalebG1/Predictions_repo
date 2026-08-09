@@ -135,12 +135,20 @@ function CommentRow({
             <p className="qcomment-text">{comment.body}</p>
             <div className="qcomment-actions">
               {canReply && (
-                <button type="button" className="qcomment-action" onClick={() => onStartReply(comment.id)}>
+                <button
+                  type="button"
+                  className="qcomment-action"
+                  onClick={() => onStartReply(comment.id)}
+                >
                   Reply
                 </button>
               )}
               {own && (
-                <button type="button" className="qcomment-action" onClick={() => onStartEdit(comment)}>
+                <button
+                  type="button"
+                  className="qcomment-action"
+                  onClick={() => onStartEdit(comment)}
+                >
                   Edit
                 </button>
               )}

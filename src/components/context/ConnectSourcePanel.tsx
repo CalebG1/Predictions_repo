@@ -78,7 +78,12 @@ export default function ConnectSourcePanel({
                 title={connected ? `${c.name} connected` : `Connect ${c.name}`}
               >
                 <span className="asrc-tile-icon">
-                  <SourceMark kind={c.kind ?? "custom"} mono={c.mono} brandColor={c.brandColor} size={30} />
+                  <SourceMark
+                    kind={c.kind ?? "custom"}
+                    mono={c.mono}
+                    brandColor={c.brandColor}
+                    size={30}
+                  />
                 </span>
                 <span className="asrc-tile-text">
                   <span className="asrc-tile-name">{c.name}</span>

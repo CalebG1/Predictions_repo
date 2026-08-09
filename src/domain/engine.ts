@@ -30,11 +30,31 @@ function seeded(seed: string): () => number {
 // Agents that produce a numeric estimate (others are process/meta roles).
 const ESTIMATING_AGENTS: { role: AgentRole; weight: number; bias: number; label: string }[] = [
   { role: "base-rate", weight: 1.2, bias: 0, label: "Anchored on comparison-class frequency." },
-  { role: "inside-view", weight: 1.0, bias: 0.06, label: "Case-specific causal forces and incentives." },
-  { role: "market-crowd", weight: 0.9, bias: -0.02, label: "External markets / polls / benchmarks." },
+  {
+    role: "inside-view",
+    weight: 1.0,
+    bias: 0.06,
+    label: "Case-specific causal forces and incentives.",
+  },
+  {
+    role: "market-crowd",
+    weight: 0.9,
+    bias: -0.02,
+    label: "External markets / polls / benchmarks.",
+  },
   { role: "red-team", weight: 0.7, bias: -0.12, label: "Strongest case against the lead view." },
-  { role: "scope-sensitivity", weight: 0.6, bias: 0.03, label: "Sensitivity to time window / threshold." },
-  { role: "bayesian-updater", weight: 1.0, bias: 0.04, label: "Likelihood-weighted update on new evidence." },
+  {
+    role: "scope-sensitivity",
+    weight: 0.6,
+    bias: 0.03,
+    label: "Sensitivity to time window / threshold.",
+  },
+  {
+    role: "bayesian-updater",
+    weight: 1.0,
+    bias: 0.04,
+    label: "Likelihood-weighted update on new evidence.",
+  },
 ];
 
 export interface RunOptions {

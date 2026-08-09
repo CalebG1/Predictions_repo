@@ -58,7 +58,9 @@ function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean 
       <td className="qt-prob">
         <div className="qt-prob-inner">
           <span className="qt-prob-val">{pct(p)}</span>
-          <span className={`qt-prob-delta delta ${delta >= 0 ? "up" : "down"}`}>{signedPct(delta)}%</span>
+          <span className={`qt-prob-delta delta ${delta >= 0 ? "up" : "down"}`}>
+            {signedPct(delta)}%
+          </span>
         </div>
       </td>
       <td className="qt-sources-col">

@@ -21,7 +21,13 @@ export default function AddContextModal({
   onClose: () => void;
   onAddAppContext: (
     connector: Connector,
-    data: { title: string; body: string; sourceRef: string; visibility: Visibility; tags: string[] }
+    data: {
+      title: string;
+      body: string;
+      sourceRef: string;
+      visibility: Visibility;
+      tags: string[];
+    },
   ) => void;
   onImport: (fileNames: string[]) => void;
   onNotes: (data: { title: string; body: string; visibility: Visibility }) => void;
@@ -71,7 +77,15 @@ export default function AddContextModal({
         <header className="asrc-head">
           <h2 className="asrc-title">Add context</h2>
           <button type="button" className="asrc-close" aria-label="Close" onClick={onClose}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+            >
               <line x1="6" y1="6" x2="18" y2="18" />
               <line x1="18" y1="6" x2="6" y2="18" />
             </svg>
@@ -151,6 +165,6 @@ export default function AddContextModal({
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
