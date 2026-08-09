@@ -174,10 +174,6 @@ export default function Competitors() {
         <div className="dash-head">
           <div>
             <h1>Competitors</h1>
-            <p className="dash-sub">
-              What are our competitors likely to do next? {allRows.length} continuously updated forecasts across{" "}
-              {competitors.length} monitored companies. Click a company to open its profile.
-            </p>
           </div>
           <button type="button" className="comp-new-btn" onClick={() => setNewMovesOpen(true)}>
             <span className="comp-new-btn-spark" aria-hidden="true">
