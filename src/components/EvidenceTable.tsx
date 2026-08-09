@@ -299,11 +299,6 @@ export default function EvidenceTable({
     <div className="panel evidence-table-panel">
       <div className="evidence-table-head">
         <h4>Evidence</h4>
-        <span className="muted small evidence-table-head-count">
-          {evidence.length === 0
-            ? "No evidence sources yet"
-            : `${evidence.length} source${evidence.length === 1 ? "" : "s"} · click a row for details`}
-        </span>
         <button type="button" className="ctx-primary-btn evidence-add-btn" onClick={() => setAddOpen(true)}>
           <IconPlus />
           Add evidence

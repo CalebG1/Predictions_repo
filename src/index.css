@@ -1672,6 +1672,14 @@ body:has(.dash-page.detail) {
   min-height: calc(100vh - 104px);
 }
 
+.dash-page.detail > .panel + .panel {
+  margin-top: 24px;
+}
+
+.dash-page.detail > .assump-panel + .evidence-table-panel {
+  margin-top: 28px;
+}
+
 .detail-hero {
   margin: 0 0 18px;
 }
@@ -9281,4 +9289,503 @@ a.ctx-bind-cell-link {
   font-weight: 700;
   color: #b4342f;
   white-space: nowrap;
+}
+
+/* ---------- Assumptions panel (question detail) ---------- */
+
+.assump-panel {
+  /* inherits layout from .evidence-table-panel */
+}
+
+.assump-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.assump-perspective-picker {
+  position: relative;
+}
+
+.assump-perspective-trigger {
+  max-width: 220px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.assump-cell-publish {
+  min-width: 120px;
+}
+
+.assump-publish-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.assump-publish-btn {
+  padding: 5px 10px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.assump-publish-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.assump-publish-btn.is-published {
+  color: #0f7a4f;
+  border-color: #b8e6cf;
+  background: #e6f6ef;
+}
+
+.assump-publish-btn.is-published:hover:not(:disabled) {
+  border-color: #0f7a4f;
+  color: #0f7a4f;
+}
+
+.assump-publish-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.assump-inline-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.assump-inline-link:hover {
+  text-decoration: underline;
+}
+
+.assump-table .assump-row {
+  cursor: default;
+}
+
+.assump-table .assump-row.evidence-row {
+  cursor: pointer;
+}
+
+.assump-table .assump-row.evidence-row:hover,
+.assump-table .assump-row.evidence-row:focus-visible {
+  background: var(--bg-soft);
+}
+
+.assump-perspective-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 230px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 4px;
+  z-index: 20;
+}
+
+.assump-perspective-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+}
+
+.assump-perspective-group:last-child {
+  margin-bottom: 0;
+}
+
+.assump-perspective-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+  padding: 4px 8px 2px;
+}
+
+.assump-perspective-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  padding: 7px 8px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.assump-perspective-item:hover,
+.assump-perspective-item.active {
+  background: var(--bg-2);
+}
+
+.assump-proposals {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.assump-proposals h5 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.assump-proposals-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assump-proposal-row {
+  border-bottom: 1px solid var(--line-2);
+  padding-bottom: 8px;
+}
+
+.assump-proposal-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.assump-proposal-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.assump-proposal-statement {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.assump-proposal-decide {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.assump-decision-note {
+  flex: 1;
+  min-width: 160px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-size: 12px;
+  background: var(--bg);
+}
+
+.assump-row-expanded td {
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--line-2);
+  padding: 12px;
+}
+
+.assump-cell-evidence {
+  white-space: nowrap;
+}
+
+.assump-evidence-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text-2);
+  cursor: pointer;
+  text-align: left;
+}
+
+.assump-evidence-link:hover {
+  color: var(--blue);
+}
+
+.assump-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-left: 6px;
+}
+
+.assump-tag-pending {
+  background: #fff4e0;
+  color: #b3730a;
+}
+
+.assump-tag-challenged {
+  background: #fdeceb;
+  color: #b4342f;
+}
+
+.assump-inline-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.assump-inline-compose-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.assump-discussion-empty {
+  margin: 0 0 8px;
+}
+
+.assump-discussion-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assump-note {
+  border-left: 2px solid var(--line);
+  padding-left: 9px;
+}
+
+.assump-note-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+}
+
+.assump-note-author {
+  font-weight: 700;
+}
+
+.assump-note-body {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.assump-discussion-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assump-discussion-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.assump-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+
+.assump-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.assump-relationship-supports { background: #e6f6ef; color: #0f7a4f; }
+.assump-relationship-contradicts { background: #fdeceb; color: #b4342f; }
+.assump-relationship-context { background: #eef0fb; color: #3454b4; }
+
+.assump-modal {
+  width: min(520px, 92vw);
+  height: auto;
+  max-height: 86vh;
+}
+
+.assump-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.assump-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.assump-field-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.assump-field textarea,
+.assump-field input,
+.assump-field select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  resize: vertical;
+  background: var(--bg);
+}
+
+.assump-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.assump-evidence-modal {
+  width: min(560px, 92vw);
+  height: auto;
+  max-height: 86vh;
+}
+
+.assump-evidence-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.assump-statement-preview {
+  margin: 0;
+  border-left: 3px solid var(--line);
+  padding-left: 10px;
+  font-style: italic;
+}
+
+.assump-publish-intro {
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+
+.assump-publish-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.assump-publish-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.assump-publish-option.selected {
+  border-color: var(--accent);
+  background: #f3fbf7;
+}
+
+.assump-publish-option input {
+  margin-top: 3px;
+}
+
+.assump-publish-option-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.assump-publish-option-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.assump-evidence-section-head {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.assump-evidence-linked-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assump-evidence-linked-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.assump-evidence-title {
+  display: block;
+  font-weight: 600;
+  font-size: 12.5px;
+  margin-bottom: 4px;
+}
+
+.assump-evidence-note {
+  margin: 4px 0 0;
+}
+
+.assump-evidence-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.assump-evidence-picker select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 12.5px;
+  background: var(--bg);
 }
