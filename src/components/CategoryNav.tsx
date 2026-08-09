@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 const tabs = [
   { label: "Overview", path: "/" },
   { label: "Projects", path: "/projects" },
+  { label: "Analyst workspace", path: "/analyst" },
   { label: "Forecasts", path: "/movers" },
   { label: "Research runs", path: "/agents" },
   { label: "Cybersecurity", path: "/cybersecurity" },

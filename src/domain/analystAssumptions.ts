@@ -1,0 +1,36 @@
+export type AnalystLibraryAssumption = {
+  id: string;
+  name: string;
+  value: string | number;
+  type: "Number" | "Text";
+  note: string;
+  category: "Market" | "Commercial" | "Operations" | "Financial" | "Planning";
+};
+
+export const analystLibraryAssumptions: AnalystLibraryAssumption[] = [
+  { id: "market-growth", name: "Market growth rate", value: 0.07, type: "Number", note: "Annual market expansion used in planning cases.", category: "Market" },
+  { id: "conversion-rate", name: "Conversion rate", value: 0.18, type: "Number", note: "Qualified lead to paid customer conversion.", category: "Commercial" },
+  { id: "average-selling-price", name: "Average selling price", value: 124, type: "Number", note: "Base case realized selling price.", category: "Commercial" },
+  { id: "launch-region", name: "Launch region", value: "North America", type: "Text", note: "Primary geographic scope for the current plan.", category: "Planning" },
+  { id: "supplier-status", name: "Supplier status", value: "Watch", type: "Text", note: "Latest supply-chain readiness assessment.", category: "Operations" },
+  { id: "inflation-rate", name: "Inflation rate", value: 0.028, type: "Number", note: "Planning inflation applied to operating costs.", category: "Financial" },
+  { id: "annual-churn", name: "Annual customer churn", value: 0.11, type: "Number", note: "Expected annual attrition for the addressable cohort.", category: "Commercial" },
+  { id: "sales-cycle-days", name: "Sales cycle days", value: 46, type: "Number", note: "Median days from qualified lead to close.", category: "Commercial" },
+  { id: "gross-margin", name: "Gross margin", value: 0.52, type: "Number", note: "Base case gross margin before overhead allocation.", category: "Financial" },
+  { id: "utilization", name: "Capacity utilization", value: 0.84, type: "Number", note: "Expected operating utilization before expansion.", category: "Operations" },
+  { id: "lead-time-days", name: "Supplier lead time days", value: 63, type: "Number", note: "Median lead time for critical inputs.", category: "Operations" },
+  { id: "headcount-plan", name: "Planned headcount", value: 42, type: "Number", note: "Approved staffing level at plan midpoint.", category: "Planning" },
+  { id: "launch-date", name: "Target launch date", value: "2026-11-06", type: "Text", note: "Current planning baseline for launch readiness.", category: "Planning" },
+  { id: "cash-burn", name: "Monthly cash burn", value: 185000, type: "Number", note: "Base monthly operating cash requirement.", category: "Financial" },
+  { id: "discount-rate", name: "Discount rate", value: 0.1, type: "Number", note: "Rate used for discounted cash-flow comparisons.", category: "Financial" },
+  { id: "win-rate", name: "Competitive win rate", value: 0.36, type: "Number", note: "Expected win rate in contested opportunities.", category: "Commercial" },
+  { id: "return-rate", name: "Product return rate", value: 0.035, type: "Number", note: "Expected return rate for the initial release.", category: "Operations" },
+  { id: "service-level", name: "Service level target", value: 0.95, type: "Number", note: "Target share of demand served within the expected window.", category: "Operations" },
+  { id: "pricing-tier", name: "Default pricing tier", value: "Professional", type: "Text", note: "Most likely customer package mix anchor.", category: "Commercial" },
+  { id: "market-share", name: "Starting market share", value: 0.014, type: "Number", note: "Addressable market share at the model start date.", category: "Market" },
+  { id: "competitor-count", name: "Active competitors", value: 7, type: "Number", note: "Material competitors considered in the baseline case.", category: "Market" },
+  { id: "regulatory-status", name: "Regulatory path", value: "Standard review", type: "Text", note: "Expected pathway absent new policy intervention.", category: "Planning" },
+  { id: "fx-rate", name: "USD / EUR rate", value: 1.08, type: "Number", note: "Planning conversion rate for EU-linked costs.", category: "Financial" },
+  { id: "renewal-rate", name: "Annual renewal rate", value: 0.89, type: "Number", note: "Expected contract renewal before expansion effects.", category: "Commercial" },
+  { id: "inventory-buffer", name: "Inventory buffer days", value: 21, type: "Number", note: "Target safety-stock coverage for critical materials.", category: "Operations" },
+];

@@ -16,6 +16,8 @@ import AgentOps from "./pages/AgentOps";
 import Cybersecurity from "./pages/Cybersecurity";
 import Cybersecurity2 from "./pages/Cybersecurity2";
 import ProjectDetail from "./pages/ProjectDetail";
+import AnalystWorkbench from "./pages/AnalystWorkbench";
+import Assumptions from "./pages/Assumptions";
 
 function AppShell() {
   return (
@@ -27,6 +29,8 @@ function AppShell() {
         <Route path="/projects" element={<Projects />} />
         <Route path="/forecast/:jobId/processing" element={<ForecastProcessing />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
+        <Route path="/analyst" element={<AnalystWorkbench />} />
+        <Route path="/assumptions" element={<Assumptions />} />
         <Route path="/q/:id" element={<QuestionDetail />} />
         <Route path="/q/:id/run/:runId" element={<AgentRunMonitor />} />
         <Route path="/agents" element={<AgentOps />} />
