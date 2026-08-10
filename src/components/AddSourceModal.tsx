@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import type { Connector } from "../domain/connectors";
 import type { ContextItem } from "../domain/types";
 import AddAppContextForm from "./context/AddAppContextForm";
 import DocumentsAndNotesPanel from "./context/DocumentsAndNotesPanel";
 import OrgAppsPanel from "./context/OrgAppsPanel";
+import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
 type Tab = "library" | "app";
 
@@ -69,59 +71,24 @@ export default function AddSourceModal({
     return libraryItems.filter((i) => i.status === "active" && !boundItemIds?.has(i.id));
   }, [libraryItems, boundItemIds]);
 
-  if (!open) return null;
-
-  return createPortal(
-    <div className="asrc-overlay" onMouseDown={onClose}>
-      <div
-        className="asrc-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Add context to forecast"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <header className="asrc-head">
-          <h2 className="asrc-title">Add context</h2>
-          <button type="button" className="asrc-close" aria-label="Close" onClick={onClose}>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-            >
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          </button>
-        </header>
-
-        <div className="ctx-mode-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "library"}
-            className={`ctx-mode-tab${tab === "library" ? " active" : ""}`}
-            onClick={() => setTab("library")}
-          >
-            From library
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "app"}
-            className={`ctx-mode-tab${tab === "app" ? " active" : ""}`}
-            onClick={() => setTab("app")}
-          >
-            From org app
-          </button>
-        </div>
-
-        <div className="asrc-body">
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto bg-card p-0 sm:max-w-3xl">
+        <DialogHeader className="px-6 pt-6 pr-12">
+          <DialogTitle>Add context</DialogTitle>
+          <DialogDescription>
+            Attach material from your library or an organization app.
+          </DialogDescription>
+        </DialogHeader>
+        <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)} className="px-6">
+          <TabsList>
+            <TabsTrigger value="library">From library</TabsTrigger>
+            <TabsTrigger value="app">From org app</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="px-6 pb-6">
           {tab === "library" ? (
-            <section className="ctx-library-pick">
+            <section className="space-y-4">
               <DocumentsAndNotesPanel
                 importLabel="Import & attach"
                 notesLabel="Save & attach"
@@ -135,21 +102,26 @@ export default function AddSourceModal({
                 }}
               />
               {attachableLibrary.length > 0 && (
-                <ul className="ctx-library-pick-list">
+                <ul className="space-y-2">
                   {attachableLibrary.map((item) => (
                     <li key={item.id}>
-                      <button
+                      <Button
                         type="button"
-                        className="ctx-library-pick-btn"
+                        variant="outline"
+                        className="h-auto w-full justify-start gap-2 p-3 text-left"
                         onClick={() => {
                           onBindFromLibrary?.(item.id);
                           onClose();
                         }}
                       >
-                        <span className="ctx-type-badge">{item.type}</span>
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                          {item.type}
+                        </span>
                         <span>{item.title}</span>
-                        <span className="muted small">{item.owningTeam}</span>
-                      </button>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {item.owningTeam}
+                        </span>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -169,8 +141,7 @@ export default function AddSourceModal({
             <OrgAppsPanel onSelectApp={setSelectedApp} />
           )}
         </div>
-      </div>
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   );
 }

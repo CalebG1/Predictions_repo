@@ -2,7 +2,11 @@ import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useStore, probabilityDelta, riskWeighted, sortWithPins } from "../store";
 import QuestionCard from "../components/QuestionCard";
-import QuestionFilters, { type HorizonKey, type SortKey, withinHorizon } from "../components/QuestionFilters";
+import QuestionFilters, {
+  type HorizonKey,
+  type SortKey,
+  withinHorizon,
+} from "../components/QuestionFilters";
 import QuestionTable from "../components/QuestionTable";
 import CreateQuestionModal, { AddQuestionButton } from "../components/CreateQuestionModal";
 import { isCategory } from "../components/ui";
@@ -36,12 +40,12 @@ export default function Overview() {
 
   const categories = useMemo(
     () => Array.from(new Set(questions.map((q) => q.category))).sort(),
-    [questions]
+    [questions],
   );
 
   const owners = useMemo(
     () => Array.from(new Set(questions.map((q) => q.owningTeam))).sort(),
-    [questions]
+    [questions],
   );
 
   const rows = useMemo(() => {
@@ -82,14 +86,27 @@ export default function Overview() {
     }
 
     return view === "table" ? sortWithPins(list, pinnedIds) : list;
-  }, [questions, search, cat, owner, riskType, vis, horizon, sort, view, pinnedIds, yesOutcome, historyFor]);
+  }, [
+    questions,
+    search,
+    cat,
+    owner,
+    riskType,
+    vis,
+    horizon,
+    sort,
+    view,
+    pinnedIds,
+    yesOutcome,
+    historyFor,
+  ]);
 
   return (
-    <div className="dash-page dash-page-questions">
-      <div className="dash-page-top">
-        <div className="dash-head">
+    <main className="mx-auto w-full max-w-7xl px-5 py-8">
+      <div className="mb-6 space-y-5">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <h1>Questions</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Questions</h1>
           </div>
           <AddQuestionButton onClick={() => setCreateOpen(true)} />
         </div>
@@ -114,9 +131,9 @@ export default function Overview() {
         />
       </div>
 
-      <div className="dash-page-body">
+      <div className="min-w-0">
         {view === "cards" ? (
-          <div className="qgrid">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {rows.map((q) => (
               <QuestionCard key={q.id} q={q} />
             ))}
@@ -125,6 +142,6 @@ export default function Overview() {
           <QuestionTable questions={rows} />
         )}
       </div>
-    </div>
+    </main>
   );
 }

@@ -566,11 +566,11 @@ interface StoreCtx {
   addAssumption: (
     questionId: string,
     perspectiveId: string,
-    input: { statement: string; rationale?: string; confidence?: AssumptionConfidence }
+    input: { statement: string; rationale?: string; confidence?: AssumptionConfidence },
   ) => QuestionAssumption | null;
   updateAssumption: (
     assumptionId: string,
-    patch: Partial<Pick<QuestionAssumption, "statement" | "rationale" | "confidence" | "status">>
+    patch: Partial<Pick<QuestionAssumption, "statement" | "rationale" | "confidence" | "status">>,
   ) => void;
   deleteAssumption: (assumptionId: string) => void;
   shareAssumption: (assumptionId: string) => void;
@@ -581,27 +581,32 @@ interface StoreCtx {
     assumptionId: string,
     evidenceId: string,
     relationship: AssumptionEvidenceRelationship,
-    note?: string
+    note?: string,
   ) => void;
   unlinkAssumptionEvidence: (linkId: string) => void;
   addEvidenceAndLinkToAssumption: (
     questionId: string,
     assumptionId: string,
     data: { title: string; body: string },
-    relationship: AssumptionEvidenceRelationship
+    relationship: AssumptionEvidenceRelationship,
   ) => void;
   assumptionProposalsFor: (questionId: string) => AssumptionProposal[];
   requestAssumptionPublish: (
     sourceAssumptionId: string,
     target: "viewing" | "default",
-    rationale?: string
+    rationale?: string,
   ) => void;
   proposeArchiveSharedAssumption: (targetAssumptionId: string, rationale?: string) => void;
   canApproveAssumptionProposals: (question: ForecastQuestion) => boolean;
   approveAssumptionProposal: (proposalId: string, decisionNote?: string) => void;
   rejectAssumptionProposal: (proposalId: string, decisionNote?: string) => void;
   assumptionNotesFor: (assumptionId: string) => AssumptionNote[];
-  addAssumptionNote: (assumptionId: string, body: string, isChallenge: boolean, evidenceId?: string) => void;
+  addAssumptionNote: (
+    assumptionId: string,
+    body: string,
+    isChallenge: boolean,
+    evidenceId?: string,
+  ) => void;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -663,13 +668,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   >(() => loadInterventionDecisions());
   const [agentRuns, setAgentRuns] = useState<AgentRun[]>(() => loadAgentRuns());
   const [assumptions, setAssumptions] = useState<QuestionAssumption[]>(() => loadAssumptions());
-  const [assumptionEvidenceLinks, setAssumptionEvidenceLinks] = useState<AssumptionEvidenceLink[]>(() =>
-    loadAssumptionEvidenceLinks()
+  const [assumptionEvidenceLinks, setAssumptionEvidenceLinks] = useState<AssumptionEvidenceLink[]>(
+    () => loadAssumptionEvidenceLinks(),
   );
   const [assumptionProposals, setAssumptionProposals] = useState<AssumptionProposal[]>(() =>
-    loadAssumptionProposals()
+    loadAssumptionProposals(),
   );
-  const [assumptionNotes, setAssumptionNotes] = useState<AssumptionNote[]>(() => loadAssumptionNotes());
+  const [assumptionNotes, setAssumptionNotes] = useState<AssumptionNote[]>(() =>
+    loadAssumptionNotes(),
+  );
   /**
    * Run ids whose probability effect has been applied THIS SESSION. Probability
    * overrides and history live in session state, so completed act-runs re-apply
@@ -1360,7 +1367,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
       setAssumptions((prev) => {
-        const removedIds = new Set(prev.filter((a) => a.questionId === questionId).map((a) => a.id));
+        const removedIds = new Set(
+          prev.filter((a) => a.questionId === questionId).map((a) => a.id),
+        );
         const next = prev.filter((a) => a.questionId !== questionId);
         saveAssumptions(next);
         if (removedIds.size > 0) {
@@ -1891,18 +1900,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    []
+    [],
   );
 
   const persistAssumptionEvidenceLinks = useCallback(
-    (updater: AssumptionEvidenceLink[] | ((prev: AssumptionEvidenceLink[]) => AssumptionEvidenceLink[])) => {
+    (
+      updater:
+        | AssumptionEvidenceLink[]
+        | ((prev: AssumptionEvidenceLink[]) => AssumptionEvidenceLink[]),
+    ) => {
       setAssumptionEvidenceLinks((prev) => {
         const next = typeof updater === "function" ? updater(prev) : updater;
         saveAssumptionEvidenceLinks(next);
         return next;
       });
     },
-    []
+    [],
   );
 
   const persistAssumptionProposals = useCallback(
@@ -1913,7 +1926,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    []
+    [],
   );
 
   const persistAssumptionNotes = useCallback(
@@ -1924,19 +1937,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    []
+    [],
   );
 
   const assumptionsFor = useCallback(
     (questionId: string) => visibleAssumptionsForQuestion(questionId, user, assumptions),
-    [user, assumptions]
+    [user, assumptions],
   );
 
   const addAssumption = useCallback(
     (
       questionId: string,
       perspectiveId: string,
-      input: { statement: string; rationale?: string; confidence?: AssumptionConfidence }
+      input: { statement: string; rationale?: string; confidence?: AssumptionConfidence },
     ): QuestionAssumption | null => {
       const statement = input.statement.trim();
       if (!statement) return null;
@@ -1960,13 +1973,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       persistAssumptions((prev) => [...prev, created]);
       return created;
     },
-    [user.id, persistAssumptions]
+    [user.id, persistAssumptions],
   );
 
   const updateAssumption = useCallback(
     (
       assumptionId: string,
-      patch: Partial<Pick<QuestionAssumption, "statement" | "rationale" | "confidence" | "status">>
+      patch: Partial<Pick<QuestionAssumption, "statement" | "rationale" | "confidence" | "status">>,
     ) => {
       const target = assumptions.find((a) => a.id === assumptionId);
       if (!target || !canEditAssumption(user, target)) return;
@@ -1979,15 +1992,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 ...a,
                 ...patch,
                 statement: patch.statement?.trim() || a.statement,
-                rationale: "rationale" in patch ? patch.rationale?.trim() || undefined : a.rationale,
+                rationale:
+                  "rationale" in patch ? patch.rationale?.trim() || undefined : a.rationale,
                 updatedBy: user.id,
                 updatedAt: now,
               }
-            : a
-        )
+            : a,
+        ),
       );
     },
-    [assumptions, user, persistAssumptions]
+    [assumptions, user, persistAssumptions],
   );
 
   const deleteAssumption = useCallback(
@@ -2007,11 +2021,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         prev.filter(
           (p) =>
             !removedIds.has(p.sourceAssumptionId ?? "") &&
-            !removedIds.has(p.targetAssumptionId ?? "")
-        )
+            !removedIds.has(p.targetAssumptionId ?? ""),
+        ),
       );
     },
-    [assumptions, user, persistAssumptions, persistAssumptionEvidenceLinks, persistAssumptionNotes, persistAssumptionProposals]
+    [
+      assumptions,
+      user,
+      persistAssumptions,
+      persistAssumptionEvidenceLinks,
+      persistAssumptionNotes,
+      persistAssumptionProposals,
+    ],
   );
 
   const shareAssumption = useCallback(
@@ -2022,7 +2043,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const targetPerspectiveId = personPerspectiveId(source.questionId, user.id);
       persistAssumptions((prev) => {
         const existing = prev.find(
-          (a) => a.perspectiveId === targetPerspectiveId && a.originAssumptionId === assumptionId
+          (a) => a.perspectiveId === targetPerspectiveId && a.originAssumptionId === assumptionId,
         );
         if (existing) {
           return prev.map((a) =>
@@ -2036,7 +2057,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                   updatedBy: user.id,
                   updatedAt: now,
                 }
-              : a
+              : a,
           );
         }
         const shared: QuestionAssumption = {
@@ -2056,7 +2077,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return [...prev, shared];
       });
     },
-    [assumptions, user, persistAssumptions]
+    [assumptions, user, persistAssumptions],
   );
 
   const unshareAssumption = useCallback(
@@ -2066,13 +2087,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           (a) =>
             a.originAssumptionId === localAssumptionId &&
             perspectiveType(a.perspectiveId) === "person" &&
-            a.createdBy === user.id
+            a.createdBy === user.id,
         );
         if (!copy) return prev;
         return prev.filter((a) => a.id !== copy.id);
       });
     },
-    [user.id, persistAssumptions]
+    [user.id, persistAssumptions],
   );
 
   const copyAssumptionToLocal = useCallback(
@@ -2096,20 +2117,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       };
       persistAssumptions((prev) => [...prev, created]);
     },
-    [assumptions, user.id, persistAssumptions]
+    [assumptions, user.id, persistAssumptions],
   );
 
   const assumptionEvidenceLinksFor = useCallback(
-    (assumptionId: string) => assumptionEvidenceLinks.filter((l) => l.assumptionId === assumptionId),
-    [assumptionEvidenceLinks]
+    (assumptionId: string) =>
+      assumptionEvidenceLinks.filter((l) => l.assumptionId === assumptionId),
+    [assumptionEvidenceLinks],
   );
 
   const linkEvidenceToAssumption = useCallback(
-    (assumptionId: string, evidenceId: string, relationship: AssumptionEvidenceRelationship, note?: string) => {
+    (
+      assumptionId: string,
+      evidenceId: string,
+      relationship: AssumptionEvidenceRelationship,
+      note?: string,
+    ) => {
       persistAssumptionEvidenceLinks((prev) => {
-        const existing = prev.find((l) => l.assumptionId === assumptionId && l.evidenceId === evidenceId);
+        const existing = prev.find(
+          (l) => l.assumptionId === assumptionId && l.evidenceId === evidenceId,
+        );
         if (existing) {
-          return prev.map((l) => (l.id === existing.id ? { ...l, relationship, note: note?.trim() || undefined } : l));
+          return prev.map((l) =>
+            l.id === existing.id ? { ...l, relationship, note: note?.trim() || undefined } : l,
+          );
         }
         return [
           ...prev,
@@ -2125,14 +2156,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ];
       });
     },
-    [user.id, persistAssumptionEvidenceLinks]
+    [user.id, persistAssumptionEvidenceLinks],
   );
 
   const unlinkAssumptionEvidence = useCallback(
     (linkId: string) => {
       persistAssumptionEvidenceLinks((prev) => prev.filter((l) => l.id !== linkId));
     },
-    [persistAssumptionEvidenceLinks]
+    [persistAssumptionEvidenceLinks],
   );
 
   const addEvidenceAndLinkToAssumption = useCallback(
@@ -2140,7 +2171,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       questionId: string,
       assumptionId: string,
       data: { title: string; body: string },
-      relationship: AssumptionEvidenceRelationship
+      relationship: AssumptionEvidenceRelationship,
     ) => {
       const title = data.title.trim();
       const body = data.body.trim();
@@ -2149,7 +2180,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       bindContext(questionId, item.id);
       linkEvidenceToAssumption(assumptionId, item.id, relationship);
     },
-    [addContextItem, bindContext, linkEvidenceToAssumption]
+    [addContextItem, bindContext, linkEvidenceToAssumption],
   );
 
   const assumptionProposalsFor = useCallback(
@@ -2157,7 +2188,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       assumptionProposals
         .filter((p) => p.questionId === questionId)
         .sort((a, b) => b.proposedAt.localeCompare(a.proposedAt)),
-    [assumptionProposals]
+    [assumptionProposals],
   );
 
   const requestAssumptionPublish = useCallback(
@@ -2166,7 +2197,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!source || !canEditAssumption(user, source)) return;
       if (source.status === "pending_review") return;
       const alreadyPending = assumptionProposals.some(
-        (p) => p.sourceAssumptionId === sourceAssumptionId && p.status === "pending"
+        (p) => p.sourceAssumptionId === sourceAssumptionId && p.status === "pending",
       );
       if (alreadyPending) return;
 
@@ -2190,11 +2221,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         prev.map((a) =>
           a.id === sourceAssumptionId
             ? { ...a, status: "pending_review", updatedBy: user.id, updatedAt: now }
-            : a
-        )
+            : a,
+        ),
       );
     },
-    [assumptions, assumptionProposals, user, persistAssumptionProposals, persistAssumptions]
+    [assumptions, assumptionProposals, user, persistAssumptionProposals, persistAssumptions],
   );
 
   const proposeArchiveSharedAssumption = useCallback(
@@ -2214,17 +2245,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       };
       persistAssumptionProposals((prev) => [...prev, proposal]);
     },
-    [assumptions, user.id, persistAssumptionProposals]
+    [assumptions, user.id, persistAssumptionProposals],
   );
 
   const canApproveAssumptionProposals = useCallback(
     (question: ForecastQuestion) => canApproveProposals(user, question),
-    [user]
+    [user],
   );
 
   const approveAssumptionProposal = useCallback(
     (proposalId: string, decisionNote?: string) => {
-      const proposal = assumptionProposals.find((p) => p.id === proposalId && p.status === "pending");
+      const proposal = assumptionProposals.find(
+        (p) => p.id === proposalId && p.status === "pending",
+      );
       if (!proposal) return;
       const question = mergedQuestions.find((q) => q.id === proposal.questionId);
       if (!question || !canApproveProposals(user, question)) return;
@@ -2251,7 +2284,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             next = next.map((a) =>
               a.id === proposal.sourceAssumptionId
                 ? { ...a, status: "active", updatedBy: user.id, updatedAt: now }
-                : a
+                : a,
             );
           }
           return next;
@@ -2262,7 +2295,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (!source) return prev;
           const targetPerspectiveId = personPerspectiveId(source.questionId, proposal.proposedBy);
           const existing = prev.find(
-            (a) => a.perspectiveId === targetPerspectiveId && a.originAssumptionId === proposal.sourceAssumptionId
+            (a) =>
+              a.perspectiveId === targetPerspectiveId &&
+              a.originAssumptionId === proposal.sourceAssumptionId,
           );
           let next = prev;
           if (existing) {
@@ -2277,7 +2312,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     updatedBy: proposal.proposedBy,
                     updatedAt: now,
                   }
-                : a
+                : a,
             );
           } else {
             const shared: QuestionAssumption = {
@@ -2299,7 +2334,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           return next.map((a) =>
             a.id === proposal.sourceAssumptionId
               ? { ...a, status: "active", updatedBy: user.id, updatedAt: now }
-              : a
+              : a,
           );
         });
       } else if (proposal.changeType === "archive" && proposal.targetAssumptionId) {
@@ -2307,25 +2342,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           prev.map((a) =>
             a.id === proposal.targetAssumptionId
               ? { ...a, status: "archived", updatedBy: user.id, updatedAt: now }
-              : a
-          )
+              : a,
+          ),
         );
       }
 
       persistAssumptionProposals((prev) =>
         prev.map((p) =>
           p.id === proposalId
-            ? { ...p, status: "approved", decidedBy: user.id, decidedAt: now, decisionNote: decisionNote?.trim() || undefined }
-            : p
-        )
+            ? {
+                ...p,
+                status: "approved",
+                decidedBy: user.id,
+                decidedAt: now,
+                decisionNote: decisionNote?.trim() || undefined,
+              }
+            : p,
+        ),
       );
     },
-    [assumptionProposals, mergedQuestions, user, persistAssumptions, persistAssumptionProposals]
+    [assumptionProposals, mergedQuestions, user, persistAssumptions, persistAssumptionProposals],
   );
 
   const rejectAssumptionProposal = useCallback(
     (proposalId: string, decisionNote?: string) => {
-      const proposal = assumptionProposals.find((p) => p.id === proposalId && p.status === "pending");
+      const proposal = assumptionProposals.find(
+        (p) => p.id === proposalId && p.status === "pending",
+      );
       if (!proposal) return;
       const question = mergedQuestions.find((q) => q.id === proposal.questionId);
       if (!question || !canApproveProposals(user, question)) return;
@@ -2338,19 +2381,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           prev.map((a) =>
             a.id === proposal.sourceAssumptionId
               ? { ...a, status: "active", updatedBy: user.id, updatedAt: now }
-              : a
-          )
+              : a,
+          ),
         );
       }
       persistAssumptionProposals((prev) =>
         prev.map((p) =>
           p.id === proposalId
-            ? { ...p, status: "rejected", decidedBy: user.id, decidedAt: now, decisionNote: decisionNote?.trim() || undefined }
-            : p
-        )
+            ? {
+                ...p,
+                status: "rejected",
+                decidedBy: user.id,
+                decidedAt: now,
+                decisionNote: decisionNote?.trim() || undefined,
+              }
+            : p,
+        ),
       );
     },
-    [assumptionProposals, mergedQuestions, user, persistAssumptionProposals, persistAssumptions]
+    [assumptionProposals, mergedQuestions, user, persistAssumptionProposals, persistAssumptions],
   );
 
   const assumptionNotesFor = useCallback(
@@ -2358,7 +2407,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       assumptionNotes
         .filter((n) => n.assumptionId === assumptionId)
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-    [assumptionNotes]
+    [assumptionNotes],
   );
 
   const addAssumptionNote = useCallback(
@@ -2381,12 +2430,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           prev.map((a) =>
             a.id === assumptionId && a.status !== "archived" && a.status !== "invalidated"
               ? { ...a, status: "challenged", updatedAt: new Date().toISOString() }
-              : a
-          )
+              : a,
+          ),
         );
       }
     },
-    [user, persistAssumptionNotes, persistAssumptions]
+    [user, persistAssumptionNotes, persistAssumptions],
   );
 
   const value = useMemo<StoreCtx>(() => {

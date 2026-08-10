@@ -14,9 +14,9 @@ export default function DocumentsAndNotesPanel({
   notesLabel?: string;
 }) {
   return (
-    <div className="ctx-docs-notes">
+    <div className="space-y-6">
       <ImportFilesPanel submitLabel={importLabel} onImport={onImport} />
-      <div className="ctx-docs-notes-divider" />
+      <div className="border-t" />
       <NotesForm submitLabel={notesLabel} onSubmit={onNotes} />
     </div>
   );

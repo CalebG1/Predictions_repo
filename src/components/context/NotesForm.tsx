@@ -1,6 +1,10 @@
 import { useState } from "react";
 import type { Visibility } from "../../domain/types";
 import { visibilityOrder } from "../ui";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Textarea } from "../ui/textarea";
 
 /** Simple free-form notes — title and context body only. */
 export default function NotesForm({
@@ -25,10 +29,10 @@ export default function NotesForm({
   };
 
   return (
-    <form className="ctx-manual-form" onSubmit={handleSubmit}>
-      <label className="ctx-field">
-        <span className="ctx-field-label">Title</span>
-        <input
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      <label className="grid gap-1.5 text-sm font-medium">
+        <span>Title</span>
+        <Input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -37,9 +41,9 @@ export default function NotesForm({
         />
       </label>
 
-      <label className="ctx-field">
-        <span className="ctx-field-label">Context body</span>
-        <textarea
+      <label className="grid gap-1.5 text-sm font-medium">
+        <span>Context body</span>
+        <Textarea
           rows={6}
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -48,20 +52,23 @@ export default function NotesForm({
         />
       </label>
 
-      <label className="ctx-field">
-        <span className="ctx-field-label">Visibility</span>
-        <select value={visibility} onChange={(e) => setVisibility(e.target.value as Visibility)}>
-          {visibilityOrder.map((v) => (
-            <option key={v} value={v}>
-              {v}
-            </option>
-          ))}
-        </select>
+      <label className="grid gap-1.5 text-sm font-medium">
+        <span>Visibility</span>
+        <Select value={visibility} onValueChange={(value) => setVisibility(value as Visibility)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {visibilityOrder.map((v) => (
+              <SelectItem key={v} value={v}>
+                {v}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </label>
 
-      <button type="submit" className="ctx-primary-btn">
-        {submitLabel}
-      </button>
+      <Button type="submit">{submitLabel}</Button>
     </form>
   );
 }

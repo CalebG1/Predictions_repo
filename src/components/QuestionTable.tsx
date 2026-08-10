@@ -7,6 +7,9 @@ import VisibilityBadge from "./VisibilityBadge";
 import QuestionTags from "./QuestionTags";
 import { IconPin } from "./icons";
 import { pct, signedPct } from "./ui";
+import { Button } from "./ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { Card, CardContent } from "./ui/card";
 
 function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean }) {
   const navigate = useNavigate();
@@ -20,8 +23,8 @@ function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean 
   const goToQuestion = () => navigate(`/q/${q.id}`);
 
   return (
-    <tr
-      className="qt-row"
+    <TableRow
+      className="cursor-pointer border-b border-border transition-colors hover:bg-muted/50 focus-visible:bg-muted"
       role="link"
       tabIndex={0}
       onClick={goToQuestion}
@@ -32,11 +35,13 @@ function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean 
         }
       }}
     >
-      <td className="qt-pin-col" aria-hidden={!pinned}>
+      <TableCell className="w-10 px-3 py-3" aria-hidden={!pinned}>
         {pinned && (
-          <button
+          <Button
             type="button"
-            className="qt-pin"
+            variant="ghost"
+            size="icon"
+            className="size-7"
             title="Unpin"
             aria-label="Unpin"
             onClick={(e) => {
@@ -46,34 +51,38 @@ function QuestionTableRow({ q, pinned }: { q: ForecastQuestion; pinned: boolean 
             }}
           >
             <IconPin filled />
-          </button>
+          </Button>
         )}
-      </td>
-      <td className="qt-question-col">
-        <div className="qt-question-cell">
-          <span className="qt-title">{q.title}</span>
+      </TableCell>
+      <TableCell className="min-w-80 px-3 py-3">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-foreground">{q.title}</span>
           <QuestionTags q={q} />
         </div>
-      </td>
-      <td className="qt-prob">
-        <div className="qt-prob-inner">
-          <span className="qt-prob-val">{pct(p)}</span>
-          <span className={`qt-prob-delta delta ${delta >= 0 ? "up" : "down"}`}>
+      </TableCell>
+      <TableCell className="px-3 py-3">
+        <div className="flex items-baseline gap-2">
+          <span className="font-semibold">{pct(p)}</span>
+          <span
+            className={`text-xs font-medium ${delta >= 0 ? "text-emerald-600" : "text-red-600"}`}
+          >
             {signedPct(delta)}%
           </span>
         </div>
-      </td>
-      <td className="qt-sources-col">
+      </TableCell>
+      <TableCell className="px-3 py-3">
         <TouchpointIcons questionId={q.id} signals={signals} maxVisible={3} />
-      </td>
-      <td className="qt-date-col">{q.resolutionDate}</td>
-      <td className="qt-vis-col">
+      </TableCell>
+      <TableCell className="whitespace-nowrap px-3 py-3 text-sm text-muted-foreground">
+        {q.resolutionDate}
+      </TableCell>
+      <TableCell className="px-3 py-3">
         <VisibilityBadge value={q.visibility} owningTeam={q.owningTeam} />
-      </td>
-      <td className="qt-menu">
+      </TableCell>
+      <TableCell className="px-3 py-3">
         <QuestionOverflowMenu q={q} probability={p} showPin />
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -81,25 +90,27 @@ export default function QuestionTable({ questions }: { questions: ForecastQuesti
   const { pinnedIds } = useStore();
 
   return (
-    <div className="qtable-wrap">
-      <table className="qtable">
-        <thead>
-          <tr>
-            <th className="qt-pin-col" aria-hidden="true" />
-            <th className="qt-question-col">Question</th>
-            <th className="qt-prob-col">Probability</th>
-            <th className="qt-sources-col">Sources</th>
-            <th className="qt-date-col">Resolves</th>
-            <th className="qt-vis-col">Visibility</th>
-            <th aria-label="Actions" />
-          </tr>
-        </thead>
-        <tbody>
-          {questions.map((q) => (
-            <QuestionTableRow key={q.id} q={q} pinned={pinnedIds.includes(q.id)} />
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Card className="p-0">
+      <CardContent className="overflow-x-auto p-0">
+        <Table className="min-w-[900px]">
+          <TableHeader className="bg-muted/50 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <TableRow>
+              <TableHead className="w-10" aria-hidden="true" />
+              <TableHead>Question</TableHead>
+              <TableHead>Probability</TableHead>
+              <TableHead>Sources</TableHead>
+              <TableHead>Resolves</TableHead>
+              <TableHead>Visibility</TableHead>
+              <TableHead aria-label="Actions" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {questions.map((q) => (
+              <QuestionTableRow key={q.id} q={q} pinned={pinnedIds.includes(q.id)} />
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }

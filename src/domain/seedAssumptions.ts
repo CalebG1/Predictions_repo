@@ -3,7 +3,12 @@
 // first load instead of only empty states.
 
 import { localPerspectiveId, personPerspectiveId, sharedPerspectiveId } from "./assumptions";
-import type { AssumptionEvidenceLink, AssumptionNote, AssumptionProposal, QuestionAssumption } from "./types";
+import type {
+  AssumptionEvidenceLink,
+  AssumptionNote,
+  AssumptionProposal,
+  QuestionAssumption,
+} from "./types";
 
 const GEO = "q-geo";
 const VENDOR = "q-cyber-vendor";
@@ -28,8 +33,10 @@ export const seedAssumptions: QuestionAssumption[] = [
     id: "asum-geo-2",
     questionId: GEO,
     perspectiveId: localPerspectiveId(GEO, "u-risk"),
-    statement: "Suez Canal Authority pricing concessions will not be enough to bring major carriers back before October.",
-    rationale: "Discount alone doesn't offset war-risk insurance premiums for most tier-1 carriers.",
+    statement:
+      "Suez Canal Authority pricing concessions will not be enough to bring major carriers back before October.",
+    rationale:
+      "Discount alone doesn't offset war-risk insurance premiums for most tier-1 carriers.",
     status: "challenged",
     confidence: "low",
     createdBy: "u-risk",
@@ -72,7 +79,8 @@ export const seedAssumptions: QuestionAssumption[] = [
     id: "asum-geo-5",
     questionId: GEO,
     perspectiveId: localPerspectiveId(GEO, "u-analyst"),
-    statement: "Panama Canal draft restrictions have already eased and are not a material driver of continued disruption.",
+    statement:
+      "Panama Canal draft restrictions have already eased and are not a material driver of continued disruption.",
     rationale: "Lock levels recovered faster than the seasonal forecast expected.",
     status: "pending_review",
     confidence: "medium",
@@ -87,7 +95,8 @@ export const seedAssumptions: QuestionAssumption[] = [
     id: "asum-vendor-1",
     questionId: VENDOR,
     perspectiveId: localPerspectiveId(VENDOR, "u-risk"),
-    statement: "Our top-10 vendor completes its SOC 2 remediation items before the Q4 renewal review.",
+    statement:
+      "Our top-10 vendor completes its SOC 2 remediation items before the Q4 renewal review.",
     rationale: "Their last status call put remediation at 80% complete with two items outstanding.",
     status: "active",
     confidence: "medium",
@@ -100,7 +109,8 @@ export const seedAssumptions: QuestionAssumption[] = [
     id: "asum-vendor-2",
     questionId: VENDOR,
     perspectiveId: personPerspectiveId(VENDOR, "u-risk"),
-    statement: "Our top-10 vendor completes its SOC 2 remediation items before the Q4 renewal review.",
+    statement:
+      "Our top-10 vendor completes its SOC 2 remediation items before the Q4 renewal review.",
     rationale: "Their last status call put remediation at 80% complete with two items outstanding.",
     status: "active",
     confidence: "medium",
@@ -206,7 +216,8 @@ export const seedAssumptionProposals: AssumptionProposal[] = [
     questionId: VENDOR,
     sourceAssumptionId: "asum-vendor-1",
     changeType: "add",
-    proposedStatement: "Vendor's SOC 2 remediation is on track to close before the Q4 renewal review.",
+    proposedStatement:
+      "Vendor's SOC 2 remediation is on track to close before the Q4 renewal review.",
     proposedConfidence: "medium",
     status: "approved",
     proposedBy: "u-risk",
@@ -219,10 +230,12 @@ export const seedAssumptionProposals: AssumptionProposal[] = [
     questionId: GEO,
     sourceAssumptionId: "asum-geo-5",
     changeType: "add",
-    proposedStatement: "Panama Canal draft restrictions have already eased and are not a material driver of continued disruption.",
+    proposedStatement:
+      "Panama Canal draft restrictions have already eased and are not a material driver of continued disruption.",
     proposedRationale: "Lock levels recovered faster than the seasonal forecast expected.",
     proposedConfidence: "medium",
-    rationale: "Worth reflecting in the shared view now that Red Sea routing is the dominant driver.",
+    rationale:
+      "Worth reflecting in the shared view now that Red Sea routing is the dominant driver.",
     status: "pending",
     proposedBy: "u-analyst",
     proposedAt: "2026-06-23T09:10:00Z",

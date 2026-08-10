@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import type { QuestionAssumption } from "../../domain/types";
+import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Textarea } from "../ui/textarea";
 
 type PublishTarget = "viewing" | "default";
-
 const OPTIONS: { id: PublishTarget; title: string; description: string }[] = [
   {
     id: "viewing",
@@ -30,94 +38,70 @@ export default function PublishAssumptionModal({
 }) {
   const [target, setTarget] = useState<PublishTarget>("viewing");
   const [rationale, setRationale] = useState("");
-
   useEffect(() => {
-    if (!open) return;
-    setTarget("viewing");
-    setRationale("");
+    if (open) {
+      setTarget("viewing");
+      setRationale("");
+    }
   }, [open, assumption?.id]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open || !assumption) return null;
-
+  if (!assumption) return null;
   const submit = () => {
     onSubmit(target, rationale.trim() || undefined);
     onClose();
   };
-
-  return createPortal(
-    <div className="asrc-overlay" onMouseDown={onClose}>
-      <div
-        className="asrc-modal assump-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Publish assumption"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <header className="asrc-head">
-          <h2 className="asrc-title">Publish assumption</h2>
-          <button type="button" className="asrc-close" aria-label="Close" onClick={onClose}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          </button>
-        </header>
-
-        <div className="asrc-body assump-modal-body">
-          <p className="assump-statement-preview muted small">{assumption.statement}</p>
-          <p className="muted small assump-publish-intro">
-            Choose how you want to publish this assumption. Either option will be submitted for review and your
-            assumption status will change to Pending review until a decision is made.
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className="gap-5 bg-card p-0 sm:max-w-xl">
+        <DialogHeader className="px-6 pt-6 pr-12">
+          <DialogTitle>Publish assumption</DialogTitle>
+          <DialogDescription>
+            Choose how this assumption should be shared for review.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 px-6">
+          <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+            {assumption.statement}
           </p>
-
-          <div className="assump-publish-options" role="radiogroup" aria-label="Publish destination">
+          <div className="space-y-2" role="radiogroup" aria-label="Publish destination">
             {OPTIONS.map((option) => (
-              <label key={option.id} className={`assump-publish-option${target === option.id ? " selected" : ""}`}>
-                <input
-                  type="radio"
-                  name="publish-target"
-                  value={option.id}
-                  checked={target === option.id}
-                  onChange={() => setTarget(option.id)}
-                />
-                <span className="assump-publish-option-copy">
-                  <span className="assump-publish-option-title">{option.title}</span>
-                  <span className="muted small">{option.description}</span>
+              <Button
+                key={option.id}
+                type="button"
+                variant="outline"
+                className={`h-auto w-full justify-start p-3 text-left ${target === option.id ? "border-primary bg-primary/5" : ""}`}
+                onClick={() => setTarget(option.id)}
+              >
+                <span className="grid gap-1">
+                  <span>{option.title}</span>
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {option.description}
+                  </span>
                 </span>
-              </label>
+              </Button>
             ))}
           </div>
-
-          <label className="assump-field">
-            <span className="assump-field-label">Note for reviewer (optional)</span>
-            <textarea
-              rows={2}
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium">
+              Note for reviewer{" "}
+              <span className="font-normal text-muted-foreground">(optional)</span>
+            </span>
+            <Textarea
+              rows={3}
               placeholder="Add context for the person reviewing this request…"
               value={rationale}
-              onChange={(e) => setRationale(e.target.value)}
+              onChange={(event) => setRationale(event.target.value)}
             />
           </label>
-
-          <div className="assump-modal-actions">
-            <button type="button" className="qcomment-action" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="button" className="ctx-primary-btn" onClick={submit}>
-              Submit for review
-            </button>
-          </div>
         </div>
-      </div>
-    </div>,
-    document.body
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={submit}>
+            Submit for review
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

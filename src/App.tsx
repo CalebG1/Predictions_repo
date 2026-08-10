@@ -12,9 +12,6 @@ import Context from "./pages/settings/Context";
 import Profile from "./pages/settings/Profile";
 import ForecastProcessing from "./pages/ForecastProcessing";
 import AgentRunMonitor from "./pages/AgentRunMonitor";
-import AgentOps from "./pages/AgentOps";
-import Cybersecurity from "./pages/Cybersecurity";
-import Cybersecurity2 from "./pages/Cybersecurity2";
 import ProjectDetail from "./pages/ProjectDetail";
 import AnalystWorkbench from "./pages/AnalystWorkbench";
 import Assumptions from "./pages/Assumptions";
@@ -33,10 +30,7 @@ function AppShell() {
         <Route path="/assumptions" element={<Assumptions />} />
         <Route path="/q/:id" element={<QuestionDetail />} />
         <Route path="/q/:id/run/:runId" element={<AgentRunMonitor />} />
-        <Route path="/agents" element={<AgentOps />} />
         <Route path="/movers" element={<Movers />} />
-        <Route path="/cybersecurity" element={<Cybersecurity />} />
-        <Route path="/cybersecurity-2" element={<Cybersecurity2 />} />
         <Route path="/settings" element={<Settings />}>
           <Route index element={<Navigate to="methodology" replace />} />
           <Route path="methodology" element={<Methodology />} />

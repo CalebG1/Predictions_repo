@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { ProbabilityPoint } from "../domain/types";
 import { buildEvidenceItems, type EvidenceItem } from "../domain/evidenceItems";
 import EvidenceCarousel from "./EvidenceCarousel";
+import { Button } from "./ui/button";
 
 export interface ProbPoint {
   id?: string;
@@ -711,12 +712,7 @@ export function ProbChart({
   const onPlotPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (isAnimating) return;
     const target = e.target as Element;
-    if (
-      target.closest(".pc-dot-soft") ||
-      target.closest(".pc-popup") ||
-      target.closest(".pc-evidence-drawer")
-    )
-      return;
+    if (target.closest("[data-pc-soft-dot]") || target.closest("[data-pc-overlay]")) return;
 
     const { x, y } = toSvgCoords(e.clientX, e.clientY);
     if (x < padL || x > padL + plotInnerW || y < padT || y > padT + innerH) return;
@@ -874,65 +870,85 @@ export function ProbChart({
 
   return (
     <div className="prob-chart-wrap">
-      <div className="pc-toolbar">
-        <div className="pc-legend">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex flex-wrap items-center gap-3.5 pl-1">
           {(Object.keys(KIND_META) as RefreshKind[]).map((k) => (
-            <span className="pc-leg-item" key={k}>
-              <span className="pc-leg-dot" style={{ background: KIND_META[k].color }} />{" "}
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+              key={k}
+            >
+              <span
+                className="inline-block size-2 rounded-full ring-2 ring-background"
+                style={{ background: KIND_META[k].color }}
+              />{" "}
               {KIND_META[k].label}
             </span>
           ))}
         </div>
-        <div className="pc-toolbar-controls">
-          <div className="pc-timeframes" role="tablist" aria-label="Timeframe">
+        <div className="inline-flex shrink-0 items-center gap-2.5">
+          <div
+            className="inline-flex gap-0.5 rounded-lg bg-muted p-0.5"
+            role="tablist"
+            aria-label="Timeframe"
+          >
             {TIMEFRAMES.map((t) => (
-              <button
+              <Button
                 key={t.key}
-                className={`pc-tf${tf === t.key ? " active" : ""}`}
+                className={`h-7 rounded-md px-2 text-xs font-semibold ${tf === t.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 onClick={() => setTf(t.key)}
                 type="button"
               >
                 {t.key}
-              </button>
+              </Button>
             ))}
           </div>
-          <div className="pc-zoom">
+          <div className="inline-flex shrink-0 items-center gap-1.5">
             {isZoomed && (
-              <button type="button" className="pc-reset" onClick={resetView}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={resetView}
+              >
                 Reset
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
-              className="pc-zoom-btn"
+              variant="outline"
+              size="icon"
+              className="size-7"
               aria-label="Zoom in"
               disabled={isAnimating || !zoomInEnabled}
               onClick={() => zoomBy(1)}
             >
               +
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="pc-zoom-btn"
+              variant="outline"
+              size="icon"
+              className="size-7"
               aria-label="Zoom out"
               disabled={isAnimating || !isZoomed}
               onClick={() => zoomBy(-1)}
             >
               −
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
-      <div className={`pc-plot${drawerOpen ? " pc-drawer-open" : ""}`} ref={plotRef}>
-        <div className="pc-plot-chart" ref={chartRef} style={{ aspectRatio: `${W} / ${H}` }}>
+      <div className="relative overflow-visible" ref={plotRef}>
+        <div className="relative w-full" ref={chartRef} style={{ aspectRatio: `${W} / ${H}` }}>
           <svg
             ref={svgRef}
             viewBox={`0 0 ${W} ${H}`}
             width="100%"
             height="100%"
             preserveAspectRatio="xMinYMin meet"
-            className={`prob-chart${brushing ? " pc-brushing" : crosshairActive ? " pc-hovering" : ""}${isAnimating ? " pc-animating" : ""}`}
+            className={`block size-full ${brushing || crosshairActive ? "cursor-crosshair" : ""} ${isAnimating ? "cursor-wait" : ""}`}
             role="img"
             aria-label={
               endpointPct
@@ -1133,7 +1149,7 @@ export function ProbChart({
                           cy={ys(prob)}
                           r={dotHitR}
                           fill="transparent"
-                          className="pc-dot-soft"
+                          data-pc-soft-dot
                           style={{ cursor: !isAnimating ? "pointer" : "default" }}
                           onClick={handleSoftClick}
                         />
@@ -1200,7 +1216,7 @@ export function ProbChart({
               !crosshairActive &&
               endpointLabel &&
               endpointPct && (
-                <g className="pc-endpoint-label" aria-hidden="true">
+                <g aria-hidden="true">
                   <circle cx={endX} cy={endY} r={6} fill={primaryColor} fillOpacity="0.14">
                     <animate attributeName="r" values="6;9;6" dur="2.4s" repeatCount="indefinite" />
                     <animate
@@ -1256,7 +1272,7 @@ export function ProbChart({
 
             {/* hover crosshair + date pill + inline tracking labels */}
             {crosshairActive && trackLabelYs && (
-              <g className="pc-cross" pointerEvents="none">
+              <g pointerEvents="none">
                 <line
                   x1={crosshairX}
                   x2={crosshairX}
@@ -1311,7 +1327,6 @@ export function ProbChart({
                 ))}
 
                 <g
-                  className="pc-crosshair-date"
                   transform={`translate(${Math.max(
                     padL + 52,
                     Math.min(padL + plotInnerW - 52, crosshairX),
@@ -1359,7 +1374,7 @@ export function ProbChart({
 
             {brush && (
               <rect
-                className="pc-brush-rect"
+                pointerEvents="none"
                 x={Math.min(brush.x0, brush.x1)}
                 y={Math.min(brush.y0, brush.y1)}
                 width={Math.abs(brush.x1 - brush.x0)}
@@ -1368,7 +1383,6 @@ export function ProbChart({
                 stroke={CHART_LINE}
                 strokeWidth="1"
                 strokeDasharray="4 3"
-                pointerEvents="none"
               />
             )}
           </svg>
@@ -1379,41 +1393,46 @@ export function ProbChart({
             selectedProb !== null && (
               <div
                 ref={popupRef}
-                className={`pc-popup${popupAnchor?.placeBelow ? " pc-popup--below" : ""}`}
+                data-pc-overlay
+                className={`absolute z-20 w-[min(268px,72vw)] rounded-xl border bg-background px-4 pb-3 pt-3 shadow-lg ${popupAnchor?.placeBelow ? "-translate-x-1/2 translate-y-2.5" : "-translate-x-1/2 -translate-y-[calc(100%+10px)]"}`}
                 style={{
                   left: popupAnchor?.x ?? 0,
                   top: popupAnchor?.y ?? 0,
                   visibility: popupAnchor ? "visible" : "hidden",
-                  ["--pc-arrow-shift" as string]: popupAnchor
-                    ? `${popupAnchor.arrowShift}px`
-                    : "0px",
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
               >
-                <button
+                <Button
                   type="button"
-                  className="pc-popup-close"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-1.5 size-7 text-muted-foreground"
                   aria-label="Close"
                   onClick={() => dismissAll()}
                 >
                   ×
-                </button>
-                <div className="pc-popup-head">
-                  <span className="pc-popup-prob">{(selectedProb * 100).toFixed(0)}%</span>
-                  <span className="pc-popup-date">{fmtDate(selectedPoint.timestamp)}</span>
+                </Button>
+                <div className="mb-1 flex items-baseline gap-2 pr-4">
+                  <span className="text-lg font-bold">{(selectedProb * 100).toFixed(0)}%</span>
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {fmtDate(selectedPoint.timestamp)}
+                  </span>
                 </div>
                 {selectedPoint.trigger && (
-                  <div className="pc-popup-trigger">{selectedPoint.trigger}</div>
+                  <div className="mb-2 inline-flex rounded bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-700">
+                    {selectedPoint.trigger}
+                  </div>
                 )}
-                <p className="pc-popup-summary">{selectedPoint.summary}</p>
+                <p className="text-sm leading-5">{selectedPoint.summary}</p>
                 {selectedPoint.detail && (
-                  <button
+                  <Button
                     type="button"
-                    className="pc-popup-toggle"
+                    variant="link"
+                    className="mt-2 h-auto p-0 text-xs"
                     onClick={() => setExpanded((v) => !v)}
                   >
                     {drawerOpen ? "Show less" : "Show more"}
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -1422,32 +1441,37 @@ export function ProbChart({
         {selectedPoint?.detail && (
           <aside
             ref={drawerRef}
-            className={`pc-evidence-drawer${drawerOpen ? " open" : ""}`}
+            data-pc-overlay
+            className={`absolute right-0 top-0 z-12 h-full overflow-hidden border-l bg-background transition-all duration-300 ${drawerOpen ? "w-[min(380px,48%)] overflow-y-auto border-border p-4 opacity-100 shadow-lg" : "w-0 border-transparent p-0 opacity-0"}`}
             aria-hidden={!drawerOpen}
             onTransitionEnd={handleDrawerTransitionEnd}
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="pc-evidence-drawer-head">
-              <span className="pc-evidence-drawer-title">Evidence</span>
-              <button
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-xs font-bold">Evidence</span>
+              <Button
                 type="button"
-                className="pc-evidence-drawer-close"
+                variant="ghost"
+                size="icon"
+                className="size-7 text-muted-foreground"
                 aria-label="Close evidence panel"
                 onClick={() => dismissAll()}
               >
                 ×
-              </button>
+              </Button>
             </div>
-            <div className="pc-evidence-drawer-meta">
+            <div className="mb-1.5 text-xs font-semibold text-muted-foreground">
               {fmtDate(selectedPoint.timestamp)}
               {selectedProb !== null && ` · ${(selectedProb * 100).toFixed(0)}%`}
             </div>
             {selectedPoint.trigger && (
-              <div className="pc-evidence-drawer-trigger">{selectedPoint.trigger}</div>
+              <div className="mb-2.5 text-xs font-semibold text-amber-700">
+                {selectedPoint.trigger}
+              </div>
             )}
             {selectedPoint.evidenceItems && selectedPoint.evidenceItems.length > 0 ? (
               <>
-                <p className="pc-evidence-drawer-summary">{selectedPoint.summary}</p>
+                <p className="mb-2.5 text-sm leading-5">{selectedPoint.summary}</p>
                 <EvidenceCarousel
                   items={selectedPoint.evidenceItems}
                   index={evidenceIndex}
@@ -1456,8 +1480,8 @@ export function ProbChart({
               </>
             ) : (
               <>
-                <p className="pc-evidence-drawer-summary">{selectedPoint.summary}</p>
-                <p className="pc-evidence-drawer-detail">{selectedPoint.detail}</p>
+                <p className="mb-2.5 text-sm leading-5">{selectedPoint.summary}</p>
+                <p className="text-sm leading-6 text-muted-foreground">{selectedPoint.detail}</p>
               </>
             )}
           </aside>
@@ -1589,7 +1613,7 @@ export function RiskMatrixScatter({
   const midY = py(0.5);
 
   return (
-    <div className="risk-matrix">
+    <div className="relative">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
@@ -1675,11 +1699,14 @@ export function RiskMatrixScatter({
         ))}
       </svg>
 
-      <div className="risk-matrix-quadrants" aria-hidden="true">
-        <span className="risk-matrix-q q-monitor">Monitor</span>
-        <span className="risk-matrix-q q-watch">Watch</span>
-        <span className="risk-matrix-q q-mitigate">Mitigate</span>
-        <span className="risk-matrix-q q-critical">Critical</span>
+      <div
+        className="grid grid-cols-2 gap-1 text-center text-xs font-medium text-muted-foreground"
+        aria-hidden="true"
+      >
+        <span>Monitor</span>
+        <span>Watch</span>
+        <span>Mitigate</span>
+        <span>Critical</span>
       </div>
     </div>
   );

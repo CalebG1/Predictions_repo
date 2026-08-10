@@ -4,6 +4,9 @@ import type { ForecastReasoning, ReasoningView } from "../domain/reasoning";
 import CyberQuestionInsights from "./CyberQuestionInsights";
 import { IconClock, IconDocument, IconExternalLink, IconLayers, IconRefresh } from "./icons";
 import { pct } from "./ui";
+import { Button } from "./ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { Card, CardContent } from "./ui/card";
 
 const VIEWS: { id: ReasoningView; label: string }[] = [
   { id: "one-line", label: "One line" },
@@ -25,19 +28,25 @@ function AccordionSection({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className={`fr-accordion${open ? " open" : ""}`}>
-      <button
+    <div className="rounded-lg border">
+      <Button
         type="button"
-        className="fr-accordion-trigger"
+        variant="ghost"
+        className="h-auto w-full justify-start gap-3 rounded-b-none px-4 py-3 text-left"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="fr-accordion-icon">{icon}</span>
-        <span className="fr-accordion-title">{title}</span>
-        {meta && <span className="fr-accordion-meta">{meta}</span>}
-        <span className={`fr-accordion-chevron${open ? " open" : ""}`} aria-hidden="true" />
-      </button>
-      {open && <div className="fr-accordion-body">{children}</div>}
+        <span className="text-muted-foreground">{icon}</span>
+        <span className="font-medium">{title}</span>
+        {meta && <span className="ml-auto text-xs text-muted-foreground">{meta}</span>}
+        <span
+          className={`text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
+          aria-hidden="true"
+        >
+          ›
+        </span>
+      </Button>
+      {open && <div className="border-t p-4">{children}</div>}
     </div>
   );
 }
@@ -65,77 +74,82 @@ export default function ReasoningThread({
   }
 
   return (
-    <section
-      className={`forecast-reasoning${view === "one-page" ? " fr-wide" : ""}`}
-      aria-label="Forecast reasoning"
-    >
-      <div className="fr-view-nav">
-        <button
+    <section className="space-y-5" aria-label="Forecast reasoning">
+      <div className="flex items-center justify-between gap-3">
+        <Button
           type="button"
-          className="fr-view-arrow"
+          variant="outline"
+          size="icon"
           aria-label="Previous view"
           onClick={() => shiftView(-1)}
         >
           ‹
-        </button>
-        <div className="fr-view-tabs" role="tablist" aria-label="Reasoning view">
+        </Button>
+        <div className="flex rounded-lg bg-muted p-1" role="tablist" aria-label="Reasoning view">
           {VIEWS.map((v) => (
-            <button
+            <Button
               key={v.id}
               type="button"
               role="tab"
               aria-selected={view === v.id}
-              className={`fr-view-tab${view === v.id ? " active" : ""}`}
+              variant="ghost"
+              size="sm"
+              className={view === v.id ? "bg-background shadow-sm" : ""}
               onClick={() => setView(v.id)}
             >
               {v.label}
-            </button>
+            </Button>
           ))}
         </div>
-        <button
+        <Button
           type="button"
-          className="fr-view-arrow"
+          variant="outline"
+          size="icon"
           aria-label="Next view"
           onClick={() => shiftView(1)}
         >
           ›
-        </button>
+        </Button>
       </div>
 
       {view === "one-page" ? (
-        <div className="fr-one-page">
-          <ul className="fr-bullets">
+        <div className="space-y-5">
+          <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed">
             {reasoning.summaryBullets.map((bullet) => (
               <li key={bullet}>{bullet}</li>
             ))}
           </ul>
 
-          <h3 className="fr-section-label">Key figures</h3>
-          <div className="fr-table-wrap">
-            <table className="fr-table">
-              <thead>
-                <tr>
-                  <th>Figure/Metric</th>
-                  <th>Value</th>
-                  <th>Source</th>
-                  <th>Significance</th>
-                </tr>
-              </thead>
-              <tbody>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Key figures
+          </h3>
+          <div className="overflow-x-auto rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Figure/Metric</TableHead>
+                  <TableHead>Value</TableHead>
+                  <TableHead>Source</TableHead>
+                  <TableHead>Significance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {reasoning.keyFigures.map((row) => (
-                  <tr key={row.metric}>
-                    <td>{row.metric}</td>
-                    <td>{row.value}</td>
-                    <td>{row.source}</td>
-                    <td>{row.significance}</td>
-                  </tr>
+                  <TableRow key={row.metric}>
+                    <TableCell>{row.metric}</TableCell>
+                    <TableCell>{row.value}</TableCell>
+                    <TableCell>{row.source}</TableCell>
+                    <TableCell>{row.significance}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
-          <h3 className="fr-section-label">Historical context</h3>
-          <ul className="fr-bullets">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Historical context
+          </h3>
+          <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed">
             {reasoning.historicalContext.map((item) => (
               <li key={item}>{item}</li>
             ))}
@@ -143,125 +157,136 @@ export default function ReasoningThread({
 
           {question.category === "Security/Cyber" && <CyberQuestionInsights q={question} />}
 
-          <div className="detail-grid fr-one-page-grid">
-            <div className="detail-main">
-              <div className="panel two-col">
-                <div>
-                  <h4 className="up">Drivers up</h4>
-                  <ul>
-                    {forecast.driversUp.map((d) => (
-                      <li key={d}>{d}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="down">Drivers down</h4>
-                  <ul>
-                    {forecast.driversDown.map((d) => (
-                      <li key={d}>{d}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="panel panel-collapse">
-                <button
-                  type="button"
-                  className="panel-collapse-trigger"
-                  aria-expanded={historyOpen}
-                  onClick={() => setHistoryOpen((open) => !open)}
-                >
-                  <span className="panel-collapse-label">
-                    <span>Forecast history</span>
-                    <span className="muted">{history.length} updates</span>
-                  </span>
-                  <span
-                    className={`panel-collapse-chevron${historyOpen ? " open" : ""}`}
-                    aria-hidden="true"
-                  />
-                </button>
-                {historyOpen && (
-                  <div className="panel-collapse-body">
-                    <p className="muted small panel-collapse-note">
-                      Immutable once locked for resolution.
-                    </p>
-                    <table className="hist-table">
-                      <thead>
-                        <tr>
-                          <th>Date</th>
-                          <th>Prob.</th>
-                          <th>Source</th>
-                          <th>What changed (trigger)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...history].reverse().map((h) => (
-                          <tr key={h.id}>
-                            <td>{h.timestamp}</td>
-                            <td>{pct(h.probability)}</td>
-                            <td>{h.source}</td>
-                            <td>{h.updateTrigger}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="space-y-5">
+              <Card className="border bg-card two-col">
+                <CardContent>
+                  <div>
+                    <h4 className="up">Drivers up</h4>
+                    <ul>
+                      {forecast.driversUp.map((d) => (
+                        <li key={d}>{d}</li>
+                      ))}
+                    </ul>
                   </div>
-                )}
-              </div>
+                  <div>
+                    <h4 className="down">Drivers down</h4>
+                    <ul>
+                      {forecast.driversDown.map((d) => (
+                        <li key={d}>{d}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border bg-card">
+                <CardContent>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="flex h-auto w-full items-center justify-between gap-3 p-0 text-left"
+                    aria-expanded={historyOpen}
+                    onClick={() => setHistoryOpen((open) => !open)}
+                  >
+                    <span className="flex items-center gap-2 font-medium">
+                      <span>Forecast history</span>
+                      <span className="text-muted-foreground">{history.length} updates</span>
+                    </span>
+                    <span
+                      className={`text-muted-foreground transition-transform ${historyOpen ? "rotate-90" : ""}`}
+                      aria-hidden="true"
+                    >
+                      ›
+                    </span>
+                  </Button>
+                  {historyOpen && (
+                    <div className="mt-4 border-t pt-4">
+                      <p className="mb-3 text-xs text-muted-foreground">
+                        Immutable once locked for resolution.
+                      </p>
+                      <Table className="">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Prob.</TableHead>
+                            <TableHead>Source</TableHead>
+                            <TableHead>What changed (trigger)</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {[...history].reverse().map((h) => (
+                            <TableRow key={h.id}>
+                              <TableCell>{h.timestamp}</TableCell>
+                              <TableCell>{pct(h.probability)}</TableCell>
+                              <TableCell>{h.source}</TableCell>
+                              <TableCell>{h.updateTrigger}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
-            <aside className="detail-side">
-              <div className="panel kv">
-                <h4>Horizon sensitivity</h4>
-                {Object.entries(forecast.horizonSensitivity).map(([k, v]) => (
-                  <div className="kv-row" key={k}>
-                    <span>{k}</span>
-                    <b>{pct(v)}</b>
-                  </div>
-                ))}
-              </div>
+            <aside className="space-y-4 lg:sticky lg:top-30 lg:self-start">
+              <Card className="border bg-card kv">
+                <CardContent>
+                  <h4>Horizon sensitivity</h4>
+                  {Object.entries(forecast.horizonSensitivity).map(([k, v]) => (
+                    <div className="" key={k}>
+                      <span>{k}</span>
+                      <b>{pct(v)}</b>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
 
-              <div className="panel kv">
-                <h4>Key uncertainties</h4>
-                <ul className="tight">
-                  {forecast.keyUncertainties.map((u) => (
-                    <li key={u}>{u}</li>
-                  ))}
-                </ul>
-                <h4>Update triggers</h4>
-                <ul className="tight">
-                  {forecast.updateTriggers.map((u) => (
-                    <li key={u}>{u}</li>
-                  ))}
-                </ul>
-                <h4>Alternative scenarios</h4>
-                <ul className="tight">
-                  {forecast.alternativeScenarios.map((u) => (
-                    <li key={u}>{u}</li>
-                  ))}
-                </ul>
-              </div>
+              <Card className="border bg-card kv">
+                <CardContent>
+                  <h4>Key uncertainties</h4>
+                  <ul className="tight">
+                    {forecast.keyUncertainties.map((u) => (
+                      <li key={u}>{u}</li>
+                    ))}
+                  </ul>
+                  <h4>Update triggers</h4>
+                  <ul className="tight">
+                    {forecast.updateTriggers.map((u) => (
+                      <li key={u}>{u}</li>
+                    ))}
+                  </ul>
+                  <h4>Alternative scenarios</h4>
+                  <ul className="tight">
+                    {forecast.alternativeScenarios.map((u) => (
+                      <li key={u}>{u}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             </aside>
           </div>
         </div>
       ) : (
         <>
-          <p className="fr-one-liner">{reasoning.oneLine}</p>
+          <p className="text-lg font-medium leading-relaxed">{reasoning.oneLine}</p>
 
           {view === "summary" && (
-            <ul className="fr-bullets fr-summary-bullets">
+            <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed">
               {reasoning.summaryBullets.slice(1, 4).map((bullet) => (
                 <li key={bullet}>{bullet}</li>
               ))}
             </ul>
           )}
 
-          <div className="fr-refresh-box">
-            <div className="fr-refresh-head">
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <div className="flex items-center gap-2 text-sm font-medium">
               <IconDocument />
               <span>Latest refresh triggered by {reasoning.latestRefresh.trigger}</span>
             </div>
-            <ul className="fr-refresh-list">
+            <ul className="mt-2 list-disc pl-5 text-sm">
               <li>
                 {reasoning.latestRefresh.url ? (
                   <a href={reasoning.latestRefresh.url} target="_blank" rel="noopener noreferrer">
@@ -273,12 +298,14 @@ export default function ReasoningThread({
                 )}
               </li>
             </ul>
-            <p className="fr-refresh-note">{reasoning.latestRefresh.explanation}</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {reasoning.latestRefresh.explanation}
+            </p>
           </div>
 
-          <div className="fr-accordions">
+          <div className="space-y-2">
             <AccordionSection icon={<IconRefresh />} title="Changes from previous forecast">
-              <ul className="fr-plain-list">
+              <ul className="list-disc space-y-2 pl-5 text-sm">
                 {reasoning.changesFromPrevious.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -290,7 +317,7 @@ export default function ReasoningThread({
               title="News sources"
               meta={`${reasoning.newsSources.length} references`}
             >
-              <ul className="fr-link-list">
+              <ul className="space-y-2 text-sm [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1 [&_a]:text-primary [&_a]:hover:underline">
                 {reasoning.newsSources.map((src) => (
                   <li key={src.title}>
                     {src.url ? (
@@ -311,7 +338,7 @@ export default function ReasoningThread({
               title="Historical precedents"
               meta={`${reasoning.historicalPrecedents.length} precedents`}
             >
-              <ul className="fr-precedent-list">
+              <ul className="space-y-3 text-sm">
                 {reasoning.historicalPrecedents.map((p) => (
                   <li key={p.title}>
                     <strong>{p.title}</strong>
@@ -326,10 +353,10 @@ export default function ReasoningThread({
               title="Prediction trace"
               meta={`${reasoning.predictionTrace.length} attempts`}
             >
-              <ul className="fr-trace-list">
+              <ul className="space-y-3 text-sm">
                 {reasoning.predictionTrace.map((attempt) => (
                   <li key={attempt.label}>
-                    <div className="fr-trace-head">
+                    <div className="flex items-center justify-between gap-3 font-medium">
                       <span>{attempt.label}</span>
                       <b>{pct(attempt.probability)}</b>
                     </div>
@@ -340,7 +367,9 @@ export default function ReasoningThread({
             </AccordionSection>
           </div>
 
-          <p className="fr-chat-hint">For more information, use the forecast chat.</p>
+          <p className="text-sm text-muted-foreground">
+            For more information, use the forecast chat.
+          </p>
         </>
       )}
     </section>

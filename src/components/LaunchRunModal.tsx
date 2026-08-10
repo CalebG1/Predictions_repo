@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   CHANNEL_LABELS,
   resourcePreview,
@@ -9,6 +8,17 @@ import {
 } from "../domain/interventions";
 import { useStore } from "../store";
 import { ChannelIcon } from "./InterventionsPanel";
+import { Button } from "./ui/button";
+import { Checkbox } from "./ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 const CHANNELS: OutreachChannel[] = ["slack", "teams", "email"];
 const WAIT_OPTIONS = [4, 12, 24, 48];
@@ -141,54 +151,31 @@ export default function LaunchRunModal({
     resources.docs.length === 0 &&
     resources.tasks.length === 0;
 
-  return createPortal(
-    <div className="asrc-overlay" onMouseDown={onClose}>
-      <div
-        className="asrc-modal int-launch-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Choose resources for this agent run"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <header className="asrc-head int-launch-head">
-          <div>
-            <h2 className="asrc-title">Launch: {suggestion.title}</h2>
-            <p className="int-launch-sub">
-              {suggestion.intent === "act"
-                ? `Delivers: ${suggestion.expectedOutcome}`
-                : `Targets: ${suggestion.targets}.`}{" "}
-              Choose what the agent may use — defaults are pre-selected.
-            </p>
-          </div>
-          <button type="button" className="asrc-close" aria-label="Close" onClick={onClose}>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-            >
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          </button>
-        </header>
+  return (
+    <Dialog open onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto bg-card p-0 sm:max-w-3xl">
+        <DialogHeader className="px-6 pt-6 pr-12">
+          <DialogTitle>Launch: {suggestion.title}</DialogTitle>
+          <DialogDescription>
+            {suggestion.intent === "act"
+              ? `Delivers: ${suggestion.expectedOutcome}`
+              : `Targets: ${suggestion.targets}.`}{" "}
+            Choose what the agent may use — defaults are pre-selected.
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="asrc-body int-launch-body">
-          <section className="int-launch-section">
-            <h3>Channels in scope</h3>
-            <div className="int-channel-toggles">
+        <div className="space-y-5 px-6">
+          <section>
+            <h3 className="mb-2 text-sm font-semibold">Channels in scope</h3>
+            <div className="flex flex-wrap gap-2">
               {CHANNELS.map((channel) => (
                 <label
                   key={channel}
-                  className={`int-channel-toggle${channels.has(channel) ? " on" : ""}`}
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${channels.has(channel) ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted"}`}
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={channels.has(channel)}
-                    onChange={() => toggleChannel(channel)}
+                    onCheckedChange={() => toggleChannel(channel)}
                   />
                   <ChannelIcon channel={channel} />
                   {CHANNEL_LABELS[channel]}
@@ -197,26 +184,30 @@ export default function LaunchRunModal({
             </div>
           </section>
 
-          <section className="int-launch-section">
-            <h3>People the agent may contact</h3>
-            <ul className="int-people-list">
+          <section>
+            <h3 className="mb-2 text-sm font-semibold">People the agent may contact</h3>
+            <ul className="divide-y rounded-lg border">
               {defaults.people.map((p) => {
                 const channelOff = !channels.has(p.channel);
                 return (
                   <li key={p.name}>
-                    <label className={`int-person-row${channelOff ? " disabled" : ""}`}>
-                      <input
-                        type="checkbox"
+                    <label
+                      className={`flex cursor-pointer items-center gap-2.5 p-3 transition-colors hover:bg-muted/60 ${channelOff ? "cursor-not-allowed opacity-50" : ""}`}
+                    >
+                      <Checkbox
                         checked={selectedPeople.has(p.name) && !channelOff}
                         disabled={channelOff}
-                        onChange={() => togglePerson(p.name)}
+                        onCheckedChange={() => togglePerson(p.name)}
                       />
-                      <span className="pc-evc-avatar" aria-hidden="true">
+                      <span
+                        className="inline-flex size-6 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary"
+                        aria-hidden="true"
+                      >
                         {initials(p.name)}
                       </span>
-                      <span className="int-person-name">{p.name}</span>
-                      <span className="muted small">{p.role}</span>
-                      <span className="int-person-target">
+                      <span className="text-sm font-medium">{p.name}</span>
+                      <span className="text-muted-foreground small">{p.role}</span>
+                      <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
                         <ChannelIcon channel={p.channel} />
                         {p.target}
                       </span>
@@ -228,18 +219,19 @@ export default function LaunchRunModal({
           </section>
 
           {defaults.tasks.length > 0 && (
-            <section className="int-launch-section">
-              <h3>Tasks the agent may execute</h3>
-              <ul className="int-doc-list">
+            <section>
+              <h3 className="mb-2 text-sm font-semibold">Tasks the agent may execute</h3>
+              <ul className="divide-y rounded-lg border">
                 {defaults.tasks.map((task) => (
                   <li key={task}>
-                    <label className="int-doc-row">
-                      <input
-                        type="checkbox"
+                    <label className="flex cursor-pointer items-center gap-2.5 p-3 text-sm transition-colors hover:bg-muted/60">
+                      <Checkbox
                         checked={selectedTasks.has(task)}
-                        onChange={() => toggleIn(selectedTasks, task, setSelectedTasks)}
+                        onCheckedChange={() => toggleIn(selectedTasks, task, setSelectedTasks)}
                       />
-                      <span className="ctx-type-badge">task</span>
+                      <span className="rounded bg-muted px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        task
+                      </span>
                       {task}
                     </label>
                   </li>
@@ -249,31 +241,33 @@ export default function LaunchRunModal({
           )}
 
           {(allDocs.length > 0 || defaults.dataPulls.length > 0) && (
-            <section className="int-launch-section">
-              <h3>Documents & data pulls</h3>
-              <ul className="int-doc-list">
+            <section>
+              <h3 className="mb-2 text-sm font-semibold">Documents & data pulls</h3>
+              <ul className="divide-y rounded-lg border">
                 {allDocs.map((doc) => (
                   <li key={doc}>
-                    <label className="int-doc-row">
-                      <input
-                        type="checkbox"
+                    <label className="flex cursor-pointer items-center gap-2.5 p-3 text-sm transition-colors hover:bg-muted/60">
+                      <Checkbox
                         checked={selectedDocs.has(doc)}
-                        onChange={() => toggleIn(selectedDocs, doc, setSelectedDocs)}
+                        onCheckedChange={() => toggleIn(selectedDocs, doc, setSelectedDocs)}
                       />
-                      <span className="ctx-type-badge">doc</span>
+                      <span className="rounded bg-muted px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        doc
+                      </span>
                       {doc}
                     </label>
                   </li>
                 ))}
                 {defaults.dataPulls.map((pull) => (
                   <li key={pull}>
-                    <label className="int-doc-row">
-                      <input
-                        type="checkbox"
+                    <label className="flex cursor-pointer items-center gap-2.5 p-3 text-sm transition-colors hover:bg-muted/60">
+                      <Checkbox
                         checked={selectedPulls.has(pull)}
-                        onChange={() => toggleIn(selectedPulls, pull, setSelectedPulls)}
+                        onCheckedChange={() => toggleIn(selectedPulls, pull, setSelectedPulls)}
                       />
-                      <span className="ctx-type-badge">pull</span>
+                      <span className="rounded bg-muted px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        pull
+                      </span>
                       {pull}
                     </label>
                   </li>
@@ -282,51 +276,58 @@ export default function LaunchRunModal({
             </section>
           )}
 
-          <section className="int-launch-section">
-            <h3>Budget</h3>
-            <div className="int-budget-row">
-              <label>
+          <section>
+            <h3 className="mb-2 text-sm font-semibold">Budget</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-1.5 text-sm font-medium">
                 Max people contacted
-                <select value={maxPeople} onChange={(e) => setMaxPeople(Number(e.target.value))}>
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Max wait per person
-                <select
-                  value={maxWaitHours}
-                  onChange={(e) => setMaxWaitHours(Number(e.target.value))}
+                <Select
+                  value={String(maxPeople)}
+                  onValueChange={(value) => setMaxPeople(Number(value))}
                 >
-                  {WAIT_OPTIONS.map((h) => (
-                    <option key={h} value={h}>
-                      {h}h
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium">
+                Max wait per person
+                <Select
+                  value={String(maxWaitHours)}
+                  onValueChange={(value) => setMaxWaitHours(Number(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WAIT_OPTIONS.map((h) => (
+                      <SelectItem key={h} value={String(h)}>
+                        {h}h
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
             </div>
           </section>
         </div>
 
-        <footer className="int-launch-foot">
-          <span className="muted small">
+        <DialogFooter>
+          <span className="text-muted-foreground small">
             {nothingSelected ? "Select at least one resource" : resourcePreview(resources)}
           </span>
-          <button
-            type="button"
-            className="ctx-primary-btn"
-            disabled={nothingSelected}
-            onClick={() => onLaunch(resources)}
-          >
+          <Button type="button" disabled={nothingSelected} onClick={() => onLaunch(resources)}>
             Launch agent
-          </button>
-        </footer>
-      </div>
-    </div>,
-    document.body,
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

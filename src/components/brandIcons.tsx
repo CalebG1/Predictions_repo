@@ -204,7 +204,7 @@ export function SourceMark({
   const text = (mono ?? "?").slice(0, 2);
   return (
     <span
-      className="source-mono"
+      className=""
       style={{
         width: size,
         height: size,

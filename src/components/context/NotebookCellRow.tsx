@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
 import type { NotebookCell } from "../../domain/types";
+import { Button } from "../ui/button";
+import { Textarea } from "../ui/textarea";
+import { Play } from "lucide-react";
 
 function autoSize(el: HTMLTextAreaElement | null) {
   if (!el) return;
@@ -35,35 +38,38 @@ export default function NotebookCellRow({
   const isCode = cell.kind === "code";
 
   return (
-    <div className={`ctx-nb-cell${isCode ? " ctx-nb-cell-code" : " ctx-nb-cell-markdown"}`}>
-      <div className="ctx-nb-cell-gutter">
+    <div className={`flex gap-3 rounded-lg border p-3 ${isCode ? "bg-card" : "bg-muted/30"}`}>
+      <div className="flex w-10 shrink-0 flex-col items-center gap-2 text-xs text-muted-foreground">
         {isCode ? (
-          <button
+          <Button
             type="button"
-            className={`ctx-nb-run-btn${cell.status === "running" ? " running" : ""}`}
+            size="icon"
+            variant="outline"
+            className="size-7"
             onClick={onRun}
             disabled={disabled}
             aria-label={cell.status === "running" ? "Running…" : "Run cell"}
             title={cell.status === "running" ? "Running…" : "Run cell"}
           >
             {cell.status === "running" ? (
-              <span className="ctx-analysis-spinner" aria-hidden />
+              <span
+                className="size-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+                aria-hidden
+              />
             ) : (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
-              </svg>
+              <Play className="size-3 fill-current" />
             )}
-          </button>
+          </Button>
         ) : (
-          <span className="ctx-nb-md-label">Text</span>
+          <span className="rounded bg-muted px-1 py-0.5 font-medium">Text</span>
         )}
-        <span className="ctx-nb-index">[{index + 1}]</span>
+        <span>[{index + 1}]</span>
       </div>
 
-      <div className="ctx-nb-cell-main">
-        <textarea
+      <div className="min-w-0 flex-1">
+        <Textarea
           ref={textareaRef}
-          className={`ctx-nb-source${isCode ? " code" : ""}`}
+          className={isCode ? "min-h-20 resize-y font-mono text-xs" : "min-h-16 resize-y"}
           value={cell.source}
           placeholder={isCode ? "# Python" : "Notes"}
           spellCheck={false}
@@ -72,45 +78,55 @@ export default function NotebookCellRow({
         />
 
         {isCode && (cell.output || cell.error) && (
-          <pre className={`ctx-nb-output${cell.status === "error" ? " error" : ""}`}>
+          <pre
+            className={`mt-2 overflow-x-auto rounded-md border p-3 text-xs ${cell.status === "error" ? "border-destructive/30 bg-destructive/10 text-destructive" : "bg-muted"}`}
+          >
             {cell.error ?? cell.output}
           </pre>
         )}
         {isCode && cell.status === "success" && cell.durationMs !== undefined && (
-          <div className="ctx-nb-meta muted small">Ran in {Math.round(cell.durationMs)}ms</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            Ran in {Math.round(cell.durationMs)}ms
+          </div>
         )}
       </div>
 
-      <div className="ctx-nb-cell-actions">
-        <button
+      <div className="flex shrink-0 flex-col gap-1">
+        <Button
           type="button"
-          className="ctx-nb-icon-btn"
+          variant="ghost"
+          size="icon"
+          className="size-7"
           onClick={onMoveUp}
           disabled={!onMoveUp}
           aria-label="Move cell up"
           title="Move up"
         >
           ↑
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="ctx-nb-icon-btn"
+          variant="ghost"
+          size="icon"
+          className="size-7"
           onClick={onMoveDown}
           disabled={!onMoveDown}
           aria-label="Move cell down"
           title="Move down"
         >
           ↓
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="ctx-nb-icon-btn ctx-nb-icon-btn-danger"
+          variant="ghost"
+          size="icon"
+          className="size-7 text-destructive hover:text-destructive"
           onClick={onRemove}
           aria-label="Delete cell"
           title="Delete cell"
         >
           ×
-        </button>
+        </Button>
       </div>
     </div>
   );

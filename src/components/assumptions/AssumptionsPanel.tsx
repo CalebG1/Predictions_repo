@@ -24,6 +24,13 @@ import { IconPlus, IconTrash } from "../icons";
 import AssumptionModal from "./AssumptionModal";
 import AssumptionEvidenceModal from "./AssumptionEvidenceModal";
 import PublishAssumptionModal from "./PublishAssumptionModal";
+import { Button } from "../ui/button";
+import { Checkbox } from "../ui/checkbox";
+import { Input } from "../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Textarea } from "../ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { Card, CardContent } from "../ui/card";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -33,11 +40,12 @@ function fmtDate(iso: string): string {
   return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
-function statusRelClass(status: AssumptionStatus): string {
-  if (status === "active") return "rel-high";
-  if (status === "pending_review") return "rel-medium";
-  if (status === "uncertain") return "rel-medium";
-  return "rel-low";
+function statusClassName(status: AssumptionStatus): string {
+  const base = "h-7 w-32 rounded-full border-0 px-2 text-xs font-bold";
+  if (status === "active") return `${base} bg-emerald-100 text-emerald-700`;
+  if (status === "pending_review" || status === "uncertain")
+    return `${base} bg-amber-100 text-amber-700`;
+  return `${base} bg-red-100 text-red-700`;
 }
 
 function PerspectiveSelect({
@@ -65,39 +73,44 @@ function PerspectiveSelect({
   const groups: AssumptionPerspectiveOption["group"][] = ["Private", "Team", "People"];
 
   return (
-    <div className="assump-perspective-picker" ref={ref}>
-      <button
+    <div className="relative" ref={ref}>
+      <Button
         type="button"
-        className="ctx-secondary-btn evidence-add-btn assump-perspective-trigger"
+        className="inline-flex min-h-9 items-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium"
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
         {current?.name ?? "Select view"}
-      </button>
+      </Button>
       {open && (
-        <div className="assump-perspective-menu" role="listbox">
+        <div
+          className="absolute left-0 top-full z-20 mt-1 min-w-52 rounded-lg border border-slate-200 bg-white p-1 shadow-lg"
+          role="listbox"
+        >
           {groups.map((group) => {
             const inGroup = options.filter((o) => o.group === group);
             if (inGroup.length === 0) return null;
             return (
-              <div className="assump-perspective-group" key={group}>
-                <span className="assump-perspective-group-label">{group}</span>
+              <div className="border-b border-slate-100 py-1 last:border-0" key={group}>
+                <span className="block px-2 py-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  {group}
+                </span>
                 {inGroup.map((opt) => (
-                  <button
+                  <Button
                     key={opt.id}
                     type="button"
                     role="option"
                     aria-selected={opt.id === value}
-                    className={`assump-perspective-item${opt.id === value ? " active" : ""}`}
+                    className={`flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm hover:bg-slate-50${opt.id === value ? " active" : ""}`}
                     onClick={() => {
                       onChange(opt.id);
                       setOpen(false);
                     }}
                   >
                     <span>{opt.name}</span>
-                    <span className="muted small">{opt.count}</span>
-                  </button>
+                    <span className="text-muted-foreground small">{opt.count}</span>
+                  </Button>
                 ))}
               </div>
             );
@@ -117,26 +130,30 @@ function StatusSelect({
   editable: boolean;
   onChange: (status: AssumptionStatus) => void;
 }) {
-  const rel = statusRelClass(value);
+  const statusClass = statusClassName(value);
   if (!editable) {
-    return <span className={`evidence-relevance-select ${rel}`}>{ASSUMPTION_STATUS_LABELS[value]}</span>;
+    return (
+      <span className={`inline-flex items-center ${statusClass}`}>
+        {ASSUMPTION_STATUS_LABELS[value]}
+      </span>
+    );
   }
   const editableStatuses = (Object.keys(ASSUMPTION_STATUS_LABELS) as AssumptionStatus[]).filter(
-    (s) => s !== "pending_review"
+    (s) => s !== "pending_review",
   );
   return (
-    <select
-      className={`evidence-relevance-select ${rel}`}
-      value={value}
-      aria-label="Assumption status"
-      onChange={(e) => onChange(e.target.value as AssumptionStatus)}
-    >
-      {editableStatuses.map((s) => (
-        <option key={s} value={s}>
-          {ASSUMPTION_STATUS_LABELS[s]}
-        </option>
-      ))}
-    </select>
+    <Select value={value} onValueChange={(next) => next && onChange(next as AssumptionStatus)}>
+      <SelectTrigger className={statusClass} aria-label="Assumption status">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {editableStatuses.map((status) => (
+          <SelectItem key={status} value={status}>
+            {ASSUMPTION_STATUS_LABELS[status]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -154,25 +171,29 @@ function DiscussionThread({ assumptionId }: { assumptionId: string }) {
   };
 
   return (
-    <div className="assump-discussion">
+    <div className="space-y-3">
       {notes.length === 0 ? (
-        <p className="muted small assump-discussion-empty">No discussion yet.</p>
+        <p className="text-muted-foreground small text-sm text-slate-500">No discussion yet.</p>
       ) : (
-        <ul className="assump-discussion-list">
+        <ul className="space-y-2">
           {notes.map((n) => (
-            <li key={n.id} className="assump-note">
-              <div className="assump-note-meta">
-                <span className="assump-note-author">{n.authorName}</span>
-                {n.isChallenge && <span className="assump-tag assump-tag-challenged">Challenge</span>}
-                <time className="muted small">{fmtDate(n.createdAt)}</time>
+            <li key={n.id} className="rounded-md bg-slate-50 p-3">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span className="font-semibold text-slate-800">{n.authorName}</span>
+                {n.isChallenge && (
+                  <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-rose-50 text-rose-700">
+                    Challenge
+                  </span>
+                )}
+                <time className="text-muted-foreground small">{fmtDate(n.createdAt)}</time>
               </div>
-              <p className="assump-note-body">{n.body}</p>
+              <p className="mt-1 text-sm text-slate-700">{n.body}</p>
             </li>
           ))}
         </ul>
       )}
-      <div className="assump-discussion-form">
-        <textarea
+      <div className="mt-3 space-y-2">
+        <Textarea
           className="qcomments-input"
           rows={2}
           placeholder="Add a note or challenge this assumption…"
@@ -180,14 +201,17 @@ function DiscussionThread({ assumptionId }: { assumptionId: string }) {
           onChange={(e) => setDraft(e.target.value)}
           aria-label="Discussion note"
         />
-        <div className="assump-discussion-actions">
-          <label className="assump-checkbox-label">
-            <input type="checkbox" checked={markChallenge} onChange={(e) => setMarkChallenge(e.target.checked)} />
+        <div className="flex items-center justify-between gap-2">
+          <label className="flex items-center gap-2 text-xs text-slate-600">
+            <Checkbox
+              checked={markChallenge}
+              onCheckedChange={(checked) => setMarkChallenge(checked === true)}
+            />
             Mark as challenge
           </label>
-          <button type="button" className="btn btn-sm" disabled={!draft.trim()} onClick={submit}>
+          <Button type="button" className="" disabled={!draft.trim()} onClick={submit}>
             Post
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -207,8 +231,8 @@ function InlineComposeRow({
 }) {
   const [text, setText] = useState("");
   return (
-    <div className="assump-inline-compose">
-      <textarea
+    <div className="mt-2 space-y-2 rounded-md bg-slate-50 p-3">
+      <Textarea
         className="qcomments-input"
         rows={2}
         placeholder={placeholder}
@@ -217,13 +241,13 @@ function InlineComposeRow({
         autoFocus
         aria-label={placeholder}
       />
-      <div className="assump-inline-compose-actions">
-        <button type="button" className="qcomment-action" onClick={onCancel}>
+      <div className="mt-2 space-y-2 rounded-md bg-slate-50 p-3-actions">
+        <Button type="button" className="qcomment-action" onClick={onCancel}>
           Cancel
-        </button>
-        <button type="button" className="btn btn-sm" onClick={() => onSubmit(text)}>
+        </Button>
+        <Button type="button" className="" onClick={() => onSubmit(text)}>
           {submitLabel}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -269,14 +293,18 @@ function AssumptionRow({
   const sharedCopy =
     kind === "own-local"
       ? allAssumptions.find(
-          (a) => a.originAssumptionId === assumption.id && perspectiveType(a.perspectiveId) === "person"
+          (a) =>
+            a.originAssumptionId === assumption.id && perspectiveType(a.perspectiveId) === "person",
         )
       : undefined;
 
   const pendingArchiveProposal =
     kind === "shared"
       ? proposals.find(
-          (p) => p.changeType === "archive" && p.targetAssumptionId === assumption.id && p.status === "pending"
+          (p) =>
+            p.changeType === "archive" &&
+            p.targetAssumptionId === assumption.id &&
+            p.status === "pending",
         )
       : undefined;
 
@@ -284,7 +312,8 @@ function AssumptionRow({
 
   const stop = (e: MouseEvent) => e.stopPropagation();
   const subtitleParts = [author?.name ?? "Unknown"];
-  if (assumption.confidence) subtitleParts.push(ASSUMPTION_CONFIDENCE_LABELS[assumption.confidence]);
+  if (assumption.confidence)
+    subtitleParts.push(ASSUMPTION_CONFIDENCE_LABELS[assumption.confidence]);
   if (assumption.rationale) subtitleParts.push(assumption.rationale);
 
   const expanded = discussionOpen || archiveProposeOpen;
@@ -295,8 +324,12 @@ function AssumptionRow({
 
   return (
     <Fragment>
-      <tr
-        className={`assump-row${editable ? " evidence-row" : ""}`}
+      <TableRow
+        className={
+          editable
+            ? "cursor-pointer hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]"
+            : undefined
+        }
         tabIndex={editable ? 0 : undefined}
         role={editable ? "button" : undefined}
         aria-label={editable ? `Edit assumption: ${assumption.statement}` : undefined}
@@ -312,117 +345,146 @@ function AssumptionRow({
             : undefined
         }
       >
-        <td className="evidence-cell-source">
-          <div className="evidence-source-main">
-            <span className="evidence-source-title">{assumption.statement}</span>
-            {pendingArchiveProposal && <span className="assump-tag assump-tag-pending">Archive pending</span>}
+        <TableCell className="min-w-55 max-w-90">
+          <div className="flex items-center gap-1.5">
+            <span className="overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
+              {assumption.statement}
+            </span>
+            {pendingArchiveProposal && (
+              <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700">
+                Archive pending
+              </span>
+            )}
           </div>
-          <span className="evidence-source-sub">
+          <span className="mt-0.5 block text-xs text-muted-foreground">
             {subtitleParts.join(" · ")} ·{" "}
-            <button
+            <Button
               type="button"
-              className="assump-inline-link"
+              className="text-xs font-medium text-blue-700 hover:text-blue-800"
               onClick={(e) => {
                 e.stopPropagation();
                 setDiscussionOpen((o) => !o);
               }}
             >
               {discussionOpen ? "Hide discussion" : "Discuss"}
-            </button>
+            </Button>
           </span>
-        </td>
+        </TableCell>
 
-        <td className="evidence-cell-relevance" onClick={stop}>
+        <TableCell className="whitespace-nowrap" onClick={stop}>
           <StatusSelect
             value={assumption.status}
             editable={kind === "own-local" && !isPendingReview}
             onChange={(status) => updateAssumption(assumption.id, { status })}
           />
-        </td>
+        </TableCell>
 
-        <td className="assump-cell-evidence" onClick={stop}>
-          <button type="button" className="assump-evidence-link" onClick={() => onManageEvidence(assumption)}>
+        <TableCell className="p-3 text-sm" onClick={stop}>
+          <Button
+            type="button"
+            className="text-sm font-medium text-blue-700 hover:text-blue-800"
+            onClick={() => onManageEvidence(assumption)}
+          >
             {evidenceSignalSummary(links)}
-          </button>
-        </td>
+          </Button>
+        </TableCell>
 
-        <td className="assump-cell-publish" onClick={stop}>
+        <TableCell className="p-3" onClick={stop}>
           {kind === "own-local" && (
-            <div className="assump-publish-cell">
+            <div className="flex flex-wrap gap-2">
               {isPendingReview ? (
-                <button type="button" className="assump-publish-btn" disabled title="Awaiting review">
-                  Pending review
-                </button>
-              ) : sharedCopy ? (
-                <button
+                <Button
                   type="button"
-                  className="assump-publish-btn is-published"
+                  className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  disabled
+                  title="Awaiting review"
+                >
+                  Pending review
+                </Button>
+              ) : sharedCopy ? (
+                <Button
+                  type="button"
+                  className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 is-published"
                   title="Remove from your shared perspective"
                   onClick={() => unshareAssumption(assumption.id)}
                 >
                   Unpublish
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
                   type="button"
-                  className="assump-publish-btn"
+                  className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                   title="Submit this assumption for review"
                   onClick={() => onPublish(assumption)}
                 >
                   Publish
-                </button>
+                </Button>
               )}
             </div>
           )}
           {kind === "own-person" && assumption.originAssumptionId && (
-            <button
+            <Button
               type="button"
-              className="assump-publish-btn is-published"
+              className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 is-published"
               title="Remove from your shared perspective"
               onClick={() => unshareAssumption(assumption.originAssumptionId!)}
             >
               Unpublish
-            </button>
+            </Button>
           )}
           {kind === "shared" && (
-            <div className="assump-publish-cell">
+            <div className="flex flex-wrap gap-2">
               {!pendingArchiveProposal && (
-                <button type="button" className="assump-inline-link" onClick={() => setArchiveProposeOpen(true)}>
+                <Button
+                  type="button"
+                  className="text-xs font-medium text-blue-700 hover:text-blue-800"
+                  onClick={() => setArchiveProposeOpen(true)}
+                >
                   Propose archive
-                </button>
+                </Button>
               )}
-              <button type="button" className="assump-inline-link" onClick={() => copyAssumptionToLocal(assumption.id)}>
+              <Button
+                type="button"
+                className="text-xs font-medium text-blue-700 hover:text-blue-800"
+                onClick={() => copyAssumptionToLocal(assumption.id)}
+              >
                 Copy to my view
-              </button>
+              </Button>
             </div>
           )}
           {kind === "other-person" && (
-            <button type="button" className="assump-inline-link" onClick={() => copyAssumptionToLocal(assumption.id)}>
-              Copy to my view
-            </button>
-          )}
-        </td>
-
-        <td className="evidence-cell-date">{fmtDate(assumption.updatedAt)}</td>
-
-        <td className="evidence-cell-actions" onClick={stop}>
-          {kind === "own-local" && (
-            <button
+            <Button
               type="button"
-              className="evidence-delete-btn"
+              className="text-xs font-medium text-blue-700 hover:text-blue-800"
+              onClick={() => copyAssumptionToLocal(assumption.id)}
+            >
+              Copy to my view
+            </Button>
+          )}
+        </TableCell>
+
+        <TableCell className="whitespace-nowrap text-muted-foreground">
+          {fmtDate(assumption.updatedAt)}
+        </TableCell>
+
+        <TableCell className="text-right" onClick={stop}>
+          {kind === "own-local" && (
+            <Button
+              type="button"
+              className="size-7 border bg-background p-1 text-muted-foreground hover:border-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => deleteAssumption(assumption.id)}
               aria-label={`Delete assumption: ${assumption.statement}`}
               title="Delete"
             >
               <IconTrash />
-            </button>
+            </Button>
           )}
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
 
       {expanded && (
-        <tr className="assump-row-expanded">
-          <td colSpan={6}>
+        <TableRow className="border-b bg-slate-50">
+          <TableCell colSpan={6}>
             {archiveProposeOpen && (
               <InlineComposeRow
                 placeholder="Why should this be archived?"
@@ -435,15 +497,22 @@ function AssumptionRow({
               />
             )}
             {discussionOpen && <DiscussionThread assumptionId={assumption.id} />}
-          </td>
-        </tr>
+          </TableCell>
+        </TableRow>
       )}
     </Fragment>
   );
 }
 
-function ProposalRow({ proposal, question }: { proposal: AssumptionProposal; question: ForecastQuestion }) {
-  const { user, allUsers, approveAssumptionProposal, rejectAssumptionProposal, assumptionsFor } = useStore();
+function ProposalRow({
+  proposal,
+  question,
+}: {
+  proposal: AssumptionProposal;
+  question: ForecastQuestion;
+}) {
+  const { user, allUsers, approveAssumptionProposal, rejectAssumptionProposal, assumptionsFor } =
+    useStore();
   const [note, setNote] = useState("");
   const proposer = allUsers.find((u) => u.id === proposal.proposedBy);
   const canDecide = canApproveProposals(user, question);
@@ -453,32 +522,42 @@ function ProposalRow({ proposal, question }: { proposal: AssumptionProposal; que
       : undefined;
 
   return (
-    <li className="assump-proposal-row">
-      <div className="assump-proposal-main">
-        <span className="assump-tag assump-tag-pending">{ASSUMPTION_CHANGE_LABELS[proposal.changeType]}</span>
-        <p className="assump-proposal-statement">
+    <li className="rounded-md border border-amber-100 bg-white p-3">
+      <div className="flex items-start gap-2">
+        <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700">
+          {ASSUMPTION_CHANGE_LABELS[proposal.changeType]}
+        </span>
+        <p className="m-0 text-sm font-medium text-slate-800">
           {proposal.changeType === "add" ? proposal.proposedStatement : target?.statement}
         </p>
       </div>
-      <p className="muted small">
+      <p className="text-muted-foreground small">
         Proposed by {proposer?.name ?? "Unknown"} · {fmtDate(proposal.proposedAt)}
         {proposal.rationale ? ` — "${proposal.rationale}"` : ""}
       </p>
       {canDecide && (
-        <div className="assump-proposal-decide">
-          <input
-            className="assump-decision-note"
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Input
+            className="min-w-48 flex-1 rounded-md border border-slate-200 px-2 py-1 text-sm"
             placeholder="Optional decision note…"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             aria-label="Decision note"
           />
-          <button type="button" className="btn btn-sm" onClick={() => approveAssumptionProposal(proposal.id, note)}>
+          <Button
+            type="button"
+            className=""
+            onClick={() => approveAssumptionProposal(proposal.id, note)}
+          >
             Approve
-          </button>
-          <button type="button" className="qcomment-action" onClick={() => rejectAssumptionProposal(proposal.id, note)}>
+          </Button>
+          <Button
+            type="button"
+            className="qcomment-action"
+            onClick={() => rejectAssumptionProposal(proposal.id, note)}
+          >
             Reject
-          </button>
+          </Button>
         </div>
       )}
     </li>
@@ -506,21 +585,25 @@ export default function AssumptionsPanel({
   } = useStore();
 
   const allAssumptions = assumptionsFor(questionId);
-  const [selectedPerspectiveId, setSelectedPerspectiveId] = useState(() => localPerspectiveId(questionId, user.id));
+  const [selectedPerspectiveId, setSelectedPerspectiveId] = useState(() =>
+    localPerspectiveId(questionId, user.id),
+  );
   const [modalTarget, setModalTarget] = useState<QuestionAssumption | "new" | null>(null);
   const [publishModalTarget, setPublishModalTarget] = useState<QuestionAssumption | null>(null);
   const [evidenceModalTarget, setEvidenceModalTarget] = useState<QuestionAssumption | null>(null);
 
   const options = useMemo(
     () => buildPerspectiveOptions(questionId, user, allUsers, allAssumptions),
-    [questionId, user, allUsers, allAssumptions]
+    [questionId, user, allUsers, allAssumptions],
   );
 
   const kind: "own-local" | "shared" | "own-person" | "other-person" = useMemo(() => {
     const t = perspectiveType(selectedPerspectiveId);
     if (t === "local") return "own-local";
     if (t === "shared") return "shared";
-    return selectedPerspectiveId === personPerspectiveId(questionId, user.id) ? "own-person" : "other-person";
+    return selectedPerspectiveId === personPerspectiveId(questionId, user.id)
+      ? "own-person"
+      : "other-person";
   }, [selectedPerspectiveId, questionId, user.id]);
 
   const rows = useMemo(
@@ -528,7 +611,7 @@ export default function AssumptionsPanel({
       allAssumptions
         .filter((a) => a.perspectiveId === selectedPerspectiveId)
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
-    [allAssumptions, selectedPerspectiveId]
+    [allAssumptions, selectedPerspectiveId],
   );
 
   const proposals = assumptionProposalsFor(questionId);
@@ -537,100 +620,113 @@ export default function AssumptionsPanel({
   const isSharedView = kind === "shared";
 
   return (
-    <div className="panel evidence-table-panel assump-panel">
-      <div className="evidence-table-head">
-        <h4>Assumptions</h4>
-        <div className="assump-head-actions">
-          <PerspectiveSelect options={options} value={selectedPerspectiveId} onChange={setSelectedPerspectiveId} />
-          {kind === "own-local" && (
-            <button type="button" className="ctx-primary-btn evidence-add-btn" onClick={() => setModalTarget("new")}>
-              <IconPlus />
-              Add assumption
-            </button>
-          )}
+    <Card className="border bg-card">
+      <CardContent className="space-y-4 p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2.5">
+          <h4>Assumptions</h4>
+          <div className="flex flex-wrap items-center gap-2">
+            <PerspectiveSelect
+              options={options}
+              value={selectedPerspectiveId}
+              onChange={setSelectedPerspectiveId}
+            />
+            {kind === "own-local" && (
+              <Button type="button" onClick={() => setModalTarget("new")}>
+                <IconPlus />
+                Add assumption
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
 
-      {isSharedView && pendingProposals.length > 0 && (
-        <div className="assump-proposals">
-          <h5>
-            Pending proposals ({pendingProposals.length})
-            {!canApprove && <span className="muted small"> — awaiting review</span>}
-          </h5>
-          <ul className="assump-proposals-list">
-            {pendingProposals.map((p) => (
-              <ProposalRow key={p.id} proposal={p} question={question} />
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {rows.length === 0 ? (
-        <p className="muted evidence-table-empty">
-          {kind === "own-local"
-            ? "Make the beliefs behind your forecast explicit. Your local assumptions are private until you choose to share or propose them."
-            : "This perspective does not have any assumptions yet."}
-        </p>
-      ) : (
-        <div className="evidence-table-wrap">
-          <table className="evidence-table assump-table">
-            <thead>
-              <tr>
-                <th>Assumption</th>
-                <th>Status</th>
-                <th>Evidence</th>
-                <th>Publish</th>
-                <th>Updated</th>
-                <th aria-label="Actions" />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((a) => (
-                <AssumptionRow
-                  key={a.id}
-                  assumption={a}
-                  question={question}
-                  kind={kind}
-                  allAssumptions={allAssumptions}
-                  onEdit={setModalTarget}
-                  onManageEvidence={setEvidenceModalTarget}
-                  onPublish={setPublishModalTarget}
-                />
+        {isSharedView && pendingProposals.length > 0 && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <h5>
+              Pending proposals ({pendingProposals.length})
+              {!canApprove && (
+                <span className="text-muted-foreground small"> — awaiting review</span>
+              )}
+            </h5>
+            <ul className="space-y-2">
+              {pendingProposals.map((p) => (
+                <ProposalRow key={p.id} proposal={p} question={question} />
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </ul>
+          </div>
+        )}
 
-      <AssumptionModal
-        open={modalTarget !== null}
-        assumption={modalTarget === "new" ? null : modalTarget}
-        onClose={() => setModalTarget(null)}
-        onCreate={(input) => {
-          const created = addAssumption(questionId, localPerspectiveId(questionId, user.id), input);
-          if (created) setSelectedPerspectiveId(localPerspectiveId(questionId, user.id));
-        }}
-        onSave={(patch) => {
-          if (modalTarget && modalTarget !== "new") updateAssumption(modalTarget.id, patch);
-        }}
-      />
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {kind === "own-local"
+              ? "Make the beliefs behind your forecast explicit. Your local assumptions are private until you choose to share or propose them."
+              : "This perspective does not have any assumptions yet."}
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border">
+            <Table className="text-sm">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Assumption</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Evidence</TableHead>
+                  <TableHead>Publish</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead aria-label="Actions" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((a) => (
+                  <AssumptionRow
+                    key={a.id}
+                    assumption={a}
+                    question={question}
+                    kind={kind}
+                    allAssumptions={allAssumptions}
+                    onEdit={setModalTarget}
+                    onManageEvidence={setEvidenceModalTarget}
+                    onPublish={setPublishModalTarget}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
-      <PublishAssumptionModal
-        open={publishModalTarget !== null}
-        assumption={publishModalTarget}
-        onClose={() => setPublishModalTarget(null)}
-        onSubmit={(target, rationale) => {
-          if (publishModalTarget) requestAssumptionPublish(publishModalTarget.id, target, rationale);
-        }}
-      />
+        <AssumptionModal
+          open={modalTarget !== null}
+          assumption={modalTarget === "new" ? null : modalTarget}
+          onClose={() => setModalTarget(null)}
+          onCreate={(input) => {
+            const created = addAssumption(
+              questionId,
+              localPerspectiveId(questionId, user.id),
+              input,
+            );
+            if (created) setSelectedPerspectiveId(localPerspectiveId(questionId, user.id));
+          }}
+          onSave={(patch) => {
+            if (modalTarget && modalTarget !== "new") updateAssumption(modalTarget.id, patch);
+          }}
+        />
 
-      <AssumptionEvidenceModal
-        open={evidenceModalTarget !== null}
-        assumption={evidenceModalTarget}
-        questionId={questionId}
-        evidence={evidence}
-        onClose={() => setEvidenceModalTarget(null)}
-      />
-    </div>
+        <PublishAssumptionModal
+          open={publishModalTarget !== null}
+          assumption={publishModalTarget}
+          onClose={() => setPublishModalTarget(null)}
+          onSubmit={(target, rationale) => {
+            if (publishModalTarget)
+              requestAssumptionPublish(publishModalTarget.id, target, rationale);
+          }}
+        />
+
+        <AssumptionEvidenceModal
+          open={evidenceModalTarget !== null}
+          assumption={evidenceModalTarget}
+          questionId={questionId}
+          evidence={evidence}
+          onClose={() => setEvidenceModalTarget(null)}
+        />
+      </CardContent>
+    </Card>
   );
 }

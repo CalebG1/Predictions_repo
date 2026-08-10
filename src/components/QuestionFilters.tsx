@@ -1,7 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { Category, Visibility } from "../domain/types";
-import { IconFilter, IconSearch, IconSort } from "./icons";
+import { IconFilter, IconSort } from "./icons";
 import { visibilityConfig, visibilityOrder } from "./ui";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Card, CardContent } from "./ui/card";
 
 export type SortKey = "movers" | "risk_weighted" | "resolving_soon" | "most_uncertain";
 export type HorizonKey = "daily" | "weekly" | "quarterly" | "all";
@@ -53,169 +58,168 @@ export default function QuestionFilters({
 }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  const filterRef = useRef<HTMLDivElement>(null);
-  const sortRef = useRef<HTMLDivElement>(null);
 
   const filtersActive = cat !== "all" || owner !== "all" || vis !== "all";
   const sortLabel = sort ? SORTS.find((s) => s.key === sort)?.label : null;
 
-  useEffect(() => {
-    if (!filterOpen) return;
-    const close = (e: Event) => {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [filterOpen]);
-
-  useEffect(() => {
-    if (!sortOpen) return;
-    const close = (e: Event) => {
-      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [sortOpen]);
-
   return (
-    <div className={`filter-bar${sort ? " has-sort-tag" : ""}`}>
-      <label className="filter-search">
-        <span className="filter-search-icon" aria-hidden="true">
-          <IconSearch />
-        </span>
-        <input
+    <Card>
+      <CardContent className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center">
+        <Input
+          className="min-w-0 flex-1"
           type="search"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search by question title…"
           aria-label="Search by question title"
         />
-      </label>
 
-      <div className="filter-toolbar">
-        <div className="filter-actions">
-          <div className="filter-menu-wrap" ref={filterRef}>
-            <button
-              type="button"
-              className={`filter-btn${filtersActive ? " active" : ""}`}
-              aria-expanded={filterOpen}
-              onClick={() => {
-                setFilterOpen((o) => !o);
-                setSortOpen(false);
-              }}
-            >
-              <IconFilter />
-              Filter
-            </button>
-            {filterOpen && (
-              <div className="filter-panel" role="dialog" aria-label="Filters">
-                <label className="filter-field">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+              <PopoverTrigger
+                type="button"
+                className={`inline-flex h-7 items-center gap-1 rounded-[min(var(--radius-md),12px)] border border-border bg-background px-2.5 text-[0.8rem] font-medium ${filtersActive ? "border-primary text-primary" : ""}`}
+                aria-expanded={filterOpen}
+                onClick={() => {
+                  setFilterOpen((o) => !o);
+                  setSortOpen(false);
+                }}
+              >
+                <IconFilter />
+                Filter
+              </PopoverTrigger>
+              <PopoverContent className="grid gap-3" align="start" aria-label="Filters">
+                <label className="grid gap-1.5 text-sm font-medium">
                   <span>Category</span>
-                  <select
+                  <Select
                     value={cat}
-                    onChange={(e) => onCatChange(e.target.value as Category | "all")}
+                    onValueChange={(value) => onCatChange(value as Category | "all")}
                   >
-                    <option value="all">All categories</option>
-                    {categories.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All categories</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
-                <label className="filter-field">
+                <label className="grid gap-1.5 text-sm font-medium">
                   <span>Owner</span>
-                  <select value={owner} onChange={(e) => onOwnerChange(e.target.value)}>
-                    <option value="all">All owners</option>
-                    {owners.map((team) => (
-                      <option key={team} value={team}>
-                        {team}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={owner} onValueChange={(value) => onOwnerChange(value ?? "all")}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All owners</SelectItem>
+                      {owners.map((team) => (
+                        <SelectItem key={team} value={team}>
+                          {team}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
-                <label className="filter-field">
+                <label className="grid gap-1.5 text-sm font-medium">
                   <span>Visibility</span>
-                  <select
+                  <Select
                     value={vis}
-                    onChange={(e) => onVisChange(e.target.value as "all" | Visibility)}
+                    onValueChange={(value) => onVisChange(value as "all" | Visibility)}
                   >
-                    <option value="all">All visibility</option>
-                    {visibilityOrder.map((v) => (
-                      <option key={v} value={v}>
-                        {visibilityConfig[v].label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All visibility</SelectItem>
+                      {visibilityOrder.map((visibility) => (
+                        <SelectItem key={visibility} value={visibility}>
+                          {visibilityConfig[visibility].label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
-              </div>
-            )}
-          </div>
+              </PopoverContent>
+            </Popover>
 
-          <div className="filter-sort-wrap" ref={sortRef}>
-            <button
-              type="button"
-              className="filter-btn"
-              aria-expanded={sortOpen}
-              onClick={() => {
-                setSortOpen((o) => !o);
-                setFilterOpen(false);
-              }}
-            >
-              <IconSort />
-              Sort
-            </button>
-            {sortLabel && (
-              <span className="filter-active-tag">
-                {sortLabel}
-                <button
-                  type="button"
-                  className="filter-active-tag-clear"
-                  aria-label={`Clear sort: ${sortLabel}`}
-                  onClick={() => onSortChange(null)}
-                >
-                  ×
-                </button>
-              </span>
-            )}
-            {sortOpen && (
-              <div
-                className="filter-panel filter-panel-sort"
+            <Popover open={sortOpen} onOpenChange={setSortOpen}>
+              <PopoverTrigger
+                type="button"
+                className="inline-flex h-7 items-center gap-1 rounded-[min(var(--radius-md),12px)] border border-border bg-background px-2.5 text-[0.8rem] font-medium"
+                aria-expanded={sortOpen}
+                onClick={() => {
+                  setSortOpen((o) => !o);
+                  setFilterOpen(false);
+                }}
+              >
+                <IconSort />
+                Sort
+              </PopoverTrigger>
+              {sortLabel && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
+                  {sortLabel}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-5"
+                    aria-label={`Clear sort: ${sortLabel}`}
+                    onClick={() => onSortChange(null)}
+                  >
+                    ×
+                  </Button>
+                </span>
+              )}
+              <PopoverContent
+                className="grid w-52 gap-1 p-1"
+                align="start"
                 role="listbox"
                 aria-label="Sort options"
               >
                 {SORTS.map((s) => (
-                  <button
+                  <Button
                     key={s.key}
                     type="button"
                     role="option"
                     aria-selected={sort === s.key}
-                    className={`filter-panel-option${sort === s.key ? " active" : ""}`}
+                    variant="ghost"
+                    size="sm"
+                    className={`justify-start ${sort === s.key ? "bg-muted text-foreground" : ""}`}
                     onClick={() => {
                       onSortChange(s.key);
                       setSortOpen(false);
                     }}
                   >
                     {s.label}
-                  </button>
+                  </Button>
                 ))}
-              </div>
-            )}
+              </PopoverContent>
+            </Popover>
           </div>
-        </div>
 
-        <label className="filter-horizon">
-          <span>Prediction horizon:</span>
-          <select value={horizon} onChange={(e) => onHorizonChange(e.target.value as HorizonKey)}>
-            {HORIZONS.map((h) => (
-              <option key={h.key} value={h.key}>
-                {h.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-    </div>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Prediction horizon:</span>
+            <Select value={horizon} onValueChange={(value) => onHorizonChange(value as HorizonKey)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {HORIZONS.map((item) => (
+                  <SelectItem key={item.key} value={item.key}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

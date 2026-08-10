@@ -5,6 +5,7 @@ import { useStore } from "../store";
 import { IconPlus } from "./icons";
 import { SourceMark } from "./brandIcons";
 import AddSourceModal from "./AddSourceModal";
+import { Button } from "./ui/button";
 
 function signalLabel(signal: TouchpointSignal): string {
   return signal.label ?? touchpointMeta(signal.kind)?.label ?? "Source";
@@ -44,14 +45,14 @@ export default function TouchpointIcons({
   const openModal = () => setModalOpen(true);
 
   return (
-    <div className="qc-touchpoints" onClick={stopNav} onMouseDown={stopNav}>
+    <div className="flex items-center gap-1" onClick={stopNav} onMouseDown={stopNav}>
       {visible.map((signal) => {
         const label = signalLabel(signal);
         const color = signalColor(signal);
         return (
           <span
             key={signalKey(signal)}
-            className="qc-tp connected"
+            className="inline-flex size-6 items-center justify-center rounded-md border bg-muted text-[var(--tp-color)]"
             style={{ "--tp-color": color } as CSSProperties}
             title={`${label} · ${signal.summary}`}
             aria-label={`${label}: ${signal.summary}`}
@@ -66,26 +67,30 @@ export default function TouchpointIcons({
       })}
 
       {overflow > 0 && (
-        <button
+        <Button
           type="button"
-          className="qc-tp qc-tp-overflow"
+          variant="outline"
+          size="icon"
+          className="size-6 rounded-md p-0 text-xs"
           title={hidden.map((s) => signalLabel(s)).join(", ")}
           aria-label={`${overflow} more sources: ${hidden.map((s) => signalLabel(s)).join(", ")}`}
           onClick={openModal}
         >
           +{overflow}
-        </button>
+        </Button>
       )}
 
-      <button
+      <Button
         type="button"
-        className="qc-tp qc-tp-add-btn"
+        variant="outline"
+        size="icon"
+        className="size-6 rounded-md p-0"
         title="Add context"
         aria-label="Add context"
         onClick={openModal}
       >
         <IconPlus />
-      </button>
+      </Button>
 
       <AddSourceModal
         open={modalOpen}

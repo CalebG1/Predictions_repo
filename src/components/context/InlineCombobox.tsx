@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 export type ComboboxOption = {
   id: string;
@@ -47,10 +49,10 @@ export default function InlineCombobox({
   }, [options, value]);
 
   return (
-    <div className="ctx-inline-combo" ref={rootRef}>
-      <input
+    <div className="relative" ref={rootRef}>
+      <Input
         type="text"
-        className="ctx-bind-inline-input"
+        className="w-full"
         placeholder={placeholder}
         value={value}
         onChange={(e) => {
@@ -61,16 +63,18 @@ export default function InlineCombobox({
         autoComplete="off"
       />
       {open && filtered.length > 0 && (
-        <ul className="ctx-inline-combo-list" role="listbox">
+        <ul
+          className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md"
+          role="listbox"
+        >
           {filtered.map((option) => (
             <li key={option.id}>
-              <button
+              <Button
                 type="button"
                 role="option"
                 aria-selected={selectedId === option.id}
-                className={`ctx-inline-combo-option${selectedId === option.id ? " selected" : ""}${
-                  option.disabled ? " disabled" : ""
-                }`}
+                variant="ghost"
+                className={`h-auto w-full justify-between ${selectedId === option.id ? "bg-accent" : ""}`}
                 disabled={option.disabled}
                 onClick={() => {
                   if (option.disabled) return;
@@ -79,14 +83,18 @@ export default function InlineCombobox({
                 }}
               >
                 <span>{option.label}</span>
-                {option.meta && <span className="muted small">{option.meta}</span>}
-              </button>
+                {option.meta && (
+                  <span className="text-xs text-muted-foreground">{option.meta}</span>
+                )}
+              </Button>
             </li>
           ))}
         </ul>
       )}
       {open && value.trim() && filtered.length === 0 && (
-        <div className="ctx-inline-combo-empty muted small">No matches</div>
+        <div className="absolute z-20 mt-1 w-full rounded-md border bg-popover p-3 text-sm text-muted-foreground shadow-md">
+          No matches
+        </div>
       )}
     </div>
   );

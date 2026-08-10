@@ -1,4 +1,7 @@
 import { useRef, useState, type DragEvent } from "react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Upload } from "lucide-react";
 
 export default function ImportFilesPanel({
   onImport,
@@ -30,9 +33,9 @@ export default function ImportFilesPanel({
   };
 
   return (
-    <section className="asrc-import">
+    <section className="space-y-3">
       <div
-        className={`asrc-drop${dragOver ? " over" : ""}`}
+        className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors ${dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/60 hover:bg-muted/40"}`}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
@@ -46,27 +49,14 @@ export default function ImportFilesPanel({
           if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click();
         }}
       >
-        <div className="asrc-drop-icon" aria-hidden>
-          <svg
-            width="30"
-            height="30"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.6}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
+        <div className="mb-2 flex justify-center text-muted-foreground" aria-hidden>
+          <Upload className="size-[30px]" strokeWidth={1.6} />
         </div>
-        <div className="asrc-drop-title">Drag &amp; drop files</div>
-        <div className="asrc-drop-sub">
-          or <span className="asrc-link">choose a file</span>
+        <div className="font-medium">Drag &amp; drop files</div>
+        <div className="mt-1 text-sm text-muted-foreground">
+          or <span className="text-primary underline">choose a file</span>
         </div>
-        <input
+        <Input
           ref={fileInputRef}
           type="file"
           multiple
@@ -76,22 +66,28 @@ export default function ImportFilesPanel({
       </div>
 
       {files.length > 0 && (
-        <div className="asrc-filelist">
+        <div className="flex flex-wrap items-center gap-2">
           {files.map((name) => (
-            <span key={name} className="asrc-file-chip">
-              <span className="asrc-file-name">{name}</span>
-              <button
+            <span
+              key={name}
+              className="inline-flex items-center gap-1 rounded-full bg-muted py-1 pl-2 pr-1 text-sm"
+            >
+              <span>{name}</span>
+              <Button
                 type="button"
                 aria-label={`Remove ${name}`}
                 onClick={() => setFiles((prev) => prev.filter((f) => f !== name))}
+                variant="ghost"
+                size="icon"
+                className="size-6 rounded-full"
               >
                 ×
-              </button>
+              </Button>
             </span>
           ))}
-          <button type="button" className="asrc-import-btn" onClick={commitImport}>
+          <Button type="button" onClick={commitImport}>
             {submitLabel} {files.length} file{files.length > 1 ? "s" : ""}
-          </button>
+          </Button>
         </div>
       )}
     </section>

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import type { Connector } from "../../domain/connectors";
 import type { NotebookCell, Visibility } from "../../domain/types";
 import AddAppContextForm from "./AddAppContextForm";
 import AnalysisPanel from "./AnalysisPanel";
 import DocumentsAndNotesPanel from "./DocumentsAndNotesPanel";
 import OrgAppsPanel from "./OrgAppsPanel";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 
 type AddMode = "content" | "app" | "analysis";
 
@@ -63,75 +64,30 @@ export default function AddContextModal({
     }
   }, [open]);
 
-  if (!open) return null;
-
-  return createPortal(
-    <div className="asrc-overlay" onMouseDown={onClose}>
-      <div
-        className="asrc-modal ctx-add-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Add context"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <header className="asrc-head">
-          <h2 className="asrc-title">Add context</h2>
-          <button type="button" className="asrc-close" aria-label="Close" onClick={onClose}>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-            >
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          </button>
-        </header>
-
-        <div className="ctx-mode-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "content"}
-            className={`ctx-mode-tab${mode === "content" ? " active" : ""}`}
-            onClick={() => {
-              setMode("content");
-              setSelectedApp(null);
-            }}
-          >
-            Documents &amp; notes
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "app"}
-            className={`ctx-mode-tab${mode === "app" ? " active" : ""}`}
-            onClick={() => {
-              setMode("app");
-              setSelectedApp(null);
-            }}
-          >
-            From org app
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "analysis"}
-            className={`ctx-mode-tab${mode === "analysis" ? " active" : ""}`}
-            onClick={() => {
-              setMode("analysis");
-              setSelectedApp(null);
-            }}
-          >
-            Analysis
-          </button>
-        </div>
-
-        <div className={`asrc-body${mode === "analysis" ? " ctx-analysis-body" : ""}`}>
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto bg-card p-0 sm:max-w-4xl">
+        <DialogHeader className="px-6 pt-6 pr-12">
+          <DialogTitle>Add context</DialogTitle>
+          <DialogDescription>
+            Add documents, app material, or analysis to your context library.
+          </DialogDescription>
+        </DialogHeader>
+        <Tabs
+          value={mode}
+          onValueChange={(value) => {
+            setMode(value as AddMode);
+            setSelectedApp(null);
+          }}
+          className="px-6"
+        >
+          <TabsList>
+            <TabsTrigger value="content">Documents &amp; notes</TabsTrigger>
+            <TabsTrigger value="app">From org app</TabsTrigger>
+            <TabsTrigger value="analysis">Analysis</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="px-6 pb-6">
           {mode === "content" ? (
             <DocumentsAndNotesPanel
               onImport={(names) => {
@@ -163,8 +119,7 @@ export default function AddContextModal({
             <OrgAppsPanel onSelectApp={setSelectedApp} />
           )}
         </div>
-      </div>
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   );
 }
