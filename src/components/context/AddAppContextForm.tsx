@@ -3,6 +3,10 @@ import type { Connector } from "../../domain/connectors";
 import type { Visibility } from "../../domain/types";
 import { SourceMark } from "../brandIcons";
 import { visibilityOrder } from "../ui";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Textarea } from "../ui/textarea";
 
 export default function AddAppContextForm({
   connector,
@@ -45,8 +49,8 @@ export default function AddAppContextForm({
   };
 
   return (
-    <form className="ctx-app-form" onSubmit={handleSubmit}>
-      <div className="ctx-app-form-head">
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
         <SourceMark
           kind={connector.kind ?? "custom"}
           mono={connector.mono}
@@ -57,15 +61,15 @@ export default function AddAppContextForm({
           <b>{connector.name}</b>
         </div>
         {onCancel && (
-          <button type="button" className="ctx-link-btn" onClick={onCancel}>
+          <Button type="button" variant="link" className="ml-auto px-0" onClick={onCancel}>
             Change app
-          </button>
+          </Button>
         )}
       </div>
 
-      <label className="ctx-field">
-        <span className="ctx-field-label">Source reference (optional)</span>
-        <input
+      <label className="grid gap-1.5 text-sm font-medium">
+        <span>Source reference (optional)</span>
+        <Input
           type="text"
           value={sourceRef}
           onChange={(e) => setSourceRef(e.target.value)}
@@ -73,9 +77,9 @@ export default function AddAppContextForm({
         />
       </label>
 
-      <label className="ctx-field">
-        <span className="ctx-field-label">Title</span>
-        <input
+      <label className="grid gap-1.5 text-sm font-medium">
+        <span>Title</span>
+        <Input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -84,9 +88,9 @@ export default function AddAppContextForm({
         />
       </label>
 
-      <label className="ctx-field">
-        <span className="ctx-field-label">Information for the model</span>
-        <textarea
+      <label className="grid gap-1.5 text-sm font-medium">
+        <span>Information for the model</span>
+        <Textarea
           rows={5}
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -95,20 +99,25 @@ export default function AddAppContextForm({
         />
       </label>
 
-      <div className="ctx-field-row">
-        <label className="ctx-field">
-          <span className="ctx-field-label">Visibility</span>
-          <select value={visibility} onChange={(e) => setVisibility(e.target.value as Visibility)}>
-            {visibilityOrder.map((v) => (
-              <option key={v} value={v}>
-                {v}
-              </option>
-            ))}
-          </select>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-1.5 text-sm font-medium">
+          <span>Visibility</span>
+          <Select value={visibility} onValueChange={(value) => setVisibility(value as Visibility)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {visibilityOrder.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {v}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </label>
-        <label className="ctx-field">
-          <span className="ctx-field-label">Tags</span>
-          <input
+        <label className="grid gap-1.5 text-sm font-medium">
+          <span>Tags</span>
+          <Input
             type="text"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
@@ -117,9 +126,7 @@ export default function AddAppContextForm({
         </label>
       </div>
 
-      <button type="submit" className="ctx-primary-btn">
-        {submitLabel}
-      </button>
+      <Button type="submit">{submitLabel}</Button>
     </form>
   );
 }

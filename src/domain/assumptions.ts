@@ -66,10 +66,11 @@ export function buildPerspectiveOptions(
   questionId: string,
   currentUser: User,
   allUsers: User[],
-  assumptions: QuestionAssumption[]
+  assumptions: QuestionAssumption[],
 ): AssumptionPerspectiveOption[] {
   const countFor = (perspectiveId: string) =>
-    assumptions.filter((a) => a.questionId === questionId && a.perspectiveId === perspectiveId).length;
+    assumptions.filter((a) => a.questionId === questionId && a.perspectiveId === perspectiveId)
+      .length;
 
   const options: AssumptionPerspectiveOption[] = [
     {
@@ -95,7 +96,7 @@ export function buildPerspectiveOptions(
     assumptions
       .filter((a) => a.questionId === questionId && perspectiveType(a.perspectiveId) === "person")
       .map((a) => perspectiveSubjectUserId(a.perspectiveId))
-      .filter((id): id is string => !!id)
+      .filter((id): id is string => !!id),
   );
 
   const people = [...peopleWithShares]
@@ -125,7 +126,7 @@ export function buildPerspectiveOptions(
 export function visibleAssumptionsForQuestion(
   questionId: string,
   currentUser: User,
-  allAssumptions: QuestionAssumption[]
+  allAssumptions: QuestionAssumption[],
 ): QuestionAssumption[] {
   return allAssumptions.filter((a) => {
     if (a.questionId !== questionId) return false;
@@ -139,7 +140,8 @@ export function visibleAssumptionsForQuestion(
 /** Only the author, editing within their own local perspective, may change assumption text. */
 export function canEditAssumption(user: User, assumption: QuestionAssumption): boolean {
   return (
-    assumption.createdBy === user.id && assumption.perspectiveId === localPerspectiveId(assumption.questionId, user.id)
+    assumption.createdBy === user.id &&
+    assumption.perspectiveId === localPerspectiveId(assumption.questionId, user.id)
   );
 }
 
@@ -150,7 +152,7 @@ export function canApproveProposals(user: User, question: ForecastQuestion): boo
 
 export function evidenceLinksFor(
   assumptionId: string,
-  links: AssumptionEvidenceLink[]
+  links: AssumptionEvidenceLink[],
 ): AssumptionEvidenceLink[] {
   return links.filter((l) => l.assumptionId === assumptionId);
 }
@@ -158,16 +160,24 @@ export function evidenceLinksFor(
 /** e.g. "2 support · 1 contradicts · 1 context" for the row summary. */
 export function evidenceSignalSummary(links: AssumptionEvidenceLink[]): string {
   if (links.length === 0) return "No linked evidence";
-  const counts: Record<AssumptionEvidenceRelationship, number> = { supports: 0, contradicts: 0, context: 0 };
+  const counts: Record<AssumptionEvidenceRelationship, number> = {
+    supports: 0,
+    contradicts: 0,
+    context: 0,
+  };
   for (const l of links) counts[l.relationship]++;
   const parts: string[] = [];
   if (counts.supports) parts.push(`${counts.supports} support${counts.supports === 1 ? "" : "s"}`);
-  if (counts.contradicts) parts.push(`${counts.contradicts} contradict${counts.contradicts === 1 ? "s" : "s"}`);
+  if (counts.contradicts)
+    parts.push(`${counts.contradicts} contradict${counts.contradicts === 1 ? "s" : "s"}`);
   if (counts.context) parts.push(`${counts.context} context`);
   return parts.join(" · ");
 }
 
-export function proposalsForQuestion(questionId: string, proposals: AssumptionProposal[]): AssumptionProposal[] {
+export function proposalsForQuestion(
+  questionId: string,
+  proposals: AssumptionProposal[],
+): AssumptionProposal[] {
   return proposals
     .filter((p) => p.questionId === questionId)
     .sort((a, b) => b.proposedAt.localeCompare(a.proposedAt));

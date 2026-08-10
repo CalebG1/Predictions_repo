@@ -1,31 +1,45 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import NotificationPanel from "./NotificationPanel";
 import { useStore } from "../store";
+import { Button } from "./ui/button";
+import { Settings } from "lucide-react";
+import SignalRidgeLogo from "../assets/sigridge_full_alt_flattened.svg";
+import { Badge } from "./ui/badge";
 
 export default function Header() {
   const { org } = useStore();
+  const { pathname } = useLocation();
+  const tabs = [
+    { label: "Overview", path: "/" },
+    { label: "Projects", path: "/projects" },
+    { label: "Analyst workspace", path: "/analyst" },
+    { label: "Forecasts", path: "/movers" },
+    { label: "Competitors", path: "/competitors" },
+  ];
   return (
-    <header className="header">
-      <div className="header-inner">
-        <Link to="/" className="logo">
-          Signal Ridge
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
+      <div className="mx-auto flex h-13 max-w-7xl items-center gap-4 px-5">
+        <Link to="/" className="flex shrink-0 items-center" aria-label="Signal Ridge home">
+          <img src={SignalRidgeLogo} alt="Signal Ridge" className="h-7 w-auto" />
         </Link>
-        <span className="org-chip">{org.name}</span>
+        <Badge>{org.name}</Badge>
+        <nav className="ml-2 flex min-w-0 flex-1 items-stretch gap-1 overflow-x-auto self-stretch" aria-label="Primary navigation">
+          {tabs.map((tab) => {
+            const active = tab.path === "/" ? pathname === "/" : pathname.startsWith(tab.path);
+            return <Link key={tab.path} to={tab.path} className={`flex shrink-0 items-center border-b-2 px-3 text-sm font-medium transition-colors ${active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{tab.label}</Link>;
+          })}
+        </nav>
 
-        <div className="header-right">
-          <Link to="/settings" className="icon-btn" title="Settings">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          </Link>
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className=""
+            render={<Link to="/settings" />}
+            title="Settings"
+          >
+            <Settings className="size-[18px]" />
+          </Button>
           <NotificationPanel />
         </div>
       </div>

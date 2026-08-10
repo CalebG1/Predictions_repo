@@ -2,6 +2,9 @@ import { Link } from "react-router-dom";
 import { connectorById } from "../../domain/connectors";
 import type { ContextItem, ContextRevision } from "../../domain/types";
 import VisibilityBadge from "../VisibilityBadge";
+import { Button } from "../ui/button";
+import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
+import { Card, CardContent } from "../ui/card";
 
 function typeLabel(item: ContextItem): string {
   if (item.connectorId && item.type === "manual") return "App context";
@@ -39,127 +42,172 @@ export default function ContextItemDetail({
   const isAppContext = item.type === "manual" && !!item.connectorId;
 
   return (
-    <div className="ctx-detail-overlay" onMouseDown={onClose}>
-      <div className="ctx-detail-panel" onMouseDown={(e) => e.stopPropagation()}>
-        <header className="ctx-detail-head">
-          <div className="ctx-detail-head-main">
-            <h3>{item.title}</h3>
-            <div className="ctx-detail-meta">
-              <span className="ctx-type-badge">{typeLabel(item)}</span>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-y-auto p-0 sm:max-w-xl">
+        <DialogTitle className="sr-only">{item.title}</DialogTitle>
+        <header className="flex items-start justify-between gap-4 border-b bg-muted/40 px-6 py-5">
+          <div className="min-w-0 flex-1">
+            <h3 className="mb-2.5 text-xl font-semibold leading-snug">{item.title}</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded bg-muted px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {typeLabel(item)}
+              </span>
               <VisibilityBadge value={item.visibility} />
-              <span className={`ctx-status ctx-status-${item.status}`}>
+              <span
+                className={
+                  item.status === "active"
+                    ? "text-sm font-medium capitalize text-emerald-700"
+                    : item.status === "pending_approval"
+                      ? "text-sm font-medium capitalize text-amber-700"
+                      : item.status === "error"
+                        ? "text-sm font-medium capitalize text-destructive"
+                        : "text-sm font-medium capitalize text-muted-foreground"
+                }
+              >
                 {statusLabel(item.status)}
               </span>
             </div>
-            <p className="ctx-detail-submeta">
+            <p className="mt-2.5 text-sm text-muted-foreground">
               {item.owningTeam} · {item.updatedAt.slice(0, 10)}
               {isAppContext && appConnector ? ` · ${appConnector.name}` : ""}
             </p>
           </div>
-          <button type="button" className="ctx-detail-close" aria-label="Close" onClick={onClose}>
+          <Button type="button" variant="outline" size="icon" aria-label="Close" onClick={onClose}>
             ×
-          </button>
+          </Button>
         </header>
 
-        <div className="ctx-detail-body">
+        <div className="flex flex-1 flex-col gap-4 px-6 py-5">
           {item.notebookCells && item.notebookCells.length > 0 ? (
-            <div className="ctx-detail-card">
-              <span className="ctx-detail-card-label">Notebook</span>
-              <div className="ctx-detail-notebook">
-                {item.notebookCells.map((cell) => (
-                  <div key={cell.id} className="ctx-detail-nb-cell">
-                    {cell.kind === "markdown" ? (
-                      <p className="ctx-detail-nb-markdown">{cell.source}</p>
-                    ) : (
-                      <>
-                        <pre className="ctx-detail-nb-code">{cell.source}</pre>
-                        {(cell.output || cell.error) && (
-                          <pre className={`ctx-detail-nb-output${cell.error ? " error" : ""}`}>
-                            {cell.error ?? cell.output}
+            <Card className="bg-muted/40">
+              <CardContent>
+                <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Notebook
+                </span>
+                <div className="space-y-2.5">
+                  {item.notebookCells.map((cell) => (
+                    <div key={cell.id} className="space-y-1.5">
+                      {cell.kind === "markdown" ? (
+                        <p className="text-sm font-semibold">{cell.source}</p>
+                      ) : (
+                        <>
+                          <pre className="whitespace-pre-wrap rounded-md border bg-background p-3 font-mono text-xs leading-5">
+                            {cell.source}
                           </pre>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+                          {(cell.output || cell.error) && (
+                            <pre
+                              className={`whitespace-pre-wrap rounded-md border p-3 font-mono text-xs leading-5 ${cell.error ? "border-destructive/30 bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}
+                            >
+                              {cell.error ?? cell.output}
+                            </pre>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           ) : (
             item.body && (
-              <div className="ctx-detail-card">
-                <span className="ctx-detail-card-label">Context</span>
-                <pre className="ctx-detail-pre">{item.body}</pre>
-              </div>
+              <Card className="bg-muted/40">
+                <CardContent>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Context
+                  </span>
+                  <pre className="whitespace-pre-wrap rounded-md border bg-background p-3 text-sm leading-6">
+                    {item.body}
+                  </pre>
+                </CardContent>
+              </Card>
             )
           )}
 
           {item.fileNames && item.fileNames.length > 0 && (
-            <div className="ctx-detail-card">
-              <span className="ctx-detail-card-label">Files</span>
-              <ul className="ctx-file-list">
-                {item.fileNames.map((f) => (
-                  <li key={f}>{f}</li>
-                ))}
-              </ul>
-            </div>
+            <Card className="bg-muted/40">
+              <CardContent>
+                <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Files
+                </span>
+                <ul className="space-y-1 text-sm">
+                  {item.fileNames.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
           )}
 
-          <div className="ctx-detail-card">
-            <span className="ctx-detail-card-label">Bound forecasts · {bindings.length}</span>
-            {bindings.length > 0 && (
-              <ul className="ctx-bind-list">
-                {bindings.map((b) => (
-                  <li key={b.questionId}>
-                    <Link to={`/q/${b.questionId}`} onClick={onClose}>
-                      {b.questionTitle}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <Card className="bg-muted/40">
+            <CardContent>
+              <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Bound forecasts · {bindings.length}
+              </span>
+              {bindings.length > 0 && (
+                <ul className="divide-y text-sm">
+                  {bindings.map((b) => (
+                    <li key={b.questionId}>
+                      <Link
+                        className="block py-1.5 text-primary hover:underline"
+                        to={`/q/${b.questionId}`}
+                        onClick={onClose}
+                      >
+                        {b.questionTitle}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
 
           {revisions.length > 0 && (
-            <div className="ctx-detail-card">
-              <span className="ctx-detail-card-label">Revisions</span>
-              <ul className="ctx-rev-list">
-                {revisions.map((r) => (
-                  <li key={r.id}>
-                    <div className="ctx-rev-head">
-                      <b>v{r.version}</b>
-                      <span className="muted small">{r.changedAt.slice(0, 10)}</span>
-                    </div>
-                    {r.body.length > 0 && (
-                      <pre className="ctx-rev-body">
-                        {r.body.slice(0, 160)}
-                        {r.body.length > 160 ? "…" : ""}
-                      </pre>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <Card className="bg-muted/40">
+              <CardContent>
+                <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Revisions
+                </span>
+                <ul className="divide-y">
+                  {revisions.map((r) => (
+                    <li key={r.id} className="py-3 last:pb-0">
+                      <div className="mb-1.5 flex items-baseline gap-2">
+                        <b>v{r.version}</b>
+                        <span className="text-muted-foreground small">
+                          {r.changedAt.slice(0, 10)}
+                        </span>
+                      </div>
+                      {r.body.length > 0 && (
+                        <pre className="whitespace-pre-wrap rounded-md border bg-background p-3 text-sm leading-6">
+                          {r.body.slice(0, 160)}
+                          {r.body.length > 160 ? "…" : ""}
+                        </pre>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
           )}
         </div>
 
-        <footer className="ctx-detail-foot">
+        <footer className="flex flex-wrap gap-2.5 border-t bg-muted/40 px-6 py-4">
           {item.status === "pending_approval" && onApprove && onReject && (
             <>
-              <button type="button" className="ctx-primary-btn" onClick={onApprove}>
+              <Button type="button" onClick={onApprove}>
                 Approve
-              </button>
-              <button type="button" className="ctx-secondary-btn" onClick={onReject}>
+              </Button>
+              <Button type="button" variant="outline" onClick={onReject}>
                 Reject
-              </button>
+              </Button>
             </>
           )}
           {canEdit && item.status !== "archived" && (
-            <button type="button" className="ctx-secondary-btn" onClick={onArchive}>
+            <Button type="button" variant="outline" onClick={onArchive}>
               Archive
-            </button>
+            </Button>
           )}
         </footer>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

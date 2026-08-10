@@ -10,6 +10,17 @@ import { userTeams } from "../../domain/teams";
 import type { Category, UserPreferences, Visibility } from "../../domain/types";
 import { useStore } from "../../store";
 import { visibilityOrder } from "../../components/ui";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import { Switch } from "../../components/ui/switch";
+import { Card, CardContent } from "../../components/ui/card";
 
 function formatDate(iso?: string): string {
   if (!iso) return "—";
@@ -32,15 +43,12 @@ function Toggle({
   description?: string;
 }) {
   return (
-    <label className="profile-toggle-row">
-      <span className="profile-toggle-copy">
-        <span className="profile-toggle-label">{label}</span>
-        {description && <span className="profile-toggle-desc muted small">{description}</span>}
+    <label className="flex items-start justify-between gap-4 border-b border-border py-4 last:border-0">
+      <span className="grid gap-1">
+        <span className="font-medium text-foreground">{label}</span>
+        {description && <span className="text-sm text-muted-foreground">{description}</span>}
       </span>
-      <span className="profile-toggle">
-        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-        <span className="profile-toggle-track" aria-hidden="true" />
-      </span>
+      <Switch checked={checked} onCheckedChange={onChange} aria-label={label} />
     </label>
   );
 }
@@ -142,329 +150,418 @@ export default function Profile() {
 
   return (
     <>
-      <div className="settings-section-head">
-        <h2>Profile</h2>
-        <p className="dash-sub">
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold tracking-tight">Profile</h2>
+        <p className="text-sm text-muted-foreground">
           Manage your account, notifications, and forecasting defaults for {org.name}.
         </p>
       </div>
 
-      <div className="profile-hero panel">
-        <div className="profile-hero-main">
-          <div className="profile-avatar" aria-hidden="true">
-            {userInitials(user)}
-          </div>
-          <div>
-            <h3 className="profile-hero-name">{displayName(user)}</h3>
-            <p className="profile-hero-title">{user.title ?? roleLabel(user.role)}</p>
-            <div className="profile-hero-meta">
-              <span className="profile-role-badge">{roleLabel(user.role)}</span>
-              {memberships.map((team) => (
-                <span key={team} className="profile-team-badge">
-                  {team}
-                </span>
-              ))}
-              <span className="muted small">Member since {formatDate(user.joinedAt)}</span>
+      <Card>
+        <CardContent className="grid gap-5 p-6 lg:grid-cols-[1fr_auto]">
+          <div className="flex min-w-0 items-center gap-4">
+            <div
+              className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground"
+              aria-hidden="true"
+            >
+              {userInitials(user)}
             </div>
-          </div>
-        </div>
-        <div className="profile-hero-stats">
-          <div className="profile-stat">
-            <div className="profile-stat-num">{visibleQuestionCount}</div>
-            <div className="profile-stat-lbl">Visible forecasts</div>
-          </div>
-          <div className="profile-stat">
-            <div className="profile-stat-num">{memberships.length}</div>
-            <div className="profile-stat-lbl">Teams</div>
-          </div>
-          <div className="profile-stat">
-            <div className="profile-stat-num">{userPreferences.expertiseDomains.length}</div>
-            <div className="profile-stat-lbl">Expertise domains</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="panel">
-        <div className="panel-head">
-          <span>Personal information</span>
-          {personalSaved && <span className="profile-saved muted small">Saved</span>}
-        </div>
-        <form className="profile-form" onSubmit={handlePersonalSave}>
-          <div className="profile-form-grid">
-            <label className="profile-field">
-              <span>Name</span>
-              <input
-                type="text"
-                value={personalDraft.name}
-                onChange={(e) => setPersonalDraft((d) => ({ ...d, name: e.target.value }))}
-              />
-            </label>
-            <label className="profile-field">
-              <span>Email</span>
-              <input
-                type="email"
-                value={personalDraft.email}
-                onChange={(e) => setPersonalDraft((d) => ({ ...d, email: e.target.value }))}
-              />
-            </label>
-            <label className="profile-field">
-              <span>Department</span>
-              <input
-                type="text"
-                value={user.department ?? user.team}
-                readOnly
-                className="readonly"
-              />
-            </label>
-            <label className="profile-field">
-              <span>Job title</span>
-              <input
-                type="text"
-                value={personalDraft.title}
-                onChange={(e) => setPersonalDraft((d) => ({ ...d, title: e.target.value }))}
-              />
-            </label>
-          </div>
-          <div className="profile-form-footer profile-form-footer-end">
-            <button type="submit" className="btn btn-sm">
-              Save changes
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <div className="panel">
-        <div className="panel-head">
-          <span>Teams</span>
-        </div>
-        <div className="profile-teams-body">
-          <div className="profile-teams-section">
-            <span className="profile-teams-label">Your teams</span>
-            <div className="profile-team-chip-row">
-              {memberships.map((team) => (
-                <span key={team} className="profile-team-chip">
-                  {team}
+            <div>
+              <h3 className="text-xl font-semibold tracking-tight text-foreground">
+                {displayName(user)}
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {user.title ?? roleLabel(user.role)}
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground">
+                  {roleLabel(user.role)}
                 </span>
-              ))}
-            </div>
-          </div>
-
-          <form className="profile-team-request" onSubmit={handleTeamRequest}>
-            <label className="profile-field profile-field-inline">
-              <span>Request to join</span>
-              <select
-                value={requestedTeam}
-                onChange={(e) => setRequestedTeam(e.target.value)}
-                disabled={availableTeams.length === 0}
-              >
-                <option value="">
-                  {availableTeams.length === 0 ? "No additional teams available" : "Select a team"}
-                </option>
-                {availableTeams.map((team) => (
-                  <option key={team} value={team}>
+                {memberships.map((team) => (
+                  <span
+                    key={team}
+                    className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
+                  >
                     {team}
-                  </option>
+                  </span>
                 ))}
-              </select>
-            </label>
-            <button type="submit" className="btn btn-sm" disabled={!requestedTeam}>
-              Submit request
-            </button>
-          </form>
+                <span className="text-sm text-muted-foreground">
+                  Member since {formatDate(user.joinedAt)}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 divide-x divide-border rounded-lg border border-border bg-muted">
+            <div className="p-4 text-center">
+              <div className="text-xl font-semibold text-foreground">{visibleQuestionCount}</div>
+              <div className="mt-1 text-xs text-muted-foreground">Visible forecasts</div>
+            </div>
+            <div className="p-4 text-center">
+              <div className="text-xl font-semibold text-foreground">{memberships.length}</div>
+              <div className="mt-1 text-xs text-muted-foreground">Teams</div>
+            </div>
+            <div className="p-4 text-center">
+              <div className="text-xl font-semibold text-foreground">
+                {userPreferences.expertiseDomains.length}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">Expertise domains</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          {myPendingRequests.length > 0 && (
-            <div className="profile-teams-section">
-              <span className="profile-teams-label">Outstanding requests</span>
-              <div className="profile-request-list">
-                {myPendingRequests.map((request) => (
-                  <div key={request.id} className="profile-request-row">
-                    <div>
-                      <div className="profile-request-team">{request.team}</div>
-                      <div className="muted small">Requested {formatDate(request.requestedAt)}</div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="mb-5 flex items-center justify-between text-base font-semibold text-foreground">
+            <span>Personal information</span>
+            {personalSaved && <span className="text-sm text-muted-foreground">Saved</span>}
+          </div>
+          <form className="space-y-5" onSubmit={handlePersonalSave}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-2 text-sm font-medium text-foreground [&_input]:h-9 [&_input]:rounded-md [&_input]:border [&_input]:border-input [&_input]:bg-background [&_input]:px-3 [&_input]:text-sm">
+                <span>Name</span>
+                <Input
+                  type="text"
+                  value={personalDraft.name}
+                  onChange={(e) => setPersonalDraft((d) => ({ ...d, name: e.target.value }))}
+                />
+              </label>
+              <label className="flex flex-col gap-2 text-sm font-medium text-foreground [&_input]:h-9 [&_input]:rounded-md [&_input]:border [&_input]:border-input [&_input]:bg-background [&_input]:px-3 [&_input]:text-sm">
+                <span>Email</span>
+                <Input
+                  type="email"
+                  value={personalDraft.email}
+                  onChange={(e) => setPersonalDraft((d) => ({ ...d, email: e.target.value }))}
+                />
+              </label>
+              <label className="flex flex-col gap-2 text-sm font-medium text-foreground [&_input]:h-9 [&_input]:rounded-md [&_input]:border [&_input]:border-input [&_input]:bg-background [&_input]:px-3 [&_input]:text-sm">
+                <span>Department</span>
+                <Input
+                  type="text"
+                  value={user.department ?? user.team}
+                  readOnly
+                  className="bg-muted text-muted-foreground"
+                />
+              </label>
+              <label className="flex flex-col gap-2 text-sm font-medium text-foreground [&_input]:h-9 [&_input]:rounded-md [&_input]:border [&_input]:border-input [&_input]:bg-background [&_input]:px-3 [&_input]:text-sm">
+                <span>Job title</span>
+                <Input
+                  type="text"
+                  value={personalDraft.title}
+                  onChange={(e) => setPersonalDraft((d) => ({ ...d, title: e.target.value }))}
+                />
+              </label>
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" className="">
+                Save changes
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="mb-5 flex items-center justify-between text-base font-semibold text-foreground">
+            <span>Teams</span>
+          </div>
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <span className="text-sm font-medium text-foreground">Your teams</span>
+              <div className="flex flex-wrap gap-2">
+                {memberships.map((team) => (
+                  <span
+                    key={team}
+                    className="rounded-full bg-muted px-2.5 py-1 text-sm text-muted-foreground"
+                  >
+                    {team}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <form
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+              onSubmit={handleTeamRequest}
+            >
+              <label className="flex items-center justify-between gap-4 text-sm font-medium text-foreground [&_select]:h-9 [&_select]:rounded-md [&_select]:border [&_select]:border-input [&_select]:bg-background [&_select]:px-3 [&_select]:text-sm">
+                <span>Request to join</span>
+                <Select
+                  value={requestedTeam || null}
+                  onValueChange={(value) => setRequestedTeam(value ?? "")}
+                  disabled={availableTeams.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        availableTeams.length === 0
+                          ? "No additional teams available"
+                          : "Select a team"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTeams.map((team) => (
+                      <SelectItem key={team} value={team}>
+                        {team}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+              <Button type="submit" className="" disabled={!requestedTeam}>
+                Submit request
+              </Button>
+            </form>
+
+            {myPendingRequests.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-sm font-medium text-foreground">Outstanding requests</span>
+                <div className="overflow-hidden rounded-lg border border-border">
+                  {myPendingRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className="flex items-center justify-between gap-4 border-b border-border p-4 last:border-0"
+                    >
+                      <div>
+                        <div className="font-medium text-foreground">{request.team}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Requested {formatDate(request.requestedAt)}
+                        </div>
+                      </div>
+                      <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">
+                        Pending admin approval
+                      </span>
                     </div>
-                    <span className="profile-request-status pending">Pending admin approval</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {user.role === "admin" && adminPendingRequests.length > 0 && (
+            <div className="border-t border-border pt-6">
+              <div className="text-sm font-medium text-foreground">Administrator review</div>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Approve or reject team membership requests for your organization.
+              </p>
+              <div className="overflow-hidden rounded-lg border border-border">
+                {adminPendingRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="flex items-center justify-between gap-4 border-b border-border p-4 last:border-0"
+                  >
+                    <div>
+                      <div className="font-medium text-foreground">{request.team}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {userNameById(request.userId)} · Requested {formatDate(request.requestedAt)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        className="border border-border bg-background text-foreground hover:bg-muted"
+                        onClick={() => approveTeamJoinRequest(request.id)}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        type="button"
+                        className="text-muted-foreground hover:text-foreground"
+                        onClick={() => rejectTeamJoinRequest(request.id)}
+                      >
+                        Reject
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
+        </CardContent>
+      </Card>
 
-        {user.role === "admin" && adminPendingRequests.length > 0 && (
-          <div className="profile-admin-requests">
-            <div className="profile-teams-label">Administrator review</div>
-            <p className="muted small profile-panel-intro">
-              Approve or reject team membership requests for your organization.
-            </p>
-            <div className="profile-request-list">
-              {adminPendingRequests.map((request) => (
-                <div key={request.id} className="profile-request-row">
-                  <div>
-                    <div className="profile-request-team">{request.team}</div>
-                    <div className="muted small">
-                      {userNameById(request.userId)} · Requested {formatDate(request.requestedAt)}
-                    </div>
-                  </div>
-                  <div className="profile-admin-actions">
-                    <button
-                      type="button"
-                      className="profile-secondary-btn"
-                      onClick={() => approveTeamJoinRequest(request.id)}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      className="profile-link-btn"
-                      onClick={() => rejectTeamJoinRequest(request.id)}
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="mb-5 flex items-center justify-between text-base font-semibold text-foreground">
+            <span>Notifications</span>
+            {prefsSaved && <span className="text-sm text-muted-foreground">Updated</span>}
           </div>
-        )}
-      </div>
+          <div className="mb-2">
+            <label className="flex items-center justify-between gap-4 text-sm font-medium text-foreground [&_select]:h-9 [&_select]:rounded-md [&_select]:border [&_select]:border-input [&_select]:bg-background [&_select]:px-3 [&_select]:text-sm">
+              <span>Email digest</span>
+              <Select
+                value={userPreferences.emailDigest}
+                onValueChange={(value) =>
+                  value && handlePrefChange("emailDigest", value as UserPreferences["emailDigest"])
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily summary</SelectItem>
+                  <SelectItem value="weekly">Weekly rollup</SelectItem>
+                  <SelectItem value="none">Off</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+          </div>
+          <div className="divide-y divide-border">
+            <Toggle
+              checked={userPreferences.probabilityAlerts}
+              onChange={(v) => handlePrefChange("probabilityAlerts", v)}
+              label="Probability threshold alerts"
+              description="Email when a watched forecast crosses your alert threshold"
+            />
+            <Toggle
+              checked={userPreferences.commentMentions}
+              onChange={(v) => handlePrefChange("commentMentions", v)}
+              label="Comment mentions"
+              description="Notify when someone @mentions you on a forecast thread"
+            />
+            <Toggle
+              checked={userPreferences.contextApprovalRequests}
+              onChange={(v) => handlePrefChange("contextApprovalRequests", v)}
+              label="Context approval requests"
+              description="Route restricted context submissions to your inbox"
+            />
+            <Toggle
+              checked={userPreferences.weeklySummary}
+              onChange={(v) => handlePrefChange("weeklySummary", v)}
+              label="Executive weekly summary"
+              description="Top movers, new risks, and calibration drift for your scope"
+            />
+            <Toggle
+              checked={userPreferences.productUpdates}
+              onChange={(v) => handlePrefChange("productUpdates", v)}
+              label="Product updates"
+              description="Release notes and methodology changes from Signal Ridge"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="panel">
-        <div className="panel-head">
-          <span>Notifications</span>
-          {prefsSaved && <span className="profile-saved muted small">Updated</span>}
-        </div>
-        <div className="profile-pref-block">
-          <label className="profile-field profile-field-inline">
-            <span>Email digest</span>
-            <select
-              value={userPreferences.emailDigest}
-              onChange={(e) =>
-                handlePrefChange("emailDigest", e.target.value as UserPreferences["emailDigest"])
+      <Card>
+        <CardContent className="p-6">
+          <div className="mb-5 flex items-center justify-between text-base font-semibold text-foreground">
+            <span>Forecasting defaults</span>
+          </div>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Pre-fill visibility and domain tags when you create forecasts or submit context.
+          </p>
+          <label className="flex items-center justify-between gap-4 text-sm font-medium text-foreground [&_select]:h-9 [&_select]:rounded-md [&_select]:border [&_select]:border-input [&_select]:bg-background [&_select]:px-3 [&_select]:text-sm">
+            <span>Default visibility</span>
+            <Select
+              value={userPreferences.defaultVisibility}
+              onValueChange={(value) =>
+                value && handlePrefChange("defaultVisibility", value as Visibility)
               }
             >
-              <option value="daily">Daily summary</option>
-              <option value="weekly">Weekly rollup</option>
-              <option value="none">Off</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {visibilityOrder.map((visibility) => (
+                  <SelectItem key={visibility} value={visibility}>
+                    {visibility}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
-        </div>
-        <div className="profile-toggle-list">
-          <Toggle
-            checked={userPreferences.probabilityAlerts}
-            onChange={(v) => handlePrefChange("probabilityAlerts", v)}
-            label="Probability threshold alerts"
-            description="Email when a watched forecast crosses your alert threshold"
-          />
-          <Toggle
-            checked={userPreferences.commentMentions}
-            onChange={(v) => handlePrefChange("commentMentions", v)}
-            label="Comment mentions"
-            description="Notify when someone @mentions you on a forecast thread"
-          />
-          <Toggle
-            checked={userPreferences.contextApprovalRequests}
-            onChange={(v) => handlePrefChange("contextApprovalRequests", v)}
-            label="Context approval requests"
-            description="Route restricted context submissions to your inbox"
-          />
-          <Toggle
-            checked={userPreferences.weeklySummary}
-            onChange={(v) => handlePrefChange("weeklySummary", v)}
-            label="Executive weekly summary"
-            description="Top movers, new risks, and calibration drift for your scope"
-          />
-          <Toggle
-            checked={userPreferences.productUpdates}
-            onChange={(v) => handlePrefChange("productUpdates", v)}
-            label="Product updates"
-            description="Release notes and methodology changes from Signal Ridge"
-          />
-        </div>
-      </div>
-
-      <div className="panel">
-        <div className="panel-head">
-          <span>Forecasting defaults</span>
-        </div>
-        <p className="muted small profile-panel-intro">
-          Pre-fill visibility and domain tags when you create forecasts or submit context.
-        </p>
-        <label className="profile-field profile-field-inline">
-          <span>Default visibility</span>
-          <select
-            value={userPreferences.defaultVisibility}
-            onChange={(e) => handlePrefChange("defaultVisibility", e.target.value as Visibility)}
-          >
-            {visibilityOrder.map((v) => (
-              <option key={v} value={v}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="profile-domains">
-          <span className="profile-domains-label">Expertise domains</span>
-          <div className="profile-domain-grid">
-            {allCategories.map((cat) => {
-              const active = userPreferences.expertiseDomains.includes(cat);
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  className={`profile-domain-chip ${active ? "active" : ""}`}
-                  onClick={() => toggleDomain(cat)}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div className="panel">
-        <div className="panel-head">
-          <span>Connected integrations</span>
-        </div>
-        <div className="profile-integrations">
-          {integrations.map((integration) => (
-            <div key={integration.id} className="profile-integration-row">
-              <div>
-                <div className="profile-integration-name">{integration.name}</div>
-                <div className="muted small">{integration.description}</div>
-                {integration.connectedAt && (
-                  <div className="muted small">Connected {formatDate(integration.connectedAt)}</div>
-                )}
-              </div>
-              <span className={`profile-integ-status ${integration.status}`}>
-                {integration.status === "connected"
-                  ? "Connected"
-                  : integration.status === "pending"
-                    ? "Pending IT"
-                    : "Available"}
-              </span>
+          <div className="mt-6 space-y-3">
+            <span className="text-sm font-medium text-foreground">Expertise domains</span>
+            <div className="flex flex-wrap gap-2">
+              {allCategories.map((cat) => {
+                const active = userPreferences.expertiseDomains.includes(cat);
+                return (
+                  <Button
+                    key={cat}
+                    type="button"
+                    className={
+                      active
+                        ? "rounded-full border border-primary bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary"
+                        : "rounded-full border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted"
+                    }
+                    onClick={() => toggleDomain(cat)}
+                  >
+                    {cat}
+                  </Button>
+                );
+              })}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="panel profile-danger-panel">
-        <div className="panel-head">
-          <span>Data &amp; account</span>
-        </div>
-        <p className="muted small profile-panel-intro">
-          Export your forecast activity and comments for compliance requests. Account deactivation
-          requires admin approval.
-        </p>
-        <div className="profile-danger-actions">
-          <button type="button" className="profile-secondary-btn">
-            Export my data
-          </button>
-          <button type="button" className="profile-danger-btn">
-            Request deactivation
-          </button>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="mb-5 flex items-center justify-between text-base font-semibold text-foreground">
+            <span>Connected integrations</span>
+          </div>
+          <div className="overflow-hidden rounded-lg border border-border">
+            {integrations.map((integration) => (
+              <div
+                key={integration.id}
+                className="flex items-center justify-between gap-4 border-b border-border p-4 last:border-0"
+              >
+                <div>
+                  <div className="font-medium text-foreground">{integration.name}</div>
+                  <div className="text-sm text-muted-foreground">{integration.description}</div>
+                  {integration.connectedAt && (
+                    <div className="text-sm text-muted-foreground">
+                      Connected {formatDate(integration.connectedAt)}
+                    </div>
+                  )}
+                </div>
+                <span
+                  className={
+                    integration.status === "connected"
+                      ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800"
+                      : integration.status === "pending"
+                        ? "rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800"
+                        : "rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
+                  }
+                >
+                  {integration.status === "connected"
+                    ? "Connected"
+                    : integration.status === "pending"
+                      ? "Pending IT"
+                      : "Available"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="p-6">
+          <div className="mb-5 flex items-center justify-between text-base font-semibold text-foreground">
+            <span>Data &amp; account</span>
+          </div>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Export your forecast activity and comments for compliance requests. Account deactivation
+            requires admin approval.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              className="border border-border bg-background text-foreground hover:bg-muted"
+            >
+              Export my data
+            </Button>
+            <Button
+              type="button"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive"
+            >
+              Request deactivation
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </>
   );
 }

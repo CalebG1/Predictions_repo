@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { ASSUMPTION_CONFIDENCE_LABELS } from "../../domain/assumptions";
 import type { AssumptionConfidence, QuestionAssumption } from "../../domain/types";
+import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Textarea } from "../ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 const CONFIDENCE_OPTIONS: AssumptionConfidence[] = ["low", "medium", "high"];
 
@@ -13,11 +23,18 @@ export default function AssumptionModal({
   onSave,
 }: {
   open: boolean;
-  /** null = creating a new assumption; otherwise editing this one. */
   assumption: QuestionAssumption | null;
   onClose: () => void;
-  onCreate?: (input: { statement: string; rationale?: string; confidence?: AssumptionConfidence }) => void;
-  onSave?: (patch: { statement: string; rationale?: string; confidence?: AssumptionConfidence }) => void;
+  onCreate?: (input: {
+    statement: string;
+    rationale?: string;
+    confidence?: AssumptionConfidence;
+  }) => void;
+  onSave?: (patch: {
+    statement: string;
+    rationale?: string;
+    confidence?: AssumptionConfidence;
+  }) => void;
 }) {
   const [statement, setStatement] = useState("");
   const [rationale, setRationale] = useState("");
@@ -29,17 +46,6 @@ export default function AssumptionModal({
     setRationale(assumption?.rationale ?? "");
     setConfidence(assumption?.confidence ?? "");
   }, [open, assumption]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
 
   const submit = () => {
     const trimmed = statement.trim();
@@ -54,70 +60,68 @@ export default function AssumptionModal({
     onClose();
   };
 
-  return createPortal(
-    <div className="asrc-overlay" onMouseDown={onClose}>
-      <div
-        className="asrc-modal assump-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label={assumption ? "Edit assumption" : "Add assumption"}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <header className="asrc-head">
-          <h2 className="asrc-title">{assumption ? "Edit assumption" : "Add local assumption"}</h2>
-          <button type="button" className="asrc-close" aria-label="Close" onClick={onClose}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          </button>
-        </header>
-
-        <div className="asrc-body assump-modal-body">
-          <label className="assump-field">
-            <span className="assump-field-label">Assumption</span>
-            <textarea
-              rows={2}
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className="min-w-lg" showCloseButton>
+        <DialogHeader className="px-6 pt-6 pr-12">
+          <DialogTitle>{assumption ? "Edit assumption" : "Add local assumption"}</DialogTitle>
+          <DialogDescription>
+            Capture a belief that informs this forecast. You can add evidence and publish it for
+            review afterward.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 px-6">
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium">Assumption</span>
+            <Textarea
+              rows={3}
               autoFocus
               placeholder="e.g. The vendor will complete its security remediation before the renewal deadline."
               value={statement}
-              onChange={(e) => setStatement(e.target.value)}
+              onChange={(event) => setStatement(event.target.value)}
             />
           </label>
-
-          <label className="assump-field">
-            <span className="assump-field-label">Rationale (optional)</span>
-            <textarea
-              rows={2}
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium">
+              Rationale <span className="font-normal text-muted-foreground">(optional)</span>
+            </span>
+            <Textarea
+              rows={3}
               placeholder="Why do you believe this?"
               value={rationale}
-              onChange={(e) => setRationale(e.target.value)}
+              onChange={(event) => setRationale(event.target.value)}
             />
           </label>
-
-          <label className="assump-field">
-            <span className="assump-field-label">Confidence (optional)</span>
-            <select value={confidence} onChange={(e) => setConfidence(e.target.value as AssumptionConfidence | "")}>
-              <option value="">Not set</option>
-              {CONFIDENCE_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {ASSUMPTION_CONFIDENCE_LABELS[c]}
-                </option>
-              ))}
-            </select>
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium">
+              Confidence <span className="font-normal text-muted-foreground">(optional)</span>
+            </span>
+            <Select
+              value={confidence || null}
+              onValueChange={(value) => setConfidence((value ?? "") as AssumptionConfidence | "")}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Not set" />
+              </SelectTrigger>
+              <SelectContent>
+                {CONFIDENCE_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {ASSUMPTION_CONFIDENCE_LABELS[option]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
-
-          <div className="assump-modal-actions">
-            <button type="button" className="qcomment-action" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="button" className="ctx-primary-btn" disabled={!statement.trim()} onClick={submit}>
-              {assumption ? "Save changes" : "Add assumption"}
-            </button>
-          </div>
         </div>
-      </div>
-    </div>,
-    document.body
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="button" disabled={!statement.trim()} onClick={submit}>
+            {assumption ? "Save changes" : "Add assumption"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

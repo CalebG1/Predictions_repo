@@ -9,7 +9,7 @@ export default function VisibilityBadge({
   owningTeam?: string;
 }) {
   return (
-    <span className="visibility-badge">
+    <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs">
       <VisibilityLabel value={value} owningTeam={owningTeam} />
     </span>
   );

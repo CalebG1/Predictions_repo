@@ -70,7 +70,8 @@ export const competitors: Competitor[] = [
     name: "Microsoft",
     monogram: "MS",
     color: "#2f6df6",
-    description: "Copilot everywhere: bundling AI into Microsoft 365, GitHub, and Azure enterprise motions.",
+    description:
+      "Copilot everywhere: bundling AI into Microsoft 365, GitHub, and Azure enterprise motions.",
     dossier: {
       facts: [
         { label: "Headquarters", value: "Redmond, WA" },
@@ -104,7 +105,8 @@ export const competitors: Competitor[] = [
     name: "Google",
     monogram: "G",
     color: "#e5484d",
-    description: "Pushing Gemini agents across Workspace and Cloud with aggressive enterprise packaging.",
+    description:
+      "Pushing Gemini agents across Workspace and Cloud with aggressive enterprise packaging.",
     dossier: {
       facts: [
         { label: "Headquarters", value: "Mountain View, CA" },
@@ -138,7 +140,8 @@ export const competitors: Competitor[] = [
     name: "OpenAI",
     monogram: "OA",
     color: "#0e1a16",
-    description: "Expanding from models into first-party products: coding, search, browsing, and workflows.",
+    description:
+      "Expanding from models into first-party products: coding, search, browsing, and workflows.",
     dossier: {
       facts: [
         { label: "Headquarters", value: "San Francisco, CA" },
@@ -172,7 +175,8 @@ export const competitors: Competitor[] = [
     name: "Anthropic",
     monogram: "A",
     color: "#d97706",
-    description: "Enterprise-focused frontier lab moving up the stack toward applications and distribution.",
+    description:
+      "Enterprise-focused frontier lab moving up the stack toward applications and distribution.",
     dossier: {
       facts: [
         { label: "Headquarters", value: "San Francisco, CA" },
@@ -213,7 +217,10 @@ export const competitors: Competitor[] = [
         { label: "Founded", value: "1999" },
         { label: "Employees", value: "~76,000" },
         { label: "Ownership", value: "Public (NYSE: CRM)" },
-        { label: "Key products", value: "Sales/Service/Marketing Clouds, Agentforce, Slack, Data Cloud" },
+        {
+          label: "Key products",
+          value: "Sales/Service/Marketing Clouds, Agentforce, Slack, Data Cloud",
+        },
       ],
       strategySummary:
         "Defending seat-based revenue through the AI transition by bundling Agentforce into core clouds and steering pricing toward consumption, with Data Cloud as the data moat and Slack as the interface moat. Packaging documentation changes are the leading indicator: each bundling step resets what enterprise buyers expect agents to cost.",
@@ -240,7 +247,8 @@ export const competitors: Competitor[] = [
     name: "HubSpot",
     monogram: "HS",
     color: "#db2777",
-    description: "Moving upmarket into enterprise with security, pricing, and vertical expansion signals.",
+    description:
+      "Moving upmarket into enterprise with security, pricing, and vertical expansion signals.",
     dossier: {
       facts: [
         { label: "Headquarters", value: "Cambridge, MA" },
@@ -274,7 +282,8 @@ export const competitors: Competitor[] = [
     name: "ServiceNow",
     monogram: "SN",
     color: "#8b5cf6",
-    description: "Extending agentic workflows beyond ITSM into adjacent enterprise workflow categories.",
+    description:
+      "Extending agentic workflows beyond ITSM into adjacent enterprise workflow categories.",
     dossier: {
       facts: [
         { label: "Headquarters", value: "Santa Clara, CA" },
@@ -308,7 +317,8 @@ export const competitors: Competitor[] = [
     name: "Adobe",
     monogram: "AD",
     color: "#f0a500",
-    description: "Defending creative suite economics while entering generative video and enterprise AI workflows.",
+    description:
+      "Defending creative suite economics while entering generative video and enterprise AI workflows.",
     dossier: {
       facts: [
         { label: "Headquarters", value: "San Jose, CA" },
@@ -381,11 +391,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Microsoft makes generally available a GitHub Copilot capability that autonomously plans and executes multi-step coding tasks (beyond single-turn completion/chat) before 2026-12-31.",
     ...STRATEGY,
-    impactEstimate: "Direct threat to our developer-tooling roadmap", impactLevel: "high", impactScore: 0.78,
-    resolutionCriteria: "Resolves YES on a GA announcement of an autonomous multi-step Copilot coding agent on the GitHub blog or Microsoft 365 roadmap.",
-    resolutionSource: "GitHub changelog / Microsoft 365 roadmap", openDate: "2026-01-10", resolutionDate: "2026-12-31",
-    priorBaseRate: 0.6, initial: 0.7,
-    triggers: triggers("GitHub changelog entry detected", "Copilot preview feature flag observed", "Build conference session catalog parsed"),
+    impactEstimate: "Direct threat to our developer-tooling roadmap",
+    impactLevel: "high",
+    impactScore: 0.78,
+    resolutionCriteria:
+      "Resolves YES on a GA announcement of an autonomous multi-step Copilot coding agent on the GitHub blog or Microsoft 365 roadmap.",
+    resolutionSource: "GitHub changelog / Microsoft 365 roadmap",
+    openDate: "2026-01-10",
+    resolutionDate: "2026-12-31",
+    priorBaseRate: 0.6,
+    initial: 0.7,
+    triggers: triggers(
+      "GitHub changelog entry detected",
+      "Copilot preview feature flag observed",
+      "Build conference session catalog parsed",
+    ),
   },
   {
     id: "q-msft-copilot-bundling",
@@ -393,11 +413,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Microsoft incorporates previously paid Copilot functionality into at least one existing Microsoft 365 enterprise plan without an incremental per-seat fee before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Resets enterprise willingness-to-pay for AI seats", impactLevel: "critical", impactScore: 0.86,
-    resolutionCriteria: "Resolves YES if official licensing documentation shows Copilot features included in an existing enterprise SKU at no added per-seat cost.",
-    resolutionSource: "Microsoft licensing documentation", openDate: "2026-02-01", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.45, initial: 0.55,
-    triggers: triggers("Partner licensing documentation change detected", "Enterprise agreement renewal terms observed", "Channel partner briefing summarized"),
+    impactEstimate: "Resets enterprise willingness-to-pay for AI seats",
+    impactLevel: "critical",
+    impactScore: 0.86,
+    resolutionCriteria:
+      "Resolves YES if official licensing documentation shows Copilot features included in an existing enterprise SKU at no added per-seat cost.",
+    resolutionSource: "Microsoft licensing documentation",
+    openDate: "2026-02-01",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.45,
+    initial: 0.55,
+    triggers: triggers(
+      "Partner licensing documentation change detected",
+      "Enterprise agreement renewal terms observed",
+      "Channel partner briefing summarized",
+    ),
   },
   {
     id: "q-msft-enterprise-agents",
@@ -405,11 +435,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Microsoft launches at least two new first-party, task-specific AI agents (e.g. finance, HR, supply chain) for Microsoft 365 or Dynamics before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Crowds out ISV agent ecosystem we depend on", impactLevel: "high", impactScore: 0.72,
-    resolutionCriteria: "Resolves YES on GA of two or more named first-party enterprise agents in official Microsoft product announcements.",
-    resolutionSource: "Microsoft product announcements", openDate: "2026-02-15", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.55, initial: 0.6,
-    triggers: triggers("Microsoft 365 roadmap item added", "Ignite session catalog parsed", "Agent store listing observed"),
+    impactEstimate: "Crowds out ISV agent ecosystem we depend on",
+    impactLevel: "high",
+    impactScore: 0.72,
+    resolutionCriteria:
+      "Resolves YES on GA of two or more named first-party enterprise agents in official Microsoft product announcements.",
+    resolutionSource: "Microsoft product announcements",
+    openDate: "2026-02-15",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.55,
+    initial: 0.6,
+    triggers: triggers(
+      "Microsoft 365 roadmap item added",
+      "Ignite session catalog parsed",
+      "Agent store listing observed",
+    ),
   },
   {
     id: "q-msft-ai-search",
@@ -417,11 +457,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Microsoft announces general availability of a standalone enterprise AI search product sold separately from Microsoft 365 Copilot before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "New entrant in our core enterprise search market", impactLevel: "critical", impactScore: 0.84,
-    resolutionCriteria: "Resolves YES on GA of a separately priced enterprise search product; bundled Copilot search features do not count.",
-    resolutionSource: "Microsoft product announcements / price list", openDate: "2026-01-20", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.4, initial: 0.55,
-    triggers: triggers("Enterprise search job postings ingested", "Azure AI Search roadmap change detected", "Reseller price list draft observed"),
+    impactEstimate: "New entrant in our core enterprise search market",
+    impactLevel: "critical",
+    impactScore: 0.84,
+    resolutionCriteria:
+      "Resolves YES on GA of a separately priced enterprise search product; bundled Copilot search features do not count.",
+    resolutionSource: "Microsoft product announcements / price list",
+    openDate: "2026-01-20",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.4,
+    initial: 0.55,
+    triggers: triggers(
+      "Enterprise search job postings ingested",
+      "Azure AI Search roadmap change detected",
+      "Reseller price list draft observed",
+    ),
   },
   {
     id: "q-msft-ai-sku",
@@ -429,11 +479,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Microsoft introduces a new separately priced enterprise AI SKU (distinct from existing Copilot per-seat licenses) before 2027-12-31.",
     ...STRATEGY,
-    impactEstimate: "Reframes enterprise AI budget line items", impactLevel: "high", impactScore: 0.68,
-    resolutionCriteria: "Resolves YES when a new AI SKU appears on Microsoft's published enterprise price list.",
-    resolutionSource: "Microsoft enterprise price list", openDate: "2026-03-01", resolutionDate: "2027-12-31",
-    priorBaseRate: 0.5, initial: 0.55,
-    triggers: triggers("Price list SKU addition detected", "Licensing FAQ update parsed", "CFO earnings commentary analyzed"),
+    impactEstimate: "Reframes enterprise AI budget line items",
+    impactLevel: "high",
+    impactScore: 0.68,
+    resolutionCriteria:
+      "Resolves YES when a new AI SKU appears on Microsoft's published enterprise price list.",
+    resolutionSource: "Microsoft enterprise price list",
+    openDate: "2026-03-01",
+    resolutionDate: "2027-12-31",
+    priorBaseRate: 0.5,
+    initial: 0.55,
+    triggers: triggers(
+      "Price list SKU addition detected",
+      "Licensing FAQ update parsed",
+      "CFO earnings commentary analyzed",
+    ),
   },
   {
     id: "q-msft-devtools-mna",
@@ -441,11 +501,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Microsoft announces a definitive agreement to acquire an AI infrastructure or developer-tools company for more than $500M before 2027-12-31.",
     ...STRATEGY,
-    impactEstimate: "Could remove a key partner or arm a rival stack", impactLevel: "high", impactScore: 0.7,
-    resolutionCriteria: "Resolves YES on an announced definitive acquisition agreement >$500M in the stated categories.",
-    resolutionSource: "SEC filings / official press release", openDate: "2026-03-10", resolutionDate: "2027-12-31",
-    priorBaseRate: 0.35, initial: 0.4,
-    triggers: triggers("M&A advisory hiring detected", "Regulatory filing ingested", "Corp-dev executive movement observed"),
+    impactEstimate: "Could remove a key partner or arm a rival stack",
+    impactLevel: "high",
+    impactScore: 0.7,
+    resolutionCriteria:
+      "Resolves YES on an announced definitive acquisition agreement >$500M in the stated categories.",
+    resolutionSource: "SEC filings / official press release",
+    openDate: "2026-03-10",
+    resolutionDate: "2027-12-31",
+    priorBaseRate: 0.35,
+    initial: 0.4,
+    triggers: triggers(
+      "M&A advisory hiring detected",
+      "Regulatory filing ingested",
+      "Corp-dev executive movement observed",
+    ),
   },
   {
     id: "q-msft-sales-headcount",
@@ -453,11 +523,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Microsoft grows its dedicated enterprise AI sales organization by more than 25% (measured via public postings and LinkedIn headcount tracking) before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Direct pressure on our enterprise pipeline", impactLevel: "medium", impactScore: 0.58,
-    resolutionCriteria: "Resolves YES if tracked AI-specialist seller headcount rises >25% versus the 2026-06-30 baseline.",
-    resolutionSource: "LinkedIn headcount tracker / job postings", openDate: "2026-02-01", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.65, initial: 0.75,
-    triggers: triggers("AI specialist seller postings ingested", "LinkedIn headcount snapshot refreshed", "Field sales reorg memo reported"),
+    impactEstimate: "Direct pressure on our enterprise pipeline",
+    impactLevel: "medium",
+    impactScore: 0.58,
+    resolutionCriteria:
+      "Resolves YES if tracked AI-specialist seller headcount rises >25% versus the 2026-06-30 baseline.",
+    resolutionSource: "LinkedIn headcount tracker / job postings",
+    openDate: "2026-02-01",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.65,
+    initial: 0.75,
+    triggers: triggers(
+      "AI specialist seller postings ingested",
+      "LinkedIn headcount snapshot refreshed",
+      "Field sales reorg memo reported",
+    ),
   },
   {
     id: "q-msft-si-partnerships",
@@ -465,11 +545,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Microsoft announces new or materially expanded AI-focused co-sell agreements with at least two global systems integrators before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Locks up implementation capacity in our accounts", impactLevel: "medium", impactScore: 0.52,
-    resolutionCriteria: "Resolves YES on two or more announced AI co-sell or delivery partnerships with global SIs.",
-    resolutionSource: "Partner press releases", openDate: "2026-03-01", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.5, initial: 0.58,
-    triggers: triggers("SI partner press release ingested", "Co-sell program terms change detected", "Partner summit agenda parsed"),
+    impactEstimate: "Locks up implementation capacity in our accounts",
+    impactLevel: "medium",
+    impactScore: 0.52,
+    resolutionCriteria:
+      "Resolves YES on two or more announced AI co-sell or delivery partnerships with global SIs.",
+    resolutionSource: "Partner press releases",
+    openDate: "2026-03-01",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.5,
+    initial: 0.58,
+    triggers: triggers(
+      "SI partner press release ingested",
+      "Co-sell program terms change detected",
+      "Partner summit agenda parsed",
+    ),
   },
 
   // ---------------- Google ----------------
@@ -479,11 +569,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Google makes autonomous Gemini agents (multi-step task execution) generally available in at least three Workspace apps before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Raises the default AI bar for productivity suites", impactLevel: "high", impactScore: 0.74,
-    resolutionCriteria: "Resolves YES on GA of autonomous agent capabilities in three or more Workspace apps per official release notes.",
-    resolutionSource: "Google Workspace release notes", openDate: "2026-01-15", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.6, initial: 0.68,
-    triggers: triggers("Workspace release notes ingested", "Gemini feature flag observed in beta", "Cloud Next session catalog parsed"),
+    impactEstimate: "Raises the default AI bar for productivity suites",
+    impactLevel: "high",
+    impactScore: 0.74,
+    resolutionCriteria:
+      "Resolves YES on GA of autonomous agent capabilities in three or more Workspace apps per official release notes.",
+    resolutionSource: "Google Workspace release notes",
+    openDate: "2026-01-15",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.6,
+    initial: 0.68,
+    triggers: triggers(
+      "Workspace release notes ingested",
+      "Gemini feature flag observed in beta",
+      "Cloud Next session catalog parsed",
+    ),
   },
   {
     id: "q-goog-agent-pricing",
@@ -491,11 +591,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Google discontinues the separately priced Gemini add-on and includes its functionality in standard Workspace Business/Enterprise tiers before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Accelerates AI price commoditization", impactLevel: "high", impactScore: 0.66,
-    resolutionCriteria: "Resolves YES if official Workspace pricing shows former add-on functionality included in standard tiers at no extra per-seat fee.",
-    resolutionSource: "Google Workspace pricing page", openDate: "2026-02-10", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.4, initial: 0.45,
-    triggers: triggers("Workspace pricing page change detected", "Admin console SKU change observed", "Reseller notice ingested"),
+    impactEstimate: "Accelerates AI price commoditization",
+    impactLevel: "high",
+    impactScore: 0.66,
+    resolutionCriteria:
+      "Resolves YES if official Workspace pricing shows former add-on functionality included in standard tiers at no extra per-seat fee.",
+    resolutionSource: "Google Workspace pricing page",
+    openDate: "2026-02-10",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.4,
+    initial: 0.45,
+    triggers: triggers(
+      "Workspace pricing page change detected",
+      "Admin console SKU change observed",
+      "Reseller notice ingested",
+    ),
   },
   {
     id: "q-goog-vertical-agents",
@@ -503,11 +613,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Google launches packaged, industry-specific Gemini agent offerings (e.g. healthcare, retail, financial services) as named products before 2027-12-31.",
     ...STRATEGY,
-    impactEstimate: "Opens vertical battlegrounds where we compete", impactLevel: "medium", impactScore: 0.55,
-    resolutionCriteria: "Resolves YES on GA of at least one named industry-specific Gemini agent package.",
-    resolutionSource: "Google Cloud product announcements", openDate: "2026-03-05", resolutionDate: "2027-12-31",
-    priorBaseRate: 0.4, initial: 0.42,
-    triggers: triggers("Vertical solution landing pages detected", "Industry sales hires ingested", "Customer case study published"),
+    impactEstimate: "Opens vertical battlegrounds where we compete",
+    impactLevel: "medium",
+    impactScore: 0.55,
+    resolutionCriteria:
+      "Resolves YES on GA of at least one named industry-specific Gemini agent package.",
+    resolutionSource: "Google Cloud product announcements",
+    openDate: "2026-03-05",
+    resolutionDate: "2027-12-31",
+    priorBaseRate: 0.4,
+    initial: 0.42,
+    triggers: triggers(
+      "Vertical solution landing pages detected",
+      "Industry sales hires ingested",
+      "Customer case study published",
+    ),
   },
   {
     id: "q-goog-ai-mna",
@@ -515,11 +635,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Google (Alphabet) closes an acquisition of an AI company valued above $1B before 2027-12-31.",
     ...STRATEGY,
-    impactEstimate: "Could consolidate a capability we rely on", impactLevel: "medium", impactScore: 0.5,
-    resolutionCriteria: "Resolves YES on a closed acquisition >$1B of a company whose primary business is AI.",
-    resolutionSource: "SEC filings / official press release", openDate: "2026-02-20", resolutionDate: "2027-12-31",
-    priorBaseRate: 0.3, initial: 0.32,
-    triggers: triggers("Regulatory filing ingested", "Corp-dev hiring detected", "Antitrust counsel engagement reported"),
+    impactEstimate: "Could consolidate a capability we rely on",
+    impactLevel: "medium",
+    impactScore: 0.5,
+    resolutionCriteria:
+      "Resolves YES on a closed acquisition >$1B of a company whose primary business is AI.",
+    resolutionSource: "SEC filings / official press release",
+    openDate: "2026-02-20",
+    resolutionDate: "2027-12-31",
+    priorBaseRate: 0.3,
+    initial: 0.32,
+    triggers: triggers(
+      "Regulatory filing ingested",
+      "Corp-dev hiring detected",
+      "Antitrust counsel engagement reported",
+    ),
   },
 
   // ---------------- OpenAI ----------------
@@ -529,11 +659,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "OpenAI releases a first-party integrated coding environment (IDE, cloud workspace, or equivalent) as a generally available product before 2027-12-31.",
     ...STRATEGY,
-    impactEstimate: "Redraws the developer-tools competitive map", impactLevel: "critical", impactScore: 0.82,
-    resolutionCriteria: "Resolves YES on GA of a first-party OpenAI coding environment; API-only or plugin offerings do not count.",
-    resolutionSource: "OpenAI product announcements", openDate: "2026-01-05", resolutionDate: "2027-12-31",
-    priorBaseRate: 0.55, initial: 0.68,
-    triggers: triggers("Developer-tools job postings ingested", "Codex product update parsed", "Developer platform docs change detected"),
+    impactEstimate: "Redraws the developer-tools competitive map",
+    impactLevel: "critical",
+    impactScore: 0.82,
+    resolutionCriteria:
+      "Resolves YES on GA of a first-party OpenAI coding environment; API-only or plugin offerings do not count.",
+    resolutionSource: "OpenAI product announcements",
+    openDate: "2026-01-05",
+    resolutionDate: "2027-12-31",
+    priorBaseRate: 0.55,
+    initial: 0.68,
+    triggers: triggers(
+      "Developer-tools job postings ingested",
+      "Codex product update parsed",
+      "Developer platform docs change detected",
+    ),
   },
   {
     id: "q-oai-browser",
@@ -541,11 +681,20 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "OpenAI ships a generally available first-party web browser (desktop or mobile) before 2027-12-01.",
     ...STRATEGY,
-    impactEstimate: "Threatens default AI distribution surfaces", impactLevel: "high", impactScore: 0.72,
+    impactEstimate: "Threatens default AI distribution surfaces",
+    impactLevel: "high",
+    impactScore: 0.72,
     resolutionCriteria: "Resolves YES on public GA release of a first-party OpenAI browser.",
-    resolutionSource: "OpenAI product announcements", openDate: "2026-01-05", resolutionDate: "2027-12-01",
-    priorBaseRate: 0.4, initial: 0.5,
-    triggers: triggers("Former Chrome engineer hires detected", "Browser-related job descriptions ingested", "Chromium fork activity observed on GitHub"),
+    resolutionSource: "OpenAI product announcements",
+    openDate: "2026-01-05",
+    resolutionDate: "2027-12-01",
+    priorBaseRate: 0.4,
+    initial: 0.5,
+    triggers: triggers(
+      "Former Chrome engineer hires detected",
+      "Browser-related job descriptions ingested",
+      "Chromium fork activity observed on GitHub",
+    ),
   },
   {
     id: "q-oai-enterprise-search",
@@ -553,11 +702,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "OpenAI launches a standalone enterprise search product (connectors to internal corpora, admin controls, separate pricing) before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Direct entry into our core market", impactLevel: "critical", impactScore: 0.88,
-    resolutionCriteria: "Resolves YES on GA of a separately sold enterprise search product; ChatGPT Enterprise features alone do not count.",
-    resolutionSource: "OpenAI product announcements / pricing", openDate: "2026-02-01", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.35, initial: 0.42,
-    triggers: triggers("Enterprise connector docs change detected", "Search infrastructure hires ingested", "Enterprise customer pilot reported"),
+    impactEstimate: "Direct entry into our core market",
+    impactLevel: "critical",
+    impactScore: 0.88,
+    resolutionCriteria:
+      "Resolves YES on GA of a separately sold enterprise search product; ChatGPT Enterprise features alone do not count.",
+    resolutionSource: "OpenAI product announcements / pricing",
+    openDate: "2026-02-01",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.35,
+    initial: 0.42,
+    triggers: triggers(
+      "Enterprise connector docs change detected",
+      "Search infrastructure hires ingested",
+      "Enterprise customer pilot reported",
+    ),
   },
   {
     id: "q-oai-workflow-products",
@@ -565,11 +724,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "OpenAI launches at least two additional first-party enterprise workflow products (beyond ChatGPT Enterprise and existing APIs) before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Expands OpenAI from vendor to competitor", impactLevel: "high", impactScore: 0.7,
-    resolutionCriteria: "Resolves YES on GA of two or more named first-party enterprise workflow products.",
-    resolutionSource: "OpenAI product announcements", openDate: "2026-02-15", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.55, initial: 0.62,
-    triggers: triggers("Enterprise product hires ingested", "DevDay session catalog parsed", "Enterprise infrastructure postings analyzed"),
+    impactEstimate: "Expands OpenAI from vendor to competitor",
+    impactLevel: "high",
+    impactScore: 0.7,
+    resolutionCriteria:
+      "Resolves YES on GA of two or more named first-party enterprise workflow products.",
+    resolutionSource: "OpenAI product announcements",
+    openDate: "2026-02-15",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.55,
+    initial: 0.62,
+    triggers: triggers(
+      "Enterprise product hires ingested",
+      "DevDay session catalog parsed",
+      "Enterprise infrastructure postings analyzed",
+    ),
   },
   {
     id: "q-oai-gtm-headcount",
@@ -577,11 +746,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "OpenAI's enterprise sales and go-to-market organization doubles versus the 2026-06-30 baseline (tracked via postings and LinkedIn) before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Escalates direct competition for enterprise accounts", impactLevel: "medium", impactScore: 0.56,
-    resolutionCriteria: "Resolves YES if tracked enterprise GTM headcount at least doubles versus baseline.",
-    resolutionSource: "LinkedIn headcount tracker / job postings", openDate: "2026-03-01", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.55, initial: 0.6,
-    triggers: triggers("Enterprise AE postings ingested", "Sales leadership hire detected", "Regional office opening reported"),
+    impactEstimate: "Escalates direct competition for enterprise accounts",
+    impactLevel: "medium",
+    impactScore: 0.56,
+    resolutionCriteria:
+      "Resolves YES if tracked enterprise GTM headcount at least doubles versus baseline.",
+    resolutionSource: "LinkedIn headcount tracker / job postings",
+    openDate: "2026-03-01",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.55,
+    initial: 0.6,
+    triggers: triggers(
+      "Enterprise AE postings ingested",
+      "Sales leadership hire detected",
+      "Regional office opening reported",
+    ),
   },
 
   // ---------------- Anthropic ----------------
@@ -591,11 +770,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Anthropic launches a first-party enterprise workflow application (beyond Claude chat/API, e.g. agents for specific business functions) before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Vendor becomes application-layer competitor", impactLevel: "high", impactScore: 0.74,
-    resolutionCriteria: "Resolves YES on GA of a named first-party enterprise workflow application from Anthropic.",
-    resolutionSource: "Anthropic product announcements", openDate: "2026-02-01", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.45, initial: 0.52,
-    triggers: triggers("Applied product team hires ingested", "Claude enterprise docs change detected", "Product designer postings analyzed"),
+    impactEstimate: "Vendor becomes application-layer competitor",
+    impactLevel: "high",
+    impactScore: 0.74,
+    resolutionCriteria:
+      "Resolves YES on GA of a named first-party enterprise workflow application from Anthropic.",
+    resolutionSource: "Anthropic product announcements",
+    openDate: "2026-02-01",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.45,
+    initial: 0.52,
+    triggers: triggers(
+      "Applied product team hires ingested",
+      "Claude enterprise docs change detected",
+      "Product designer postings analyzed",
+    ),
   },
   {
     id: "q-anth-acquisition",
@@ -603,11 +792,20 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Anthropic announces the acquisition of another company (any size, acqui-hires included if publicly announced) before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Signals build-vs-buy posture shift", impactLevel: "medium", impactScore: 0.45,
+    impactEstimate: "Signals build-vs-buy posture shift",
+    impactLevel: "medium",
+    impactScore: 0.45,
     resolutionCriteria: "Resolves YES on any publicly announced acquisition by Anthropic.",
-    resolutionSource: "Official press release / credible reporting", openDate: "2026-03-01", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.3, initial: 0.34,
-    triggers: triggers("Corp-dev hiring detected", "Startup team absorption reported", "Investor letter analyzed"),
+    resolutionSource: "Official press release / credible reporting",
+    openDate: "2026-03-01",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.3,
+    initial: 0.34,
+    triggers: triggers(
+      "Corp-dev hiring detected",
+      "Startup team absorption reported",
+      "Investor letter analyzed",
+    ),
   },
   {
     id: "q-anth-f100-partnership",
@@ -615,11 +813,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Anthropic announces a major distribution partnership with a Fortune 100 technology company (beyond existing cloud deals) before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Expands Claude's enterprise reach past our channels", impactLevel: "medium", impactScore: 0.55,
-    resolutionCriteria: "Resolves YES on an announced distribution/OEM partnership with a Fortune 100 tech company other than existing cloud providers' current terms.",
-    resolutionSource: "Joint press release", openDate: "2026-02-10", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.5, initial: 0.56,
-    triggers: triggers("Partnership press release ingested", "Joint webinar listing detected", "Alliance manager hires observed"),
+    impactEstimate: "Expands Claude's enterprise reach past our channels",
+    impactLevel: "medium",
+    impactScore: 0.55,
+    resolutionCriteria:
+      "Resolves YES on an announced distribution/OEM partnership with a Fortune 100 tech company other than existing cloud providers' current terms.",
+    resolutionSource: "Joint press release",
+    openDate: "2026-02-10",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.5,
+    initial: 0.56,
+    triggers: triggers(
+      "Partnership press release ingested",
+      "Joint webinar listing detected",
+      "Alliance manager hires observed",
+    ),
   },
   {
     id: "q-anth-apps-division",
@@ -627,11 +835,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Anthropic publicly establishes a dedicated enterprise applications division or business unit with named leadership before 2027-12-31.",
     ...STRATEGY,
-    impactEstimate: "Organizational commitment to app-layer competition", impactLevel: "medium", impactScore: 0.48,
-    resolutionCriteria: "Resolves YES if Anthropic announces or credible reporting confirms a dedicated applications division with a named leader.",
-    resolutionSource: "Company announcements / credible reporting", openDate: "2026-03-15", resolutionDate: "2027-12-31",
-    priorBaseRate: 0.35, initial: 0.4,
-    triggers: triggers("Executive hire announcement parsed", "Org chart change reported", "GM-level postings ingested"),
+    impactEstimate: "Organizational commitment to app-layer competition",
+    impactLevel: "medium",
+    impactScore: 0.48,
+    resolutionCriteria:
+      "Resolves YES if Anthropic announces or credible reporting confirms a dedicated applications division with a named leader.",
+    resolutionSource: "Company announcements / credible reporting",
+    openDate: "2026-03-15",
+    resolutionDate: "2027-12-31",
+    priorBaseRate: 0.35,
+    initial: 0.4,
+    triggers: triggers(
+      "Executive hire announcement parsed",
+      "Org chart change reported",
+      "GM-level postings ingested",
+    ),
   },
 
   // ---------------- Salesforce ----------------
@@ -641,11 +859,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Salesforce incorporates previously separately priced Agentforce functionality into at least two additional existing SKUs before 2027-03-31.",
     ...STRATEGY,
-    impactEstimate: "Compresses standalone agent pricing across the market", impactLevel: "high", impactScore: 0.7,
-    resolutionCriteria: "Resolves YES if official pricing/packaging documentation shows Agentforce features included in two or more additional SKUs.",
-    resolutionSource: "Salesforce pricing documentation", openDate: "2026-01-15", resolutionDate: "2027-03-31",
-    priorBaseRate: 0.6, initial: 0.66,
-    triggers: triggers("Pricing documentation change detected", "Dreamforce keynote transcript analyzed", "Partner enablement deck ingested"),
+    impactEstimate: "Compresses standalone agent pricing across the market",
+    impactLevel: "high",
+    impactScore: 0.7,
+    resolutionCriteria:
+      "Resolves YES if official pricing/packaging documentation shows Agentforce features included in two or more additional SKUs.",
+    resolutionSource: "Salesforce pricing documentation",
+    openDate: "2026-01-15",
+    resolutionDate: "2027-03-31",
+    priorBaseRate: 0.6,
+    initial: 0.66,
+    triggers: triggers(
+      "Pricing documentation change detected",
+      "Dreamforce keynote transcript analyzed",
+      "Partner enablement deck ingested",
+    ),
   },
   {
     id: "q-crm-ai-mna",
@@ -653,11 +881,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Salesforce announces a definitive agreement to acquire an AI software company for more than $1B before 2027-12-31.",
     ...STRATEGY,
-    impactEstimate: "Could absorb an adjacent player in our space", impactLevel: "medium", impactScore: 0.55,
-    resolutionCriteria: "Resolves YES on an announced definitive agreement >$1B for a company whose primary business is AI software.",
-    resolutionSource: "SEC filings / official press release", openDate: "2026-02-01", resolutionDate: "2027-12-31",
-    priorBaseRate: 0.35, initial: 0.38,
-    triggers: triggers("M&A rumor coverage analyzed", "Regulatory filing ingested", "Corp-dev executive movement observed"),
+    impactEstimate: "Could absorb an adjacent player in our space",
+    impactLevel: "medium",
+    impactScore: 0.55,
+    resolutionCriteria:
+      "Resolves YES on an announced definitive agreement >$1B for a company whose primary business is AI software.",
+    resolutionSource: "SEC filings / official press release",
+    openDate: "2026-02-01",
+    resolutionDate: "2027-12-31",
+    priorBaseRate: 0.35,
+    initial: 0.38,
+    triggers: triggers(
+      "M&A rumor coverage analyzed",
+      "Regulatory filing ingested",
+      "Corp-dev executive movement observed",
+    ),
   },
   {
     id: "q-crm-usage-pricing",
@@ -665,11 +903,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Salesforce makes consumption-based (per-action or credit) pricing the default Agentforce model across its core clouds before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Sets buyer expectations for agent pricing models", impactLevel: "medium", impactScore: 0.52,
-    resolutionCriteria: "Resolves YES if official pricing shows consumption-based Agentforce pricing as the default across core clouds.",
-    resolutionSource: "Salesforce pricing documentation", openDate: "2026-02-20", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.45, initial: 0.5,
-    triggers: triggers("Pricing page change detected", "CRO earnings commentary analyzed", "Credit-consumption docs ingested"),
+    impactEstimate: "Sets buyer expectations for agent pricing models",
+    impactLevel: "medium",
+    impactScore: 0.52,
+    resolutionCriteria:
+      "Resolves YES if official pricing shows consumption-based Agentforce pricing as the default across core clouds.",
+    resolutionSource: "Salesforce pricing documentation",
+    openDate: "2026-02-20",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.45,
+    initial: 0.5,
+    triggers: triggers(
+      "Pricing page change detected",
+      "CRO earnings commentary analyzed",
+      "Credit-consumption docs ingested",
+    ),
   },
   {
     id: "q-crm-itsm-entry",
@@ -677,11 +925,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Salesforce launches a named ITSM product or acquires an ITSM vendor before 2028-06-30.",
     ...STRATEGY,
-    impactEstimate: "Reshapes an adjacent market we integrate with", impactLevel: "low", impactScore: 0.35,
-    resolutionCriteria: "Resolves YES on GA of a named Salesforce ITSM product or a closed ITSM acquisition.",
-    resolutionSource: "Salesforce product announcements", openDate: "2026-03-10", resolutionDate: "2028-06-30",
-    priorBaseRate: 0.25, initial: 0.28,
-    triggers: triggers("ITSM product hires ingested", "Service Cloud roadmap change detected", "Analyst briefing summarized"),
+    impactEstimate: "Reshapes an adjacent market we integrate with",
+    impactLevel: "low",
+    impactScore: 0.35,
+    resolutionCriteria:
+      "Resolves YES on GA of a named Salesforce ITSM product or a closed ITSM acquisition.",
+    resolutionSource: "Salesforce product announcements",
+    openDate: "2026-03-10",
+    resolutionDate: "2028-06-30",
+    priorBaseRate: 0.25,
+    initial: 0.28,
+    triggers: triggers(
+      "ITSM product hires ingested",
+      "Service Cloud roadmap change detected",
+      "Analyst briefing summarized",
+    ),
   },
 
   // ---------------- HubSpot ----------------
@@ -691,11 +949,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "HubSpot launches a separately marketed enterprise security product or add-on (admin security suite, governance, or equivalent) before 2027-07-01.",
     ...STRATEGY,
-    impactEstimate: "Neutralizes our enterprise-security differentiation", impactLevel: "high", impactScore: 0.72,
-    resolutionCriteria: "Resolves YES on GA of a named, separately marketed HubSpot enterprise security product or paid add-on.",
-    resolutionSource: "HubSpot product announcements / pricing", openDate: "2026-01-10", resolutionDate: "2027-07-01",
-    priorBaseRate: 0.3, initial: 0.38,
-    triggers: triggers("Security PM postings ingested", "VP of Security Products hire detected", "Partner documentation referenced unreleased security capability"),
+    impactEstimate: "Neutralizes our enterprise-security differentiation",
+    impactLevel: "high",
+    impactScore: 0.72,
+    resolutionCriteria:
+      "Resolves YES on GA of a named, separately marketed HubSpot enterprise security product or paid add-on.",
+    resolutionSource: "HubSpot product announcements / pricing",
+    openDate: "2026-01-10",
+    resolutionDate: "2027-07-01",
+    priorBaseRate: 0.3,
+    initial: 0.38,
+    triggers: triggers(
+      "Security PM postings ingested",
+      "VP of Security Products hire detected",
+      "Partner documentation referenced unreleased security capability",
+    ),
   },
   {
     id: "q-hs-enterprise-pricing",
@@ -703,11 +971,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "HubSpot raises the list price of at least one Enterprise-tier hub by more than 10% before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Creates pricing umbrella / displacement window", impactLevel: "medium", impactScore: 0.5,
-    resolutionCriteria: "Resolves YES if published list pricing for any Enterprise hub rises >10% versus the 2026-06-30 baseline.",
-    resolutionSource: "HubSpot pricing page history", openDate: "2026-02-01", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.45, initial: 0.55,
-    triggers: triggers("Pricing page change detected", "Packaging FAQ update parsed", "CFO earnings commentary analyzed"),
+    impactEstimate: "Creates pricing umbrella / displacement window",
+    impactLevel: "medium",
+    impactScore: 0.5,
+    resolutionCriteria:
+      "Resolves YES if published list pricing for any Enterprise hub rises >10% versus the 2026-06-30 baseline.",
+    resolutionSource: "HubSpot pricing page history",
+    openDate: "2026-02-01",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.45,
+    initial: 0.55,
+    triggers: triggers(
+      "Pricing page change detected",
+      "Packaging FAQ update parsed",
+      "CFO earnings commentary analyzed",
+    ),
   },
   {
     id: "q-hs-sales-headcount",
@@ -715,11 +993,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "HubSpot increases enterprise-segment sales headcount by more than 20% versus the 2026-06-30 baseline before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "More competitive pressure in upmarket deals", impactLevel: "medium", impactScore: 0.48,
-    resolutionCriteria: "Resolves YES if tracked enterprise sales headcount rises >20% versus baseline.",
-    resolutionSource: "LinkedIn headcount tracker / job postings", openDate: "2026-02-15", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.55, initial: 0.6,
-    triggers: triggers("Enterprise AE postings ingested", "Sales kickoff coverage analyzed", "LinkedIn headcount snapshot refreshed"),
+    impactEstimate: "More competitive pressure in upmarket deals",
+    impactLevel: "medium",
+    impactScore: 0.48,
+    resolutionCriteria:
+      "Resolves YES if tracked enterprise sales headcount rises >20% versus baseline.",
+    resolutionSource: "LinkedIn headcount tracker / job postings",
+    openDate: "2026-02-15",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.55,
+    initial: 0.6,
+    triggers: triggers(
+      "Enterprise AE postings ingested",
+      "Sales kickoff coverage analyzed",
+      "LinkedIn headcount snapshot refreshed",
+    ),
   },
   {
     id: "q-hs-healthcare-vertical",
@@ -727,11 +1015,22 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "HubSpot launches a named, dedicated healthcare product offering or vertical edition before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "First-mover risk in a vertical we are evaluating", impactLevel: "medium", impactScore: 0.52,
-    resolutionCriteria: "Resolves YES on GA of a named healthcare-specific HubSpot product or edition.",
-    resolutionSource: "HubSpot product announcements", openDate: "2026-05-01", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.35, initial: 0.44,
-    triggers: triggers("Healthcare sales roles ingested", "Healthcare integrations detected", "Healthcare landing pages observed", "CEO verticalization comments analyzed"),
+    impactEstimate: "First-mover risk in a vertical we are evaluating",
+    impactLevel: "medium",
+    impactScore: 0.52,
+    resolutionCriteria:
+      "Resolves YES on GA of a named healthcare-specific HubSpot product or edition.",
+    resolutionSource: "HubSpot product announcements",
+    openDate: "2026-05-01",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.35,
+    initial: 0.44,
+    triggers: triggers(
+      "Healthcare sales roles ingested",
+      "Healthcare integrations detected",
+      "Healthcare landing pages observed",
+      "CEO verticalization comments analyzed",
+    ),
   },
 
   // ---------------- ServiceNow ----------------
@@ -741,11 +1040,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "ServiceNow makes AI agents generally available in at least two workflow categories beyond ITSM/ITOM (e.g. HR, finance, legal) before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Encroaches on adjacent workflow markets", impactLevel: "high", impactScore: 0.66,
-    resolutionCriteria: "Resolves YES on GA of agents in two or more additional workflow categories per official release notes.",
-    resolutionSource: "ServiceNow release notes", openDate: "2026-01-20", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.6, initial: 0.64,
-    triggers: triggers("Release notes ingested", "Knowledge conference catalog parsed", "Workflow GM hire detected"),
+    impactEstimate: "Encroaches on adjacent workflow markets",
+    impactLevel: "high",
+    impactScore: 0.66,
+    resolutionCriteria:
+      "Resolves YES on GA of agents in two or more additional workflow categories per official release notes.",
+    resolutionSource: "ServiceNow release notes",
+    openDate: "2026-01-20",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.6,
+    initial: 0.64,
+    triggers: triggers(
+      "Release notes ingested",
+      "Knowledge conference catalog parsed",
+      "Workflow GM hire detected",
+    ),
   },
   {
     id: "q-now-smb-product",
@@ -753,11 +1062,20 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "ServiceNow launches a named product line specifically packaged and priced for SMB customers before 2028-01-01.",
     ...STRATEGY,
-    impactEstimate: "Downmarket motion colliding with our segment", impactLevel: "medium", impactScore: 0.45,
+    impactEstimate: "Downmarket motion colliding with our segment",
+    impactLevel: "medium",
+    impactScore: 0.45,
     resolutionCriteria: "Resolves YES on GA of a named SMB-specific ServiceNow product line.",
-    resolutionSource: "ServiceNow product announcements", openDate: "2026-02-10", resolutionDate: "2028-01-01",
-    priorBaseRate: 0.25, initial: 0.3,
-    triggers: triggers("SMB packaging job postings ingested", "Self-serve signup flow detected", "Downmarket pricing experiment observed"),
+    resolutionSource: "ServiceNow product announcements",
+    openDate: "2026-02-10",
+    resolutionDate: "2028-01-01",
+    priorBaseRate: 0.25,
+    initial: 0.3,
+    triggers: triggers(
+      "SMB packaging job postings ingested",
+      "Self-serve signup flow detected",
+      "Downmarket pricing experiment observed",
+    ),
   },
   {
     id: "q-now-consumption-pricing",
@@ -765,11 +1083,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "ServiceNow introduces a consumption-based (usage or credit) pricing tier for its AI capabilities before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Normalizes usage-based AI pricing among incumbents", impactLevel: "medium", impactScore: 0.46,
-    resolutionCriteria: "Resolves YES if official pricing documentation shows a consumption-based AI tier.",
-    resolutionSource: "ServiceNow pricing documentation", openDate: "2026-03-01", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.45, initial: 0.5,
-    triggers: triggers("Pricing documentation change detected", "CFO earnings commentary analyzed", "Partner enablement deck ingested"),
+    impactEstimate: "Normalizes usage-based AI pricing among incumbents",
+    impactLevel: "medium",
+    impactScore: 0.46,
+    resolutionCriteria:
+      "Resolves YES if official pricing documentation shows a consumption-based AI tier.",
+    resolutionSource: "ServiceNow pricing documentation",
+    openDate: "2026-03-01",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.45,
+    initial: 0.5,
+    triggers: triggers(
+      "Pricing documentation change detected",
+      "CFO earnings commentary analyzed",
+      "Partner enablement deck ingested",
+    ),
   },
   {
     id: "q-now-ai-startup-mna",
@@ -777,11 +1105,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "ServiceNow announces the acquisition of at least one AI startup before 2027-12-31.",
     ...STRATEGY,
-    impactEstimate: "Consolidates capabilities in agentic workflows", impactLevel: "medium", impactScore: 0.5,
-    resolutionCriteria: "Resolves YES on any announced acquisition of a company whose primary business is AI.",
-    resolutionSource: "Official press release", openDate: "2026-02-01", resolutionDate: "2027-12-31",
-    priorBaseRate: 0.55, initial: 0.6,
-    triggers: triggers("Corp-dev hiring detected", "Acquisition press release ingested", "Startup diligence chatter reported"),
+    impactEstimate: "Consolidates capabilities in agentic workflows",
+    impactLevel: "medium",
+    impactScore: 0.5,
+    resolutionCriteria:
+      "Resolves YES on any announced acquisition of a company whose primary business is AI.",
+    resolutionSource: "Official press release",
+    openDate: "2026-02-01",
+    resolutionDate: "2027-12-31",
+    priorBaseRate: 0.55,
+    initial: 0.6,
+    triggers: triggers(
+      "Corp-dev hiring detected",
+      "Acquisition press release ingested",
+      "Startup diligence chatter reported",
+    ),
   },
 
   // ---------------- Adobe ----------------
@@ -791,11 +1129,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Adobe releases a generally available first-party AI video generation product (standalone or named module) before 2027-10-01.",
     ...STRATEGY,
-    impactEstimate: "Raises table stakes for creative AI suites", impactLevel: "high", impactScore: 0.64,
-    resolutionCriteria: "Resolves YES on GA of a first-party Adobe AI video generation product; beta or research previews do not count.",
-    resolutionSource: "Adobe product announcements", openDate: "2026-01-15", resolutionDate: "2027-10-01",
-    priorBaseRate: 0.55, initial: 0.62,
-    triggers: triggers("Firefly release notes ingested", "MAX conference catalog parsed", "Video model research hires detected"),
+    impactEstimate: "Raises table stakes for creative AI suites",
+    impactLevel: "high",
+    impactScore: 0.64,
+    resolutionCriteria:
+      "Resolves YES on GA of a first-party Adobe AI video generation product; beta or research previews do not count.",
+    resolutionSource: "Adobe product announcements",
+    openDate: "2026-01-15",
+    resolutionDate: "2027-10-01",
+    priorBaseRate: 0.55,
+    initial: 0.62,
+    triggers: triggers(
+      "Firefly release notes ingested",
+      "MAX conference catalog parsed",
+      "Video model research hires detected",
+    ),
   },
   {
     id: "q-adbe-workflow-product",
@@ -803,11 +1151,20 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Adobe launches a named enterprise AI workflow product (beyond existing Creative/Experience Cloud features) before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "New entrant in enterprise AI workflow spend", impactLevel: "medium", impactScore: 0.55,
+    impactEstimate: "New entrant in enterprise AI workflow spend",
+    impactLevel: "medium",
+    impactScore: 0.55,
     resolutionCriteria: "Resolves YES on GA of a named enterprise AI workflow product from Adobe.",
-    resolutionSource: "Adobe product announcements", openDate: "2026-05-10", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.4, initial: 0.52,
-    triggers: triggers("Enterprise workflow hires ingested", "GenStudio expansion detected", "Experience Cloud roadmap change parsed"),
+    resolutionSource: "Adobe product announcements",
+    openDate: "2026-05-10",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.4,
+    initial: 0.52,
+    triggers: triggers(
+      "Enterprise workflow hires ingested",
+      "GenStudio expansion detected",
+      "Experience Cloud roadmap change parsed",
+    ),
   },
   {
     id: "q-adbe-enterprise-pricing",
@@ -815,11 +1172,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Adobe raises Creative Cloud enterprise per-seat list pricing by more than 8% before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Budget shift creates displacement opportunities", impactLevel: "low", impactScore: 0.35,
-    resolutionCriteria: "Resolves YES if published enterprise list pricing rises >8% versus the 2026-06-30 baseline.",
-    resolutionSource: "Adobe pricing page history", openDate: "2026-02-15", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.5, initial: 0.53,
-    triggers: triggers("Pricing page change detected", "Enterprise agreement terms reported", "CFO earnings commentary analyzed"),
+    impactEstimate: "Budget shift creates displacement opportunities",
+    impactLevel: "low",
+    impactScore: 0.35,
+    resolutionCriteria:
+      "Resolves YES if published enterprise list pricing rises >8% versus the 2026-06-30 baseline.",
+    resolutionSource: "Adobe pricing page history",
+    openDate: "2026-02-15",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.5,
+    initial: 0.53,
+    triggers: triggers(
+      "Pricing page change detected",
+      "Enterprise agreement terms reported",
+      "CFO earnings commentary analyzed",
+    ),
   },
   {
     id: "q-adbe-chief-ai-officer",
@@ -827,11 +1194,21 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
     preciseDefinition:
       "Adobe appoints a dedicated C-level AI executive (Chief AI Officer or equivalent title) before 2027-06-30.",
     ...STRATEGY,
-    impactEstimate: "Signals deeper organizational AI commitment", impactLevel: "low", impactScore: 0.3,
-    resolutionCriteria: "Resolves YES on an announced C-level appointment with an AI-specific mandate.",
-    resolutionSource: "Adobe press releases / executive pages", openDate: "2026-03-01", resolutionDate: "2027-06-30",
-    priorBaseRate: 0.3, initial: 0.33,
-    triggers: triggers("Executive search engagement reported", "Leadership page change detected", "Executive hire announcement parsed"),
+    impactEstimate: "Signals deeper organizational AI commitment",
+    impactLevel: "low",
+    impactScore: 0.3,
+    resolutionCriteria:
+      "Resolves YES on an announced C-level appointment with an AI-specific mandate.",
+    resolutionSource: "Adobe press releases / executive pages",
+    openDate: "2026-03-01",
+    resolutionDate: "2027-06-30",
+    priorBaseRate: 0.3,
+    initial: 0.33,
+    triggers: triggers(
+      "Executive search engagement reported",
+      "Leadership page change detected",
+      "Executive hire announcement parsed",
+    ),
   },
 ];
 
@@ -839,50 +1216,238 @@ export const competitorQuestionSeeds: CompetitorQuestionSeed[] = [
 
 export const competitorMoves: CompetitorMove[] = [
   // Microsoft
-  { questionId: "q-msft-copilot-agent", competitorId: "microsoft", moveCategory: "Product", expectedHorizon: "Next 6 months" },
-  { questionId: "q-msft-copilot-bundling", competitorId: "microsoft", moveCategory: "Pricing & Packaging", expectedHorizon: "Next 12 months" },
-  { questionId: "q-msft-enterprise-agents", competitorId: "microsoft", moveCategory: "Product", expectedHorizon: "Next 12 months" },
-  { questionId: "q-msft-ai-search", competitorId: "microsoft", moveCategory: "Product", expectedHorizon: "By Q2 2027" },
-  { questionId: "q-msft-ai-sku", competitorId: "microsoft", moveCategory: "Pricing & Packaging", expectedHorizon: "Next 18 months" },
-  { questionId: "q-msft-devtools-mna", competitorId: "microsoft", moveCategory: "M&A & Investment", expectedHorizon: "Next 18 months" },
-  { questionId: "q-msft-sales-headcount", competitorId: "microsoft", moveCategory: "Go-to-market", expectedHorizon: "Next 12 months" },
-  { questionId: "q-msft-si-partnerships", competitorId: "microsoft", moveCategory: "Partnerships", expectedHorizon: "Next 12 months" },
+  {
+    questionId: "q-msft-copilot-agent",
+    competitorId: "microsoft",
+    moveCategory: "Product",
+    expectedHorizon: "Next 6 months",
+  },
+  {
+    questionId: "q-msft-copilot-bundling",
+    competitorId: "microsoft",
+    moveCategory: "Pricing & Packaging",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-msft-enterprise-agents",
+    competitorId: "microsoft",
+    moveCategory: "Product",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-msft-ai-search",
+    competitorId: "microsoft",
+    moveCategory: "Product",
+    expectedHorizon: "By Q2 2027",
+  },
+  {
+    questionId: "q-msft-ai-sku",
+    competitorId: "microsoft",
+    moveCategory: "Pricing & Packaging",
+    expectedHorizon: "Next 18 months",
+  },
+  {
+    questionId: "q-msft-devtools-mna",
+    competitorId: "microsoft",
+    moveCategory: "M&A & Investment",
+    expectedHorizon: "Next 18 months",
+  },
+  {
+    questionId: "q-msft-sales-headcount",
+    competitorId: "microsoft",
+    moveCategory: "Go-to-market",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-msft-si-partnerships",
+    competitorId: "microsoft",
+    moveCategory: "Partnerships",
+    expectedHorizon: "Next 12 months",
+  },
   // Google
-  { questionId: "q-goog-workspace-agents", competitorId: "google", moveCategory: "Product", expectedHorizon: "Next 12 months" },
-  { questionId: "q-goog-agent-pricing", competitorId: "google", moveCategory: "Pricing & Packaging", expectedHorizon: "Next 12 months" },
-  { questionId: "q-goog-vertical-agents", competitorId: "google", moveCategory: "Market Entry", expectedHorizon: "Next 18 months" },
-  { questionId: "q-goog-ai-mna", competitorId: "google", moveCategory: "M&A & Investment", expectedHorizon: "Next 18 months" },
+  {
+    questionId: "q-goog-workspace-agents",
+    competitorId: "google",
+    moveCategory: "Product",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-goog-agent-pricing",
+    competitorId: "google",
+    moveCategory: "Pricing & Packaging",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-goog-vertical-agents",
+    competitorId: "google",
+    moveCategory: "Market Entry",
+    expectedHorizon: "Next 18 months",
+  },
+  {
+    questionId: "q-goog-ai-mna",
+    competitorId: "google",
+    moveCategory: "M&A & Investment",
+    expectedHorizon: "Next 18 months",
+  },
   // OpenAI
-  { questionId: "q-oai-coding-env", competitorId: "openai", moveCategory: "Product", expectedHorizon: "By end of 2027" },
-  { questionId: "q-oai-browser", competitorId: "openai", moveCategory: "Product", expectedHorizon: "By December 2027" },
-  { questionId: "q-oai-enterprise-search", competitorId: "openai", moveCategory: "Market Entry", expectedHorizon: "Next 12 months", newlyIdentified: true },
-  { questionId: "q-oai-workflow-products", competitorId: "openai", moveCategory: "Product", expectedHorizon: "Next 12 months" },
-  { questionId: "q-oai-gtm-headcount", competitorId: "openai", moveCategory: "Go-to-market", expectedHorizon: "Next 12 months" },
+  {
+    questionId: "q-oai-coding-env",
+    competitorId: "openai",
+    moveCategory: "Product",
+    expectedHorizon: "By end of 2027",
+  },
+  {
+    questionId: "q-oai-browser",
+    competitorId: "openai",
+    moveCategory: "Product",
+    expectedHorizon: "By December 2027",
+  },
+  {
+    questionId: "q-oai-enterprise-search",
+    competitorId: "openai",
+    moveCategory: "Market Entry",
+    expectedHorizon: "Next 12 months",
+    newlyIdentified: true,
+  },
+  {
+    questionId: "q-oai-workflow-products",
+    competitorId: "openai",
+    moveCategory: "Product",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-oai-gtm-headcount",
+    competitorId: "openai",
+    moveCategory: "Go-to-market",
+    expectedHorizon: "Next 12 months",
+  },
   // Anthropic
-  { questionId: "q-anth-workflow-entry", competitorId: "anthropic", moveCategory: "Market Entry", expectedHorizon: "Next 12 months" },
-  { questionId: "q-anth-acquisition", competitorId: "anthropic", moveCategory: "M&A & Investment", expectedHorizon: "Next 12 months" },
-  { questionId: "q-anth-f100-partnership", competitorId: "anthropic", moveCategory: "Partnerships", expectedHorizon: "Next 12 months" },
-  { questionId: "q-anth-apps-division", competitorId: "anthropic", moveCategory: "Organization & Talent", expectedHorizon: "Next 18 months" },
+  {
+    questionId: "q-anth-workflow-entry",
+    competitorId: "anthropic",
+    moveCategory: "Market Entry",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-anth-acquisition",
+    competitorId: "anthropic",
+    moveCategory: "M&A & Investment",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-anth-f100-partnership",
+    competitorId: "anthropic",
+    moveCategory: "Partnerships",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-anth-apps-division",
+    competitorId: "anthropic",
+    moveCategory: "Organization & Talent",
+    expectedHorizon: "Next 18 months",
+  },
   // Salesforce
-  { questionId: "q-crm-agentforce-bundling", competitorId: "salesforce", moveCategory: "Pricing & Packaging", expectedHorizon: "By Q1 2027" },
-  { questionId: "q-crm-ai-mna", competitorId: "salesforce", moveCategory: "M&A & Investment", expectedHorizon: "Next 18 months" },
-  { questionId: "q-crm-usage-pricing", competitorId: "salesforce", moveCategory: "Pricing & Packaging", expectedHorizon: "Next 12 months" },
-  { questionId: "q-crm-itsm-entry", competitorId: "salesforce", moveCategory: "Market Entry", expectedHorizon: "Next 24 months" },
+  {
+    questionId: "q-crm-agentforce-bundling",
+    competitorId: "salesforce",
+    moveCategory: "Pricing & Packaging",
+    expectedHorizon: "By Q1 2027",
+  },
+  {
+    questionId: "q-crm-ai-mna",
+    competitorId: "salesforce",
+    moveCategory: "M&A & Investment",
+    expectedHorizon: "Next 18 months",
+  },
+  {
+    questionId: "q-crm-usage-pricing",
+    competitorId: "salesforce",
+    moveCategory: "Pricing & Packaging",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-crm-itsm-entry",
+    competitorId: "salesforce",
+    moveCategory: "Market Entry",
+    expectedHorizon: "Next 24 months",
+  },
   // HubSpot
-  { questionId: "q-hs-security-product", competitorId: "hubspot", moveCategory: "Product", expectedHorizon: "By July 2027" },
-  { questionId: "q-hs-enterprise-pricing", competitorId: "hubspot", moveCategory: "Pricing & Packaging", expectedHorizon: "Next 12 months" },
-  { questionId: "q-hs-sales-headcount", competitorId: "hubspot", moveCategory: "Go-to-market", expectedHorizon: "Next 12 months" },
-  { questionId: "q-hs-healthcare-vertical", competitorId: "hubspot", moveCategory: "Market Entry", expectedHorizon: "Next 12 months", newlyIdentified: true },
+  {
+    questionId: "q-hs-security-product",
+    competitorId: "hubspot",
+    moveCategory: "Product",
+    expectedHorizon: "By July 2027",
+  },
+  {
+    questionId: "q-hs-enterprise-pricing",
+    competitorId: "hubspot",
+    moveCategory: "Pricing & Packaging",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-hs-sales-headcount",
+    competitorId: "hubspot",
+    moveCategory: "Go-to-market",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-hs-healthcare-vertical",
+    competitorId: "hubspot",
+    moveCategory: "Market Entry",
+    expectedHorizon: "Next 12 months",
+    newlyIdentified: true,
+  },
   // ServiceNow
-  { questionId: "q-now-agent-categories", competitorId: "servicenow", moveCategory: "Product", expectedHorizon: "Next 12 months" },
-  { questionId: "q-now-smb-product", competitorId: "servicenow", moveCategory: "Market Entry", expectedHorizon: "Before 2028" },
-  { questionId: "q-now-consumption-pricing", competitorId: "servicenow", moveCategory: "Pricing & Packaging", expectedHorizon: "Next 12 months" },
-  { questionId: "q-now-ai-startup-mna", competitorId: "servicenow", moveCategory: "M&A & Investment", expectedHorizon: "Next 18 months" },
+  {
+    questionId: "q-now-agent-categories",
+    competitorId: "servicenow",
+    moveCategory: "Product",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-now-smb-product",
+    competitorId: "servicenow",
+    moveCategory: "Market Entry",
+    expectedHorizon: "Before 2028",
+  },
+  {
+    questionId: "q-now-consumption-pricing",
+    competitorId: "servicenow",
+    moveCategory: "Pricing & Packaging",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-now-ai-startup-mna",
+    competitorId: "servicenow",
+    moveCategory: "M&A & Investment",
+    expectedHorizon: "Next 18 months",
+  },
   // Adobe
-  { questionId: "q-adbe-ai-video", competitorId: "adobe", moveCategory: "Product", expectedHorizon: "By Q4 2027" },
-  { questionId: "q-adbe-workflow-product", competitorId: "adobe", moveCategory: "Market Entry", expectedHorizon: "Next 12 months", newlyIdentified: true },
-  { questionId: "q-adbe-enterprise-pricing", competitorId: "adobe", moveCategory: "Pricing & Packaging", expectedHorizon: "Next 12 months" },
-  { questionId: "q-adbe-chief-ai-officer", competitorId: "adobe", moveCategory: "Organization & Talent", expectedHorizon: "Next 12 months" },
+  {
+    questionId: "q-adbe-ai-video",
+    competitorId: "adobe",
+    moveCategory: "Product",
+    expectedHorizon: "By Q4 2027",
+  },
+  {
+    questionId: "q-adbe-workflow-product",
+    competitorId: "adobe",
+    moveCategory: "Market Entry",
+    expectedHorizon: "Next 12 months",
+    newlyIdentified: true,
+  },
+  {
+    questionId: "q-adbe-enterprise-pricing",
+    competitorId: "adobe",
+    moveCategory: "Pricing & Packaging",
+    expectedHorizon: "Next 12 months",
+  },
+  {
+    questionId: "q-adbe-chief-ai-officer",
+    competitorId: "adobe",
+    moveCategory: "Organization & Talent",
+    expectedHorizon: "Next 12 months",
+  },
 ];
 
 // --- Lookups / helpers ---

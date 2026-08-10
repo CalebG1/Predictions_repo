@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import type { Category, SourceClass, Visibility } from "../domain/types";
 import { findSimilarQuestions, type EvidenceDraft } from "../domain/generateQuestion";
@@ -8,6 +7,11 @@ import { useStore } from "../store";
 import CategoryPicker from "./CategoryPicker";
 import VisibilityPicker from "./VisibilityPicker";
 import { IconPlus } from "./icons";
+import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Textarea } from "./ui/textarea";
 
 const SOURCE_CLASSES: { value: SourceClass; label: string }[] = [
   { value: "org_internal", label: "Internal" },
@@ -128,8 +132,6 @@ export default function CreateQuestionModal({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
-
   const isFirst = step === 0;
   const isLast = step === STEPS.length - 1;
   const step0Complete = form.title.trim().length >= 5 && form.description.trim().length > 0;
@@ -141,7 +143,6 @@ export default function CreateQuestionModal({
   const stepComplete = [step0Complete, step1Complete, step2Complete][step];
   const canSubmit = step0Complete && step1Complete && step2Complete && !submitting;
   const canGoNext = stepComplete;
-  const showNav = step > 0 || step0Complete;
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -190,52 +191,29 @@ export default function CreateQuestionModal({
     navigate(`/forecast/${job.id}/processing`);
   };
 
-  return createPortal(
-    <div className="cq-overlay" onMouseDown={onClose}>
-      <div
-        className="cq-modal cq-modal-form"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Create a forecast"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <header className="cq-head">
-          <div>
-            <h2 className="cq-title">Create a forecast</h2>
-          </div>
-          <button type="button" className="cq-close" aria-label="Close" onClick={onClose}>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-            >
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          </button>
-        </header>
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent>
+        <DialogHeader className="px-2 pt-2 pr-10">
+          <DialogTitle>Create a forecast</DialogTitle>
+        </DialogHeader>
 
-        <div className="cq-progress" aria-hidden="true">
+        <div className="flex gap-2 px-2" aria-hidden="true">
           {STEPS.map((s, i) => (
             <span
               key={s.title}
-              className={`cq-progress-dot${i <= step ? " done" : ""}${i === step ? " active" : ""}`}
+              className={`h-1 flex-1 rounded-full ${i <= step ? "bg-primary" : "bg-muted"}`}
             />
           ))}
         </div>
 
-        <div className="cq-body cq-form">
+        <div className="space-y-5 px-2 py-3">
           {step === 0 && (
             <>
-              <label className="cq-field">
-                <span className="cq-label">Question title</span>
-                <input
+              <label className="grid gap-1.5 text-sm font-medium">
+                <span>Question title</span>
+                <Input
                   type="text"
-                  className="cq-input"
                   placeholder="Will the Fed cut rates at the September meeting?"
                   value={form.title}
                   onChange={(e) => update("title", e.target.value)}
@@ -244,12 +222,14 @@ export default function CreateQuestionModal({
               </label>
 
               {showSimilar && (
-                <div className="cq-similar">
-                  <div className="cq-similar-head">
-                    <span className="cq-similar-label">Similar existing questions</span>
-                    <button
+                <div className="rounded-lg border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium">Similar existing questions</span>
+                    <Button
                       type="button"
-                      className="cq-similar-close"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7"
                       aria-label="Dismiss similar questions"
                       onClick={() => setSimilarDismissed(true)}
                     >
@@ -265,31 +245,31 @@ export default function CreateQuestionModal({
                         <line x1="6" y1="6" x2="18" y2="18" />
                         <line x1="18" y1="6" x2="6" y2="18" />
                       </svg>
-                    </button>
+                    </Button>
                   </div>
-                  <ul className="cq-similar-list">
+                  <ul className="mt-2 space-y-1">
                     {similar.map((q) => (
                       <li key={q.id}>
-                        <button
+                        <Button
                           type="button"
-                          className="cq-similar-item"
+                          variant="ghost"
+                          className="h-auto w-full justify-between whitespace-normal px-2 py-2 text-left"
                           onClick={() => navigate(`/q/${q.id}`)}
                         >
-                          <span className="cq-similar-text">{q.title}</span>
-                          <span className="cq-similar-chevron" aria-hidden="true">
+                          <span>{q.title}</span>
+                          <span className="text-muted-foreground" aria-hidden="true">
                             ›
                           </span>
-                        </button>
+                        </Button>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              <label className="cq-field">
-                <span className="cq-label">Description</span>
-                <textarea
-                  className="cq-textarea"
+              <label className="grid gap-1.5 text-sm font-medium">
+                <span>Description</span>
+                <Textarea
                   placeholder="What exactly must happen, by when, and under what conditions?"
                   rows={4}
                   value={form.description}
@@ -301,13 +281,13 @@ export default function CreateQuestionModal({
 
           {step === 1 && (
             <>
-              <div className="cq-row cq-row-pickers">
-                <div className="cq-field">
-                  <span className="cq-label">Category</span>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="grid gap-1.5 text-sm font-medium">
+                  <span>Category</span>
                   <CategoryPicker value={form.category} onChange={(c) => update("category", c)} />
                 </div>
-                <div className="cq-field">
-                  <span className="cq-label">Visibility</span>
+                <div className="grid gap-1.5 text-sm font-medium">
+                  <span>Visibility</span>
                   <VisibilityPicker
                     value={form.visibility}
                     owningTeam={user.team}
@@ -316,11 +296,10 @@ export default function CreateQuestionModal({
                 </div>
               </div>
 
-              <label className="cq-field">
-                <span className="cq-label">Impact if true</span>
-                <input
+              <label className="grid gap-1.5 text-sm font-medium">
+                <span>Impact if true</span>
+                <Input
                   type="text"
-                  className="cq-input"
                   placeholder="e.g. ~$30M revenue at risk"
                   value={form.impactEstimate}
                   onChange={(e) => update("impactEstimate", e.target.value)}
@@ -332,10 +311,9 @@ export default function CreateQuestionModal({
 
           {step === 2 && (
             <>
-              <label className="cq-field">
-                <span className="cq-label">Resolution criteria</span>
-                <textarea
-                  className="cq-textarea"
+              <label className="grid gap-1.5 text-sm font-medium">
+                <span>Resolution criteria</span>
+                <Textarea
                   placeholder="How will this resolve YES or NO? Cite observable thresholds and authoritative sources."
                   rows={3}
                   value={form.resolutionCriteria}
@@ -344,73 +322,75 @@ export default function CreateQuestionModal({
                 />
               </label>
 
-              <div className="cq-row">
-                <label className="cq-field">
-                  <span className="cq-label">Resolution source</span>
-                  <input
+              <div className="grid gap-5 sm:grid-cols-2">
+                <label className="grid gap-1.5 text-sm font-medium">
+                  <span>Resolution source</span>
+                  <Input
                     type="text"
-                    className="cq-input"
                     placeholder="e.g. FOMC statement, SEC EDGAR"
                     value={form.resolutionSource}
                     onChange={(e) => update("resolutionSource", e.target.value)}
                   />
                 </label>
-                <label className="cq-field">
-                  <span className="cq-label">Resolution date</span>
-                  <input
+                <label className="grid gap-1.5 text-sm font-medium">
+                  <span>Resolution date</span>
+                  <Input
                     type="date"
-                    className="cq-input"
                     value={form.resolutionDate}
                     onChange={(e) => update("resolutionDate", e.target.value)}
                   />
                 </label>
               </div>
 
-              <div className="cq-evidence">
-                <div className="cq-evidence-head">
-                  <span className="cq-label">Evidence sources</span>
-                  <button type="button" className="cq-evidence-add" onClick={addEvidenceRow}>
+              <div className="space-y-3 rounded-lg border p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium">Evidence sources</span>
+                  <Button type="button" variant="outline" size="sm" onClick={addEvidenceRow}>
                     Add source
-                  </button>
+                  </Button>
                 </div>
-                <div className="cq-evidence-list">
+                <div className="space-y-2">
                   {form.evidence.map((row, index) => (
-                    <div key={index} className="cq-evidence-row">
-                      <input
+                    <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_10rem_auto]">
+                      <Input
                         type="text"
-                        className="cq-input"
                         placeholder="Source title"
                         value={row.title}
                         onChange={(e) => updateEvidence(index, { title: e.target.value })}
                       />
-                      <input
+                      <Input
                         type="url"
-                        className="cq-input"
                         placeholder="URL (optional)"
                         value={row.url ?? ""}
                         onChange={(e) => updateEvidence(index, { url: e.target.value })}
                       />
-                      <select
-                        className="cq-select"
+                      <Select
                         value={row.sourceClass ?? "org_internal"}
-                        onChange={(e) =>
-                          updateEvidence(index, { sourceClass: e.target.value as SourceClass })
+                        onValueChange={(value) =>
+                          updateEvidence(index, { sourceClass: value as SourceClass })
                         }
                       >
-                        {SOURCE_CLASSES.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                      <button
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SOURCE_CLASSES.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
                         type="button"
-                        className="cq-evidence-remove"
+                        variant="ghost"
+                        size="icon"
+                        className="size-9 text-destructive hover:text-destructive"
                         aria-label="Remove evidence source"
                         onClick={() => removeEvidenceRow(index)}
                       >
                         ×
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -418,55 +398,48 @@ export default function CreateQuestionModal({
             </>
           )}
         </div>
+        <DialogFooter className="flex items-center justify-between">
+          {!isFirst ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Previous step"
+              onClick={goBack}
+            >
+              <IconArrow direction="left" />
+            </Button>
+          ) : (
+            <span aria-hidden="true" />
+          )}
 
-        {showNav && (
-          <footer className={`cq-foot cq-foot-nav${isLast ? " cq-foot-last" : ""}`}>
-            {!isFirst ? (
-              <button
-                type="button"
-                className="cq-nav-btn"
-                aria-label="Previous step"
-                onClick={goBack}
-              >
-                <IconArrow direction="left" />
-              </button>
-            ) : (
-              <span className="cq-nav-spacer" aria-hidden="true" />
-            )}
-
-            {isLast ? (
-              <button
-                type="button"
-                className="alert-btn primary cq-submit cq-create-btn"
-                disabled={!canSubmit}
-                onClick={handleSubmit}
-              >
-                {submitting ? "Creating…" : "Create forecast"}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="cq-nav-btn"
-                aria-label="Next step"
-                disabled={!canGoNext}
-                onClick={goNext}
-              >
-                <IconArrow direction="right" />
-              </button>
-            )}
-          </footer>
-        )}
-      </div>
-    </div>,
-    document.body,
+          {isLast ? (
+            <Button type="button" className="min-w-36" disabled={!canSubmit} onClick={handleSubmit}>
+              {submitting ? "Creating…" : "Create forecast"}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Next step"
+              disabled={!canGoNext}
+              onClick={goNext}
+            >
+              <IconArrow direction="right" />
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export function AddQuestionButton({ onClick }: { onClick: () => void }) {
   return (
-    <button type="button" className="cq-add-btn" onClick={onClick}>
+    <Button type="button" onClick={onClick}>
       <IconPlus />
       Add Question
-    </button>
+    </Button>
   );
 }

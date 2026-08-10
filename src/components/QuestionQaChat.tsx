@@ -1,62 +1,21 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useStore } from "../store";
 import type { ForecastQuestion } from "../domain/types";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
+import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
+import { CircleHelp, RefreshCw, X } from "lucide-react";
 
 function IconQa() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  );
+  return <CircleHelp size={18} />;
 }
 
 function IconClose() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
+  return <X size={16} />;
 }
 
 function IconReset() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-      <path d="M21 3v5h-5" />
-      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-      <path d="M3 21v-5h5" />
-    </svg>
-  );
+  return <RefreshCw size={15} />;
 }
 
 const SUGGESTIONS = [
@@ -106,96 +65,132 @@ export default function QuestionQaChat({ q }: { q: ForecastQuestion }) {
 
   if (!open) {
     return (
-      <button
+      <Button
         type="button"
-        className="qa-fab"
+        className="fixed right-5 bottom-5 z-60 inline-flex rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm font-medium text-foreground shadow-lg hover:bg-muted"
         onClick={() => setOpen(true)}
         aria-label="Open forecast Q&A"
       >
         <IconQa />
         <span>Q&amp;A</span>
         {messages.length > 0 && (
-          <span className="qa-fab-badge" aria-hidden="true">
+          <span
+            className="inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1 text-xs font-bold text-muted-foreground"
+            aria-hidden="true"
+          >
             {messages.length}
           </span>
         )}
-      </button>
+      </Button>
     );
   }
 
   return (
-    <div className="qa-panel" role="dialog" aria-label="Forecast Q&A">
-      <div className="qa-head">
-        <div className="qa-title">Forecast Q&amp;A</div>
-        <div className="qa-head-actions">
-          <button
-            type="button"
-            className="qa-head-btn"
-            onClick={clearChat}
-            disabled={messages.length === 0 || pending}
-            title="Clear conversation"
-            aria-label="Clear conversation"
-          >
-            <IconReset />
-          </button>
-          <button
-            type="button"
-            className="qa-head-btn"
-            onClick={() => setOpen(false)}
-            aria-label="Close Q&A"
-          >
-            <IconClose />
-          </button>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="fixed right-5 bottom-5 left-auto top-auto z-60 flex h-[min(520px,calc(100vh-120px))] w-[min(380px,calc(100vw-40px))] translate-x-0 translate-y-0 flex-col overflow-hidden p-0">
+        <DialogTitle className="sr-only">Forecast Q&amp;A</DialogTitle>
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/50 px-4 py-3">
+          <div className="text-sm font-semibold">Forecast Q&amp;A</div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground"
+              onClick={clearChat}
+              disabled={messages.length === 0 || pending}
+              title="Clear conversation"
+              aria-label="Clear conversation"
+            >
+              <IconReset />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground"
+              onClick={() => setOpen(false)}
+              aria-label="Close Q&A"
+            >
+              <IconClose />
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <div className="qa-messages" ref={listRef}>
-        {messages.length === 0 && !pending && (
-          <div className="qa-welcome">
-            <p>Ask about the probability, drivers, resolution, or what would trigger an update.</p>
-            <div className="qa-suggestions">
-              {SUGGESTIONS.map((s) => (
-                <button key={s} type="button" className="qa-suggestion" onClick={() => submit(s)}>
-                  {s}
-                </button>
-              ))}
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4" ref={listRef}>
+          {messages.length === 0 && !pending && (
+            <div>
+              <p className="mb-3 text-sm leading-6 text-muted-foreground">
+                Ask about the probability, drivers, resolution, or what would trigger an update.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {SUGGESTIONS.map((s) => (
+                  <Button
+                    key={s}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => submit(s)}
+                  >
+                    {s}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-        {messages.map((m) => (
-          <div key={m.id} className={`qa-msg qa-msg-${m.role}`}>
-            <div className="qa-msg-label">{m.role === "user" ? "You" : "Assistant"}</div>
-            <div className="qa-msg-body">{m.body}</div>
-          </div>
-        ))}
-        {pending && (
-          <div className="qa-msg qa-msg-assistant">
-            <div className="qa-msg-label">Assistant</div>
-            <div className="qa-msg-body qa-msg-thinking">Thinking…</div>
-          </div>
-        )}
-      </div>
+          )}
+          {messages.map((m) => (
+            <div
+              key={m.id}
+              className={`max-w-[92%] ${m.role === "assistant" ? "self-start" : "self-end"}`}
+            >
+              <div className="mb-1 text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
+                {m.role === "user" ? "You" : "Assistant"}
+              </div>
+              <div
+                className={
+                  m.role === "assistant"
+                    ? "rounded-xl rounded-bl-sm border border-border bg-muted px-3 py-2.5 text-sm leading-6 whitespace-pre-wrap"
+                    : "rounded-xl rounded-br-sm bg-primary px-3 py-2.5 text-sm leading-6 whitespace-pre-wrap text-primary-foreground"
+                }
+              >
+                {m.body}
+              </div>
+            </div>
+          ))}
+          {pending && (
+            <div className="max-w-[92%] self-start">
+              <div className="mb-1 text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
+                Assistant
+              </div>
+              <div className="rounded-xl rounded-bl-sm border border-border bg-muted px-3 py-2.5 text-sm text-muted-foreground italic">
+                Thinking…
+              </div>
+            </div>
+          )}
+        </div>
 
-      <form className="qa-form" onSubmit={onSubmit}>
-        <textarea
-          ref={inputRef}
-          className="qa-input"
-          rows={1}
-          placeholder="Ask about this forecast…"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              submit(draft);
-            }
-          }}
-          aria-label="Question"
-        />
-        <button type="submit" className="qa-send" disabled={!draft.trim() || pending}>
-          Ask
-        </button>
-      </form>
-    </div>
+        <form className="flex items-center gap-2 border-t border-border p-3" onSubmit={onSubmit}>
+          <Textarea
+            ref={inputRef}
+            className="min-h-10 max-h-30 min-w-0 flex-1 resize-none rounded-lg border border-input bg-muted/50 px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+            rows={1}
+            placeholder="Ask about this forecast…"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                submit(draft);
+              }
+            }}
+            aria-label="Question"
+          />
+          <Button type="submit" disabled={!draft.trim() || pending}>
+            Ask
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

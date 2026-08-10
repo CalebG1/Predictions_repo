@@ -17,6 +17,7 @@ import {
 } from "../components/charts";
 import VisibilityPicker from "../components/VisibilityPicker";
 import { overviewHref } from "../components/ui";
+import { Card, CardContent } from "../components/ui/card";
 import { competitorForQuestion } from "../domain/competitors";
 import { CompetitorAvatar } from "../components/competitors";
 
@@ -69,7 +70,10 @@ export default function QuestionDetail() {
         points,
         companionSeries,
         primaryLineColor: colorForOption(primary.label, 0),
-        endpointLabel: { tag: primary.label, probability: primary.currentProbability },
+        endpointLabel: {
+          tag: primary.label,
+          probability: primary.currentProbability,
+        },
         history: primaryHistory,
       };
     }
@@ -98,37 +102,47 @@ export default function QuestionDetail() {
 
   if (!q || !chartConfig || !reasoning) {
     return (
-      <div className="dash-page">
-        <div className="locked-card">
-          <h2>🔒 Not available</h2>
-          <p>
-            This question is outside your visibility level, or doesn't exist. Restricted lines are
-            never exposed outside authorized roles.
-          </p>
-          <Link to="/" className="btn">
-            Back to overview
-          </Link>
-        </div>
+      <div className="mx-auto w-full max-w-[1240px] space-y-6 px-[22px] py-8">
+        <Card className="">
+          <CardContent>
+            <h2>🔒 Not available</h2>
+            <p>
+              This question is outside your visibility level, or doesn't exist. Restricted lines are
+              never exposed outside authorized roles.
+            </p>
+            <Link to="/" className="">
+              Back to overview
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="dash-page detail">
-      <div className="detail-hero">
-        <div className="detail-head">
-          <div className="detail-head-main">
-            <nav className="detail-breadcrumbs" aria-label="Question categories">
+    <div className="mx-auto min-h-[calc(100vh-64px)] w-full max-w-[1240px] bg-background px-[22px] pb-22 pt-4">
+      <div className="mb-5">
+        <div className="mb-3 flex flex-col items-start justify-between gap-4 sm:flex-row">
+          <div className="min-w-0 flex-1">
+            <nav
+              className="mb-2 flex flex-wrap items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground [&_a]:hover:text-foreground"
+              aria-label="Question categories"
+            >
               <Link to={overviewHref({ type: q.riskOrOpportunity })}>
                 {q.riskOrOpportunity === "risk" ? "Risk" : "Opportunity"}
               </Link>
-              <span className="detail-crumb-sep" aria-hidden="true">
+              <span className="text-muted-foreground" aria-hidden="true">
                 ·
               </span>
-              <Link to={overviewHref({ type: q.riskOrOpportunity, cat: q.category })}>
+              <Link
+                to={overviewHref({
+                  type: q.riskOrOpportunity,
+                  cat: q.category,
+                })}
+              >
                 {q.category}
               </Link>
-              <span className="detail-crumb-sep" aria-hidden="true">
+              <span className="text-muted-foreground" aria-hidden="true">
                 ·
               </span>
               <Link
@@ -142,19 +156,22 @@ export default function QuestionDetail() {
               </Link>
               {competitor && (
                 <>
-                  <span className="detail-crumb-sep" aria-hidden="true">
+                  <span className="text-muted-foreground" aria-hidden="true">
                     ·
                   </span>
-                  <Link to={`/competitors/${competitor.id}`} className="detail-crumb-company">
+                  <Link
+                    to={`/competitors/${competitor.id}`}
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                  >
                     <CompetitorAvatar competitor={competitor} />
                     {competitor.name}
                   </Link>
                 </>
               )}
             </nav>
-            <h1 className="detail-title">{q.title}</h1>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{q.title}</h1>
           </div>
-          <div className="detail-nav-meta">
+          <div className="shrink-0 pt-1">
             <VisibilityPicker
               value={q.visibility}
               owningTeam={q.owningTeam}
@@ -164,14 +181,16 @@ export default function QuestionDetail() {
         </div>
       </div>
 
-      <div className="panel detail-chart">
-        <ProbChart
-          points={chartConfig.points}
-          endpointLabel={chartConfig.endpointLabel}
-          companionSeries={chartConfig.companionSeries}
-          primaryLineColor={chartConfig.primaryLineColor}
-        />
-      </div>
+      <Card className="mb-5 border-0 bg-transparent p-0 shadow-none">
+        <CardContent className="p-0">
+          <ProbChart
+            points={chartConfig.points}
+            endpointLabel={chartConfig.endpointLabel}
+            companionSeries={chartConfig.companionSeries}
+            primaryLineColor={chartConfig.primaryLineColor}
+          />
+        </CardContent>
+      </Card>
 
       <ReasoningThread
         reasoning={reasoning}

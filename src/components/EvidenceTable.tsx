@@ -11,6 +11,11 @@ import AddSourceModal from "./AddSourceModal";
 import { BrandIcon } from "./brandIcons";
 import { IconExternalLink, IconPlus, IconRefresh, IconTrash } from "./icons";
 import { pct } from "./ui";
+import { Button } from "./ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
+import { Card, CardContent } from "./ui/card";
 
 const SOURCE_CLASS_LABELS: Record<SourceClass, string> = {
   central_bank: "Central bank",
@@ -83,7 +88,7 @@ function sourceSubtitle(evidence: EvidenceSource): string {
 function sourceIcon(evidence: EvidenceSource): ReactNode {
   if (evidence.kind === "app_message" && evidence.app) {
     return (
-      <span className={`evidence-source-icon evidence-source-icon-${evidence.app.app}`}>
+      <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-[5px]">
         <BrandIcon kind={evidence.app.app} width={14} height={14} />
       </span>
     );
@@ -94,21 +99,24 @@ function sourceIcon(evidence: EvidenceSource): ReactNode {
 function AppMessageBody({ evidence }: { evidence: EvidenceSource }) {
   const app = evidence.app!;
   return (
-    <div className="evidence-detail-app">
-      <div className="evidence-detail-app-head">
-        <span className={`pc-evc-app-logo pc-evc-app-logo-${app.app}`}>
+    <div>
+      <div className="mb-2.5 flex items-center gap-2.5">
+        <span className="inline-flex size-7 items-center justify-center rounded-md bg-muted">
           <BrandIcon kind={app.app} width={16} height={16} />
         </span>
         <div>
-          <span className="evidence-detail-app-channel">{app.channel}</span>
-          <span className="evidence-detail-app-name">
+          <span className="block text-sm font-bold">{app.channel}</span>
+          <span className="block text-xs text-muted-foreground">
             {app.app === "teams" ? "Microsoft Teams" : "Slack"}
           </span>
         </div>
       </div>
-      <div className="evidence-detail-message">
-        <div className="evidence-detail-message-author">
-          <span className="pc-evc-avatar" aria-hidden="true">
+      <div className="rounded-lg bg-muted p-3">
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold">
+          <span
+            className="inline-flex size-6 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary"
+            aria-hidden="true"
+          >
             {app.author
               .split(" ")
               .map((p) => p[0])
@@ -116,9 +124,9 @@ function AppMessageBody({ evidence }: { evidence: EvidenceSource }) {
               .slice(0, 2)}
           </span>
           <span>{app.author}</span>
-          <span className="muted small">{app.authorRole}</span>
+          <span className="text-muted-foreground small">{app.authorRole}</span>
         </div>
-        <p>{app.message}</p>
+        <p className="text-sm leading-6 text-muted-foreground">{app.message}</p>
       </div>
     </div>
   );
@@ -127,17 +135,21 @@ function AppMessageBody({ evidence }: { evidence: EvidenceSource }) {
 function AnalysisBody({ evidence }: { evidence: EvidenceSource }) {
   const a = evidence.analysis!;
   return (
-    <div className="evidence-detail-analysis">
-      <p>{a.narrative}</p>
-      <div className="pc-evc-code-block">
-        <div className="pc-evc-code-head">
+    <div>
+      <p className="mb-2.5 text-sm leading-6 text-muted-foreground">{a.narrative}</p>
+      <div className="overflow-hidden rounded-lg border">
+        <div className="border-b bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
           <span>{a.language}</span>
         </div>
-        <pre className="pc-evc-code">{a.code}</pre>
+        <pre className="overflow-x-auto p-3 font-mono text-xs leading-5">{a.code}</pre>
       </div>
-      <div className="pc-evc-output-block">
-        <span className="pc-evc-output-label">Output</span>
-        <pre className="pc-evc-output">{a.output}</pre>
+      <div className="mt-2.5 overflow-hidden rounded-lg border">
+        <span className="block bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+          Output
+        </span>
+        <pre className="overflow-x-auto bg-muted/40 p-3 font-mono text-xs leading-5">
+          {a.output}
+        </pre>
       </div>
     </div>
   );
@@ -146,16 +158,24 @@ function AnalysisBody({ evidence }: { evidence: EvidenceSource }) {
 function WebsiteBody({ evidence }: { evidence: EvidenceSource }) {
   const w = evidence.website!;
   return (
-    <a className="pc-evc-website" href={w.url} target="_blank" rel="noopener noreferrer">
-      <div className="pc-evc-website-head">
-        <span className="pc-evc-favicon" aria-hidden="true">
+    <a
+      className="block rounded-lg border p-3 text-foreground transition-colors hover:bg-muted/60"
+      href={w.url}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span
+          className="inline-flex size-5 items-center justify-center rounded bg-muted font-semibold"
+          aria-hidden="true"
+        >
           {w.publisher.slice(0, 1)}
         </span>
-        <span className="pc-evc-domain">{w.domain}</span>
+        <span className="font-medium">{w.domain}</span>
         <IconExternalLink />
       </div>
-      <div className="pc-evc-website-headline">{w.headline}</div>
-      <p className="pc-evc-website-snippet">{w.snippet}</p>
+      <div className="mt-2 font-semibold">{w.headline}</div>
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">{w.snippet}</p>
     </a>
   );
 }
@@ -163,12 +183,12 @@ function WebsiteBody({ evidence }: { evidence: EvidenceSource }) {
 function PredictionBody({ evidence }: { evidence: EvidenceSource }) {
   const p = evidence.prediction!;
   return (
-    <div className="evidence-detail-prediction">
-      <div className="evidence-detail-prediction-head">
+    <div className="rounded-lg border bg-muted p-3.5">
+      <div className="mb-1.5 flex items-baseline justify-between gap-2.5 text-sm font-semibold">
         <span>{p.agent}</span>
-        <b>{pct(p.probability)}</b>
+        <b className="text-lg text-foreground">{pct(p.probability)}</b>
       </div>
-      <p>{p.summary}</p>
+      <p className="text-sm leading-6 text-muted-foreground">{p.summary}</p>
     </div>
   );
 }
@@ -185,71 +205,69 @@ function EvidenceDetailModal({
   const kind = evidence.kind ?? "feed";
 
   return (
-    <div className="evidence-detail-overlay" onMouseDown={onClose}>
-      <div className="evidence-detail-panel" onMouseDown={(e) => e.stopPropagation()}>
-        <header className="evidence-detail-head">
-          <div className="evidence-detail-head-main">
-            <span className="evidence-detail-class">{kindBadge(evidence)}</span>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+        <DialogTitle className="sr-only">{evidence.title}</DialogTitle>
+        <header className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <span className="rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
+              {kindBadge(evidence)}
+            </span>
             <h3>{evidence.title}</h3>
           </div>
-          <button
-            type="button"
-            className="evidence-detail-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Close">
             ×
-          </button>
+          </Button>
         </header>
 
-        <div className="evidence-detail-body">
+        <div className="space-y-5">
           {kind === "app_message" && evidence.app && <AppMessageBody evidence={evidence} />}
           {kind === "analysis" && evidence.analysis && <AnalysisBody evidence={evidence} />}
           {kind === "website" && evidence.website && <WebsiteBody evidence={evidence} />}
           {kind === "prediction" && evidence.prediction && <PredictionBody evidence={evidence} />}
 
-          <div className="evidence-detail-grid">
-            <div className="evidence-detail-field">
-              <span className="evidence-detail-label">Published</span>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1 text-sm">
+              <span className="text-xs font-medium text-muted-foreground">Published</span>
               <span>{fmtDate(evidence.retrievedAt)}</span>
             </div>
-            <div className="evidence-detail-field">
-              <span className="evidence-detail-label">Credibility</span>
+            <div className="grid gap-1 text-sm">
+              <span className="text-xs font-medium text-muted-foreground">Credibility</span>
               <span>{pct(evidence.credibilityScore)}</span>
             </div>
-            <div className="evidence-detail-field">
-              <span className="evidence-detail-label">Relevance</span>
-              <span className={`evidence-detail-pill rel-${relevance}`}>
+            <div className="grid gap-1 text-sm">
+              <span className="text-xs font-medium text-muted-foreground">Relevance</span>
+              <span className="w-fit rounded-full bg-muted px-2 py-1 text-xs font-medium">
                 {RELEVANCE_LABELS[relevance]}
               </span>
             </div>
-            <div className="evidence-detail-field">
-              <span className="evidence-detail-label">Refresh schedule</span>
+            <div className="grid gap-1 text-sm">
+              <span className="text-xs font-medium text-muted-foreground">Refresh schedule</span>
               <span>{FREQUENCY_LABELS[frequency]}</span>
             </div>
             {evidence.methodTag && kind === "feed" && (
-              <div className="evidence-detail-field">
-                <span className="evidence-detail-label">Method</span>
+              <div className="grid gap-1 text-sm">
+                <span className="text-xs font-medium text-muted-foreground">Method</span>
                 <span>{evidence.methodTag}</span>
               </div>
             )}
             {evidence.geographyTag && (
-              <div className="evidence-detail-field">
-                <span className="evidence-detail-label">Geography</span>
+              <div className="grid gap-1 text-sm">
+                <span className="text-xs font-medium text-muted-foreground">Geography</span>
                 <span>{evidence.geographyTag}</span>
               </div>
             )}
           </div>
 
           {evidence.indicates && (
-            <div className="evidence-detail-indicates">
-              <span className="evidence-detail-label">What this indicates</span>
+            <div className="border-t border-dashed pt-4">
+              <span className="text-xs font-medium text-muted-foreground">What this indicates</span>
               <p>{evidence.indicates}</p>
             </div>
           )}
 
           {evidence.disconfirming && (
-            <p className="evidence-detail-disconfirming">
+            <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
               ⚖︎ Deliberately sourced to challenge the lead view, to guard against one-sided evidence
               gathering.
             </p>
@@ -257,7 +275,7 @@ function EvidenceDetailModal({
 
           {(evidence.url || evidence.website?.url) && kind !== "website" && (
             <a
-              className="evidence-detail-link"
+              className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
               href={evidence.url ?? evidence.website?.url}
               target="_blank"
               rel="noopener noreferrer"
@@ -267,8 +285,8 @@ function EvidenceDetailModal({
             </a>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -312,185 +330,213 @@ export default function EvidenceTable({
   };
 
   return (
-    <div className="panel evidence-table-panel">
-      <div className="evidence-table-head">
-        <h4>Evidence</h4>
-        <span className="muted small evidence-table-head-count">
-          {evidence.length === 0
-            ? "No evidence sources yet"
-            : `${evidence.length} source${evidence.length === 1 ? "" : "s"} · click a row for details`}
-        </span>
-        <button
-          type="button"
-          className="ctx-primary-btn evidence-add-btn"
-          onClick={() => setAddOpen(true)}
-        >
-          <IconPlus />
-          Add evidence
-        </button>
-      </div>
+    <Card className="border bg-card">
+      <CardContent className="space-y-3">
+        <div className="flex flex-wrap items-baseline gap-2.5">
+          <h4 className="mr-auto">Evidence</h4>
+          <span className="mr-1 text-xs text-muted-foreground">
+            {evidence.length === 0
+              ? "No evidence sources yet"
+              : `${evidence.length} source${evidence.length === 1 ? "" : "s"} · click a row for details`}
+          </span>
+          <Button
+            type="button"
+            className="inline-flex items-center gap-1.5"
+            onClick={() => setAddOpen(true)}
+          >
+            <IconPlus />
+            Add evidence
+          </Button>
+        </div>
 
-      {evidence.length === 0 ? (
-        <p className="muted evidence-table-empty">No evidence sources added yet.</p>
-      ) : (
-        <div className="evidence-table-wrap">
-          <table className="evidence-table">
-            <thead>
-              <tr>
-                <th>Source</th>
-                <th>Published</th>
-                <th>Relevance</th>
-                <th>Refresh</th>
-                <th aria-label="Actions" />
-              </tr>
-            </thead>
-            <tbody>
-              {evidence.map((e) => {
-                const relevance = e.relevance ?? "medium";
-                const frequency = e.refreshFrequency ?? "default";
-                const isRefreshing = refreshingId === e.id;
-                return (
-                  <tr
-                    key={e.id}
-                    className="evidence-row"
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`View details for ${e.title}`}
-                    onClick={() => setDetail(e)}
-                    onKeyDown={(ev) => {
-                      if (ev.key === "Enter" || ev.key === " ") {
-                        ev.preventDefault();
-                        setDetail(e);
-                      }
-                    }}
-                  >
-                    <td className="evidence-cell-source">
-                      <div className="evidence-source-main">
-                        {sourceIcon(e)}
-                        <span className="evidence-source-title">{e.title}</span>
-                        {e.disconfirming && (
-                          <span className="ev-dis" title="Deliberately disconfirming">
-                            ⚖︎
-                          </span>
-                        )}
-                        {(e.url || e.website?.url) && (
-                          <a
-                            href={e.url ?? e.website?.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="evidence-source-link"
-                            onClick={stop}
-                            aria-label="Open source in new tab"
-                            title="Open source"
-                          >
-                            <IconExternalLink />
-                          </a>
-                        )}
-                      </div>
-                      <span className="evidence-source-sub">{sourceSubtitle(e)}</span>
-                    </td>
-
-                    <td className="evidence-cell-date">{fmtDate(e.retrievedAt)}</td>
-
-                    <td className="evidence-cell-relevance" onClick={stop}>
-                      <select
-                        className={`evidence-relevance-select rel-${relevance}`}
-                        value={relevance}
-                        aria-label={`Relevance for ${e.title}`}
-                        onChange={(ev) =>
-                          setEvidenceRelevance(
-                            questionId,
-                            e.id,
-                            ev.target.value as EvidenceRelevance,
-                          )
+        {evidence.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No evidence sources added yet.</p>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border">
+            <Table className="text-sm">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Source</TableHead>
+                  <TableHead>Published</TableHead>
+                  <TableHead>Relevance</TableHead>
+                  <TableHead>Refresh</TableHead>
+                  <TableHead aria-label="Actions" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {evidence.map((e) => {
+                  const relevance = e.relevance ?? "medium";
+                  const frequency = e.refreshFrequency ?? "default";
+                  const isRefreshing = refreshingId === e.id;
+                  return (
+                    <TableRow
+                      key={e.id}
+                      className="cursor-pointer transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]"
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`View details for ${e.title}`}
+                      onClick={() => setDetail(e)}
+                      onKeyDown={(ev) => {
+                        if (ev.key === "Enter" || ev.key === " ") {
+                          ev.preventDefault();
+                          setDetail(e);
                         }
-                      >
-                        <option value="high">High</option>
-                        <option value="medium">Medium</option>
-                        <option value="low">Low</option>
-                      </select>
-                    </td>
+                      }}
+                    >
+                      <TableCell className="min-w-55 max-w-90">
+                        <div className="flex items-center gap-1.5">
+                          {sourceIcon(e)}
+                          <span className="overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
+                            {e.title}
+                          </span>
+                          {e.disconfirming && (
+                            <span className="" title="Deliberately disconfirming">
+                              ⚖︎
+                            </span>
+                          )}
+                          {(e.url || e.website?.url) && (
+                            <a
+                              href={e.url ?? e.website?.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex shrink-0 text-muted-foreground hover:text-primary"
+                              onClick={stop}
+                              aria-label="Open source in new tab"
+                              title="Open source"
+                            >
+                              <IconExternalLink />
+                            </a>
+                          )}
+                        </div>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {sourceSubtitle(e)}
+                        </span>
+                      </TableCell>
 
-                    <td className="evidence-cell-refresh" onClick={stop}>
-                      <div className="evidence-refresh-controls">
-                        <select
-                          className="evidence-freq-select"
-                          value={frequency}
-                          aria-label={`Refresh frequency for ${e.title}`}
-                          onChange={(ev) =>
-                            setEvidenceRefreshFrequency(
-                              questionId,
-                              e.id,
-                              ev.target.value as EvidenceRefreshFrequency,
-                            )
+                      <TableCell className="whitespace-nowrap text-muted-foreground">
+                        {fmtDate(e.retrievedAt)}
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap" onClick={stop}>
+                        <Select
+                          value={relevance}
+                          onValueChange={(value) =>
+                            value &&
+                            setEvidenceRelevance(questionId, e.id, value as EvidenceRelevance)
                           }
                         >
-                          <option value="default">Default</option>
-                          <option value="hourly">Hourly</option>
-                          <option value="daily">Daily</option>
-                          <option value="weekly">Weekly</option>
-                          <option value="monthly">Monthly</option>
-                        </select>
-                        <button
+                          <SelectTrigger
+                            className={
+                              relevance === "high"
+                                ? "h-7 w-24 rounded-full border-0 bg-emerald-100 px-2 text-xs font-bold text-emerald-700"
+                                : relevance === "low"
+                                  ? "h-7 w-24 rounded-full border-0 bg-red-100 px-2 text-xs font-bold text-red-700"
+                                  : "h-7 w-24 rounded-full border-0 bg-amber-100 px-2 text-xs font-bold text-amber-700"
+                            }
+                            aria-label={`Relevance for ${e.title}`}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap" onClick={stop}>
+                        <div className="flex items-center gap-1.5">
+                          <Select
+                            value={frequency}
+                            onValueChange={(value) =>
+                              value &&
+                              setEvidenceRefreshFrequency(
+                                questionId,
+                                e.id,
+                                value as EvidenceRefreshFrequency,
+                              )
+                            }
+                          >
+                            <SelectTrigger
+                              className="h-7 w-24 text-xs"
+                              aria-label={`Refresh frequency for ${e.title}`}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(["default", "hourly", "daily", "weekly", "monthly"] as const).map(
+                                (option) => (
+                                  <SelectItem key={option} value={option}>
+                                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                                  </SelectItem>
+                                ),
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            className={`size-7 border bg-background p-1 text-muted-foreground hover:border-primary hover:text-primary ${isRefreshing ? "animate-spin" : ""}`}
+                            onClick={() => doRefresh(e.id)}
+                            disabled={isRefreshing}
+                            aria-label={`Refresh ${e.title} now`}
+                            title="Refresh now"
+                          >
+                            <IconRefresh />
+                          </Button>
+                        </div>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {fmtRelative(e.lastRefreshedAt)}
+                        </span>
+                      </TableCell>
+
+                      <TableCell className="text-right" onClick={stop}>
+                        <Button
                           type="button"
-                          className={`evidence-refresh-btn${isRefreshing ? " spinning" : ""}`}
-                          onClick={() => doRefresh(e.id)}
-                          disabled={isRefreshing}
-                          aria-label={`Refresh ${e.title} now`}
-                          title="Refresh now"
+                          className="size-7 border bg-background p-1 text-muted-foreground hover:border-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => deleteEvidenceRow(questionId, e.id)}
+                          aria-label={`Delete ${e.title}`}
+                          title="Delete"
                         >
-                          <IconRefresh />
-                        </button>
-                      </div>
-                      <span className="evidence-refresh-sub">{fmtRelative(e.lastRefreshedAt)}</span>
-                    </td>
+                          <IconTrash />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
-                    <td className="evidence-cell-actions" onClick={stop}>
-                      <button
-                        type="button"
-                        className="evidence-delete-btn"
-                        onClick={() => deleteEvidenceRow(questionId, e.id)}
-                        aria-label={`Delete ${e.title}`}
-                        title="Delete"
-                      >
-                        <IconTrash />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {detail && <EvidenceDetailModal evidence={detail} onClose={() => setDetail(null)} />}
 
-      {detail && <EvidenceDetailModal evidence={detail} onClose={() => setDetail(null)} />}
-
-      <AddSourceModal
-        open={addOpen}
-        libraryItems={contextItems}
-        boundItemIds={boundItemIds}
-        onClose={() => setAddOpen(false)}
-        onAddAppContext={(connector, data) => {
-          addAppContext(
-            {
-              connectorId: connector.id,
-              title: data.title,
-              body: data.body,
-              sourceRef: data.sourceRef,
-              visibility: data.visibility as Visibility,
-              tags: data.tags,
-            },
-            questionId,
-          );
-        }}
-        onImport={(fileNames) => addUpload(questionId, fileNames)}
-        onNotes={(data) => {
-          const item = addContextItem({ type: "manual", ...data });
-          bindContext(questionId, item.id);
-        }}
-        onBindFromLibrary={(itemId) => bindContext(questionId, itemId)}
-      />
-    </div>
+        <AddSourceModal
+          open={addOpen}
+          libraryItems={contextItems}
+          boundItemIds={boundItemIds}
+          onClose={() => setAddOpen(false)}
+          onAddAppContext={(connector, data) => {
+            addAppContext(
+              {
+                connectorId: connector.id,
+                title: data.title,
+                body: data.body,
+                sourceRef: data.sourceRef,
+                visibility: data.visibility as Visibility,
+                tags: data.tags,
+              },
+              questionId,
+            );
+          }}
+          onImport={(fileNames) => addUpload(questionId, fileNames)}
+          onNotes={(data) => {
+            const item = addContextItem({ type: "manual", ...data });
+            bindContext(questionId, item.id);
+          }}
+          onBindFromLibrary={(itemId) => bindContext(questionId, itemId)}
+        />
+      </CardContent>
+    </Card>
   );
 }

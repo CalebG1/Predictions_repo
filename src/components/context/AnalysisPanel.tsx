@@ -10,6 +10,9 @@ import {
 } from "../../lib/pyodideSandbox";
 import { visibilityOrder } from "../ui";
 import NotebookCellRow from "./NotebookCellRow";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 const STARTER_CODE = `import statistics
 
@@ -151,54 +154,65 @@ export default function AnalysisPanel({
   };
 
   return (
-    <div className="ctx-analysis">
-      <div className="ctx-analysis-scroll">
-        <div className={`ctx-analysis-status ctx-analysis-status-${phase}`}>
-          {phase === "loading" && <span className="ctx-analysis-spinner" aria-hidden />}
-          <span className="ctx-analysis-status-dot" aria-hidden />
+    <div className="space-y-4">
+      <div className="space-y-4">
+        <div
+          className={`flex items-center gap-2 text-sm ${phase === "error" ? "text-destructive" : phase === "ready" ? "text-emerald-700" : "text-muted-foreground"}`}
+        >
+          {phase === "loading" && (
+            <span
+              className="size-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+              aria-hidden
+            />
+          )}
+          <span className="size-2 rounded-full bg-current" aria-hidden />
           <span>{statusText}</span>
         </div>
 
-        <div className="ctx-analysis-toolbar">
-          <button
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
             type="button"
-            className="ctx-secondary-btn"
+            variant="outline"
+            size="sm"
             onClick={() => fileInputRef.current?.click()}
           >
             Import
-          </button>
-          <input
+          </Button>
+          <Input
             ref={fileInputRef}
             type="file"
             accept=".ipynb,.py"
             hidden
             onChange={(e) => handleImport(e.target.files)}
           />
-          <button type="button" className="ctx-secondary-btn" onClick={() => addCell("code")}>
+          <Button type="button" variant="outline" size="sm" onClick={() => addCell("code")}>
             + Code cell
-          </button>
-          <button type="button" className="ctx-secondary-btn" onClick={() => addCell("markdown")}>
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => addCell("markdown")}>
             + Text cell
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="ctx-secondary-btn"
+            variant="outline"
+            size="sm"
             onClick={runAll}
             disabled={phase !== "ready"}
           >
             Run all
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="ctx-link-btn ctx-analysis-restart"
+            variant="link"
+            size="sm"
+            className="ml-auto"
             onClick={handleRestart}
             disabled={phase === "loading"}
           >
             Restart kernel
-          </button>
+          </Button>
         </div>
 
-        <div className="ctx-nb">
+        <div className="space-y-2">
           {cells.map((cell, idx) => (
             <NotebookCellRow
               key={cell.id}
@@ -215,34 +229,34 @@ export default function AnalysisPanel({
         </div>
       </div>
 
-      <div className="ctx-analysis-footer">
-        <label className="ctx-field">
-          <span className="ctx-field-label">Title</span>
-          <input
+      <div className="grid gap-4 rounded-lg border bg-muted/20 p-4 sm:grid-cols-[1fr_180px_auto] sm:items-end">
+        <label className="grid gap-1.5 text-sm font-medium">
+          <span>Title</span>
+          <Input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Sensitivity check on base-rate assumptions"
           />
         </label>
-        <label className="ctx-field">
-          <span className="ctx-field-label">Visibility</span>
-          <select value={visibility} onChange={(e) => setVisibility(e.target.value as Visibility)}>
-            {visibilityOrder.map((v) => (
-              <option key={v} value={v}>
-                {v}
-              </option>
-            ))}
-          </select>
+        <label className="grid gap-1.5 text-sm font-medium">
+          <span>Visibility</span>
+          <Select value={visibility} onValueChange={(value) => setVisibility(value as Visibility)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {visibilityOrder.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {v}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </label>
-        <button
-          type="button"
-          className="ctx-primary-btn"
-          disabled={!canSubmit}
-          onClick={handleSubmit}
-        >
+        <Button type="button" disabled={!canSubmit} onClick={handleSubmit}>
           {submitLabel}
-        </button>
+        </Button>
       </div>
     </div>
   );

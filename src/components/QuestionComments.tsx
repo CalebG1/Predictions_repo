@@ -2,6 +2,9 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useStore } from "../store";
 import { IconTrash } from "./icons";
 import type { ForecastQuestion, QuestionComment, User } from "../domain/types";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
+import { Card, CardContent } from "./ui/card";
 
 function formatWhen(iso: string): string {
   const d = new Date(iso);
@@ -9,7 +12,10 @@ function formatWhen(iso: string): string {
   const diffMs = now.getTime() - d.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   if (diffDays === 0) {
-    return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    return d.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
   }
   if (diffDays === 1) return "Yesterday";
   if (diffDays < 7) return `${diffDays}d ago`;
@@ -91,77 +97,86 @@ function CommentRow({
   const isReplying = replyingToId === comment.id;
 
   return (
-    <li className={`qcomment${isReply ? " qcomment-reply" : ""}`}>
-      <div className="qcomment-avatar" aria-hidden="true">
+    <li
+      className={`flex items-start gap-3 ${isReply ? "ml-10 border-l-2 border-border pl-3" : ""}`}
+    >
+      <div
+        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary"
+        aria-hidden="true"
+      >
         {initials(comment.authorName)}
       </div>
-      <div className="qcomment-body">
-        <div className="qcomment-meta">
-          <span className="qcomment-author">{comment.authorName}</span>
-          <span className="qcomment-team">{comment.authorTeam}</span>
-          <time className="qcomment-time" dateTime={comment.createdAt}>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex flex-wrap items-center gap-1.5">
+          <span className="text-sm font-semibold">{comment.authorName}</span>
+          <span className="text-xs text-muted-foreground">{comment.authorTeam}</span>
+          <time className="text-xs text-muted-foreground" dateTime={comment.createdAt}>
             {formatWhen(comment.createdAt)}
           </time>
-          {comment.editedAt && <span className="qcomment-edited">edited</span>}
+          {comment.editedAt && <span className="text-xs text-muted-foreground italic">edited</span>}
         </div>
 
         {isEditing ? (
           <form
-            className="qcomment-inline-form"
+            className="mt-2"
             onSubmit={(e) => {
               e.preventDefault();
               onSaveEdit(comment.id);
             }}
           >
-            <textarea
-              className="qcomments-input"
+            <Textarea
+              className="min-h-14 w-full resize-y rounded-lg border border-input bg-muted/50 px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
               rows={2}
               value={editDraft}
               onChange={(e) => onEditDraft(e.target.value)}
               autoFocus
               aria-label="Edit comment"
             />
-            <div className="qcomment-inline-actions">
-              <button type="button" className="qcomment-action" onClick={onCancelEdit}>
+            <div className="mt-2 flex justify-end gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={onCancelEdit}>
                 Cancel
-              </button>
-              <button type="submit" className="btn btn-sm" disabled={!editDraft.trim()}>
+              </Button>
+              <Button type="submit" size="sm" disabled={!editDraft.trim()}>
                 Save
-              </button>
+              </Button>
             </div>
           </form>
         ) : (
           <>
-            <p className="qcomment-text">{comment.body}</p>
-            <div className="qcomment-actions">
+            <p className="text-sm leading-6 whitespace-pre-wrap">{comment.body}</p>
+            <div className="mt-1.5 flex items-center gap-1">
               {canReply && (
-                <button
+                <Button
                   type="button"
-                  className="qcomment-action"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => onStartReply(comment.id)}
                 >
                   Reply
-                </button>
+                </Button>
               )}
               {own && (
-                <button
+                <Button
                   type="button"
-                  className="qcomment-action"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => onStartEdit(comment)}
                 >
                   Edit
-                </button>
+                </Button>
               )}
               {own && (
-                <button
+                <Button
                   type="button"
-                  className="qcomment-delete"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-muted-foreground hover:text-destructive"
                   onClick={() => onDelete(comment.id)}
                   title="Delete comment"
                   aria-label="Delete comment"
                 >
                   <IconTrash />
-                </button>
+                </Button>
               )}
             </div>
           </>
@@ -169,14 +184,14 @@ function CommentRow({
 
         {isReplying && (
           <form
-            className="qcomment-inline-form qcomment-reply-form"
+            className="mt-3"
             onSubmit={(e) => {
               e.preventDefault();
               onSubmitReply(comment.id);
             }}
           >
-            <textarea
-              className="qcomments-input"
+            <Textarea
+              className="min-h-14 w-full resize-y rounded-lg border border-input bg-muted/50 px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
               rows={2}
               placeholder={`Reply to ${comment.authorName.split(" ")[0]}…`}
               value={replyDraft}
@@ -184,13 +199,13 @@ function CommentRow({
               autoFocus
               aria-label="Reply"
             />
-            <div className="qcomment-inline-actions">
-              <button type="button" className="qcomment-action" onClick={onCancelReply}>
+            <div className="mt-2 flex justify-end gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={onCancelReply}>
                 Cancel
-              </button>
-              <button type="submit" className="btn btn-sm" disabled={!replyDraft.trim()}>
+              </Button>
+              <Button type="submit" size="sm" disabled={!replyDraft.trim()}>
                 Reply
-              </button>
+              </Button>
             </div>
           </form>
         )}
@@ -245,49 +260,26 @@ export default function QuestionComments({ q }: { q: ForecastQuestion }) {
   };
 
   return (
-    <div className="panel qcomments">
-      <div className="panel-head">
-        <span>Comments</span>
-        <span className="muted">{comments.length}</span>
-      </div>
+    <Card>
+      <CardContent className="p-5">
+        <div className="mb-5 flex items-center justify-between text-base font-semibold">
+          <span>Comments</span>
+          <span className="text-muted-foreground">{comments.length}</span>
+        </div>
 
-      {comments.length === 0 ? (
-        <p className="muted small qcomments-empty">No comments yet — add context for the team.</p>
-      ) : (
-        <ul className="qcomments-list">
-          {threads.map(({ comment, replies }) => (
-            <li key={comment.id} className="qcomment-thread">
-              <ul className="qcomment-thread-list">
-                <CommentRow
-                  comment={comment}
-                  user={user}
-                  canReply
-                  editingId={editingId}
-                  editDraft={editDraft}
-                  replyingToId={replyingToId}
-                  replyDraft={replyDraft}
-                  onStartEdit={startEdit}
-                  onEditDraft={setEditDraft}
-                  onCancelEdit={() => {
-                    setEditingId(null);
-                    setEditDraft("");
-                  }}
-                  onSaveEdit={saveEdit}
-                  onStartReply={startReply}
-                  onReplyDraft={setReplyDraft}
-                  onCancelReply={() => {
-                    setReplyingToId(null);
-                    setReplyDraft("");
-                  }}
-                  onSubmitReply={submitReply}
-                  onDelete={deleteComment}
-                />
-                {replies.map((reply) => (
+        {comments.length === 0 ? (
+          <p className="mb-4 text-sm text-muted-foreground">
+            No comments yet — add context for the team.
+          </p>
+        ) : (
+          <ul className="mb-4 flex list-none flex-col gap-4 p-0">
+            {threads.map(({ comment, replies }) => (
+              <li key={comment.id} className="list-none">
+                <ul className="flex list-none flex-col gap-3 p-0">
                   <CommentRow
-                    key={reply.id}
-                    comment={reply}
+                    comment={comment}
                     user={user}
-                    isReply
+                    canReply
                     editingId={editingId}
                     editDraft={editDraft}
                     replyingToId={replyingToId}
@@ -308,33 +300,63 @@ export default function QuestionComments({ q }: { q: ForecastQuestion }) {
                     onSubmitReply={submitReply}
                     onDelete={deleteComment}
                   />
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
-      )}
+                  {replies.map((reply) => (
+                    <CommentRow
+                      key={reply.id}
+                      comment={reply}
+                      user={user}
+                      isReply
+                      editingId={editingId}
+                      editDraft={editDraft}
+                      replyingToId={replyingToId}
+                      replyDraft={replyDraft}
+                      onStartEdit={startEdit}
+                      onEditDraft={setEditDraft}
+                      onCancelEdit={() => {
+                        setEditingId(null);
+                        setEditDraft("");
+                      }}
+                      onSaveEdit={saveEdit}
+                      onStartReply={startReply}
+                      onReplyDraft={setReplyDraft}
+                      onCancelReply={() => {
+                        setReplyingToId(null);
+                        setReplyDraft("");
+                      }}
+                      onSubmitReply={submitReply}
+                      onDelete={deleteComment}
+                    />
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
 
-      <form className="qcomments-form" onSubmit={submit}>
-        <div className="qcomments-compose">
-          <div className="qcomment-avatar qcomment-avatar-self" aria-hidden="true">
-            {initials(user.name)}
+        <form onSubmit={submit}>
+          <div className="flex items-start gap-3">
+            <div
+              className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary"
+              aria-hidden="true"
+            >
+              {initials(user.name)}
+            </div>
+            <Textarea
+              className="min-h-14 min-w-0 flex-1 resize-y rounded-lg border border-input bg-muted/50 px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+              rows={2}
+              placeholder="Add a comment for the team…"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              aria-label="Comment"
+            />
           </div>
-          <textarea
-            className="qcomments-input"
-            rows={2}
-            placeholder="Add a comment for the team…"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            aria-label="Comment"
-          />
-        </div>
-        <div className="qcomments-actions">
-          <button type="submit" className="btn btn-sm" disabled={!draft.trim()}>
-            Post comment
-          </button>
-        </div>
-      </form>
-    </div>
+          <div className="mt-3 flex justify-end">
+            <Button type="submit" size="sm" disabled={!draft.trim()}>
+              Post comment
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

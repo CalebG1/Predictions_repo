@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import type { MouseEvent } from "react";
 import type { Visibility } from "../domain/types";
 import VisibilityLabel from "./VisibilityLabel";
 import { visibilityConfig, visibilityOrder } from "./ui";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "./ui/select";
 
 export default function VisibilityPicker({
   value,
@@ -12,57 +13,34 @@ export default function VisibilityPicker({
   owningTeam?: string;
   onChange: (v: Visibility) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: Event) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
   const stopNav = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
   return (
-    <div className="vis-picker" ref={ref} onClick={stopNav} onMouseDown={stopNav}>
-      <button
-        type="button"
-        className="vis-trigger"
-        title={visibilityConfig[value].description}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-      >
-        <VisibilityLabel value={value} owningTeam={owningTeam} />
-      </button>
-      {open && (
-        <div className="vis-menu" role="listbox">
+    <div onClick={stopNav} onMouseDown={stopNav}>
+      <Select value={value} onValueChange={(next) => onChange(next as Visibility)}>
+        <SelectTrigger
+          size="sm"
+          title={visibilityConfig[value].description}
+          className="h-auto w-fit border-0 bg-transparent p-0 text-xs shadow-none hover:bg-transparent focus-visible:ring-0"
+        >
+          <VisibilityLabel value={value} owningTeam={owningTeam} />
+        </SelectTrigger>
+        <SelectContent align="end" className="min-w-45">
           {visibilityOrder.map((v) => (
-            <button
-              key={v}
-              type="button"
-              role="option"
-              aria-selected={v === value}
-              className={`vis-menu-item${v === value ? " active" : ""}`}
-              onClick={() => {
-                onChange(v);
-                setOpen(false);
-              }}
-            >
-              <span className="vis-menu-label">
+            <SelectItem key={v} value={v} className="items-start py-2">
+              <span className="flex flex-col items-start gap-0.5">
                 <VisibilityLabel value={v} owningTeam={owningTeam} />
+                <span className="text-xs text-muted-foreground">
+                  {visibilityConfig[v].description}
+                </span>
               </span>
-              <span className="vis-menu-desc">{visibilityConfig[v].description}</span>
-            </button>
+            </SelectItem>
           ))}
-        </div>
-      )}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

@@ -12,14 +12,18 @@ describe("competitor move metadata", () => {
   it("maps every move to a seeded question", () => {
     const questionIds = new Set(questions.map((q) => q.id));
     for (const move of competitorMoves) {
-      expect(questionIds.has(move.questionId), `missing question for move ${move.questionId}`).toBe(true);
+      expect(questionIds.has(move.questionId), `missing question for move ${move.questionId}`).toBe(
+        true,
+      );
     }
   });
 
   it("maps every move to a known competitor", () => {
     const competitorIds = new Set(competitors.map((c) => c.id));
     for (const move of competitorMoves) {
-      expect(competitorIds.has(move.competitorId), `unknown competitor ${move.competitorId}`).toBe(true);
+      expect(competitorIds.has(move.competitorId), `unknown competitor ${move.competitorId}`).toBe(
+        true,
+      );
     }
   });
 
@@ -39,7 +43,9 @@ describe("competitor move metadata", () => {
   });
 
   it("generates Yes outcomes for every competitor question", () => {
-    const yesByQuestion = new Set(outcomes.filter((o) => o.label === "Yes").map((o) => o.questionId));
+    const yesByQuestion = new Set(
+      outcomes.filter((o) => o.label === "Yes").map((o) => o.questionId),
+    );
     for (const seed of competitorQuestionSeeds) {
       expect(yesByQuestion.has(seed.id), `no Yes outcome for ${seed.id}`).toBe(true);
     }

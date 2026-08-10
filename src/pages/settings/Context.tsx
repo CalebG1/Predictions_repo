@@ -8,6 +8,26 @@ import { bindingCountForItem } from "../../domain/context";
 import type { ContextItem, ContextItemType, ContextBinding } from "../../domain/types";
 import { useStore } from "../../store";
 import { users } from "../../domain/seed";
+import { Button } from "../../components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { Input } from "../../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../components/ui/table";
+import { Card, CardContent } from "../../components/ui/card";
+import { loadWorkbookOutputBindings, loadWorkbookOutputs, saveWorkbookOutputBindings, type WorkbookOutput, type WorkbookOutputBinding } from "../../domain/workbookOutputs";
 
 const TABS = ["library", "bindings", "governance"] as const;
 type Tab = (typeof TABS)[number];
@@ -60,6 +80,9 @@ export default function Context() {
   const [undoNoticeId, setUndoNoticeId] = useState(0);
   const [undoBinding, setUndoBinding] = useState<ContextBinding | null>(null);
   const [undoFading, setUndoFading] = useState(false);
+  const [workbookOutputs] = useState<WorkbookOutput[]>(loadWorkbookOutputs);
+  const [workbookOutputBindings, setWorkbookOutputBindings] = useState<WorkbookOutputBinding[]>(loadWorkbookOutputBindings);
+  const [workbookOutputTargets, setWorkbookOutputTargets] = useState<Record<string, string>>({});
 
   const userName = (id: string) =>
     users.find((u) => u.id === id)?.name ?? allUsers.find((u) => u.id === id)?.name ?? id;
@@ -221,6 +244,22 @@ export default function Context() {
     setNewBindNotes("");
   };
 
+  const bindWorkbookOutput = (outputId: string) => {
+    const questionId = workbookOutputTargets[outputId];
+    if (!questionId || workbookOutputBindings.some((binding) => binding.outputId === outputId && binding.questionId === questionId)) return;
+    setWorkbookOutputBindings((bindings) => {
+      const next = [...bindings, { id: `workbook-binding-${Date.now()}`, outputId, questionId, createdAt: new Date().toISOString() }];
+      saveWorkbookOutputBindings(next);
+      return next;
+    });
+  };
+
+  const unbindWorkbookOutput = (bindingId: string) => setWorkbookOutputBindings((bindings) => {
+    const next = bindings.filter((binding) => binding.id !== bindingId);
+    saveWorkbookOutputBindings(next);
+    return next;
+  });
+
   const clearUndoTimers = () => {
     if (undoFadeTimerRef.current) {
       window.clearTimeout(undoFadeTimerRef.current);
@@ -304,390 +343,440 @@ export default function Context() {
 
   return (
     <>
-      <div className="settings-section-head ctx-page-head">
+      <div className="mb-2">
         <h2>Context registry</h2>
       </div>
 
-      <div className="ctx-page-tabs" role="tablist">
-        {TABS.map((t) => (
-          <button
-            key={t}
-            type="button"
-            role="tab"
-            aria-selected={tab === t}
-            className={`ctx-page-tab${tab === t ? " active" : ""}`}
-            onClick={() => setTab(t)}
-          >
-            {t === "library" && "Library"}
-            {t === "bindings" && "Bindings"}
-            {t === "governance" && "Governance"}
-            {t === "governance" && pendingCount > 0 && (
-              <span className="ctx-tab-badge">{pendingCount}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
+        <TabsList>
+          {TABS.map((t) => (
+            <TabsTrigger key={t} value={t}>
+              {t === "library" && "Library"}
+              {t === "bindings" && "Bindings"}
+              {t === "governance" && "Governance"}
+              {t === "governance" && pendingCount > 0 && (
+                <span className="rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold text-primary-foreground">
+                  {pendingCount}
+                </span>
+              )}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {tab === "library" && (
         <>
-          <div className="panel ctx-library-panel">
-            <div className="ctx-library-toolbar">
-              <input
-                type="search"
-                placeholder="Search by name or team…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="ctx-search"
-              />
-              <select
-                value={typeFilter}
-                onChange={(e) =>
-                  setTypeFilter(e.target.value as ContextItemType | "all" | "app" | "notes")
-                }
-              >
-                <option value="all">All types</option>
-                <option value="document">Document</option>
-                <option value="app">App context</option>
-                <option value="notes">Notes</option>
-                <option value="evidence">Evidence</option>
-                <option value="analysis">Analysis</option>
-              </select>
-              <button
-                type="button"
-                className="ctx-primary-btn"
-                onClick={() => setAddModalOpen(true)}
-              >
-                Add context
-              </button>
-            </div>
+          <Card className="border bg-card overflow-hidden">
+            <CardContent>
+              <div className="flex flex-wrap items-center gap-3 border-b px-5 py-4">
+                <Input
+                  type="search"
+                  placeholder="Search by name or team…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="min-w-50 flex-1"
+                />
+                <Select
+                  value={typeFilter}
+                  onValueChange={(value) =>
+                    setTypeFilter(value as ContextItemType | "all" | "app" | "notes")
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All types</SelectItem>
+                    <SelectItem value="document">Document</SelectItem>
+                    <SelectItem value="app">App context</SelectItem>
+                    <SelectItem value="notes">Notes</SelectItem>
+                    <SelectItem value="evidence">Evidence</SelectItem>
+                    <SelectItem value="analysis">Analysis</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button type="button" onClick={() => setAddModalOpen(true)}>
+                  Add context
+                </Button>
+              </div>
 
-            <div className="ctx-table-wrap">
-              <table className="hist-table ctx-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Visibility</th>
-                    <th>Team</th>
-                    <th>Status</th>
-                    <th>Bindings</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="ctx-empty-cell muted">
-                        No context items match your filters.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredItems.map((item) => (
-                      <tr
-                        key={item.id}
-                        className="ctx-row-clickable"
-                        onClick={() => setDetailItem(item)}
-                      >
-                        <td className="ctx-name-cell">{item.title}</td>
-                        <td>
-                          <span className="ctx-type-badge">{typeLabel(item)}</span>
-                        </td>
-                        <td>
-                          <VisibilityBadge value={item.visibility} />
-                        </td>
-                        <td className="muted">{item.owningTeam}</td>
-                        <td>
-                          <span className={`ctx-status ctx-status-${item.status}`}>
-                            {item.status.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td>{bindingCountForItem(item.id, contextBindings)}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+              <div className="overflow-x-auto">
+                <Table className="">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Visibility</TableHead>
+                      <TableHead>Team</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Bindings</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredItems.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="p-8 text-center text-muted-foreground">
+                          No context items match your filters.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredItems.map((item) => (
+                        <TableRow
+                          key={item.id}
+                          className="cursor-pointer hover:bg-muted/60"
+                          onClick={() => setDetailItem(item)}
+                        >
+                          <TableCell className="max-w-70 font-medium">{item.title}</TableCell>
+                          <TableCell>
+                            <span className="rounded bg-muted px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              {typeLabel(item)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <VisibilityBadge value={item.visibility} />
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{item.owningTeam}</TableCell>
+                          <TableCell>
+                            <span
+                              className={
+                                item.status === "active"
+                                  ? "text-sm font-medium capitalize text-emerald-700"
+                                  : item.status === "pending_approval"
+                                    ? "text-sm font-medium capitalize text-amber-700"
+                                    : item.status === "error"
+                                      ? "text-sm font-medium capitalize text-destructive"
+                                      : "text-sm font-medium capitalize text-muted-foreground"
+                              }
+                            >
+                              {item.status.replace("_", " ")}
+                            </span>
+                          </TableCell>
+                          <TableCell>{bindingCountForItem(item.id, contextBindings)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
 
       {tab === "bindings" && (
-        <div className="panel ctx-bind-panel">
-          <div className="panel-head">
-            <span>Forecast bindings</span>
-          </div>
+        <>
+        <Card className="mb-4 border bg-card">
+          <CardContent>
+            <div className="mb-4">
+              <span className="text-sm font-semibold">Workbook outputs</span>
+              <p className="mt-1 text-sm text-muted-foreground">Locally saved spreadsheet outputs can be referenced by a forecast here.</p>
+            </div>
+            {workbookOutputs.length === 0 ? <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No workbook outputs yet. Publish a cell from Analyst Workspace → Output.</p> : <div className="space-y-3">{workbookOutputs.map((output) => {
+              const bindings = workbookOutputBindings.filter((binding) => binding.outputId === output.id);
+              const selectedQuestionId = workbookOutputTargets[output.id] ?? "";
+              const duplicate = bindings.some((binding) => binding.questionId === selectedQuestionId);
+              return <div key={output.id} className="rounded-lg border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-medium">{output.name}</p><p className="mt-1 text-xs text-muted-foreground">{output.workbook} · {output.sheet}!{output.cell} · {output.value}</p>{output.formula && <code className="mt-2 block rounded bg-muted px-2 py-1 text-xs">{output.formula}</code>}</div><div className="flex min-w-60 flex-1 gap-2 sm:max-w-md"><Select value={selectedQuestionId} onValueChange={(value) => value && setWorkbookOutputTargets((targets) => ({ ...targets, [output.id]: value }))}><SelectTrigger className="min-w-0 flex-1"><SelectValue placeholder="Choose forecast" /></SelectTrigger><SelectContent>{questions.map((question) => <SelectItem key={question.id} value={question.id}>{question.title}</SelectItem>)}</SelectContent></Select><Button disabled={!selectedQuestionId || duplicate} onClick={() => bindWorkbookOutput(output.id)}>Reference</Button></div></div>{bindings.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{bindings.map((binding) => <span key={binding.id} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{questions.find((question) => question.id === binding.questionId)?.title ?? binding.questionId}<button className="ml-1 text-primary/70 hover:text-primary" aria-label="Remove workbook output reference" onClick={() => unbindWorkbookOutput(binding.id)}>×</button></span>)}</div>}</div>})}</div>}
+          </CardContent>
+        </Card>
+        <Card className="border bg-card relative flex flex-col">
+          <CardContent>
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+              <span>Forecast bindings</span>
+            </div>
 
-          {undoBinding && (
-            <div
-              key={undoNoticeId}
-              className={`ctx-bind-undo-toast${undoFading ? " fade-out" : ""}`}
-            >
-              <span>Binding removed</span>
-              <button type="button" className="ctx-bind-undo-btn" onClick={handleUndoUnbind}>
-                Undo
-              </button>
-              <button
-                type="button"
-                className="ctx-bind-undo-dismiss"
-                aria-label="Dismiss"
-                onClick={clearUndoToast}
+            {undoBinding && (
+              <div
+                key={undoNoticeId}
+                className={`absolute left-1/2 top-2.5 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-foreground/95 px-3.5 py-2 text-sm text-primary-foreground shadow-lg ${undoFading ? "animate-out fade-out slide-out-to-top-2" : "animate-in fade-in slide-in-from-top-2"}`}
               >
-                ×
-              </button>
+                <span>Binding removed</span>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto p-0 text-primary-foreground"
+                  onClick={handleUndoUnbind}
+                >
+                  Undo
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-6 text-primary-foreground/70 hover:text-primary-foreground"
+                  aria-label="Dismiss"
+                  onClick={clearUndoToast}
+                >
+                  ×
+                </Button>
+              </div>
+            )}
+
+            <div className="border-b px-4 py-3">
+              <Input
+                type="search"
+                className="w-full"
+                placeholder="Search by context item, forecast, or notes…"
+                value={bindingsSearch}
+                onChange={(e) => setBindingsSearch(e.target.value)}
+              />
             </div>
-          )}
 
-          <div className="ctx-bind-toolbar">
-            <input
-              type="search"
-              className="ctx-search"
-              placeholder="Search by context item, forecast, or notes…"
-              value={bindingsSearch}
-              onChange={(e) => setBindingsSearch(e.target.value)}
-            />
-          </div>
+            <div className="flex min-h-0 max-h-[min(480px,calc(100vh-300px))] flex-col">
+              <div className="shrink-0 border-b bg-background">
+                <Table className="table-fixed">
+                  <colgroup>
+                    <col className="w-[34%]" />
+                    <col className="w-[34%]" />
+                    <col className="w-[32%]" />
+                  </colgroup>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Forecast</TableHead>
+                      <TableHead>Context item</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                </Table>
+              </div>
 
-          <div className="ctx-bind-body">
-            <div className="ctx-bind-table-head">
-              <table className="hist-table ctx-bind-table">
-                <colgroup>
-                  <col className="ctx-bind-col-forecast" />
-                  <col className="ctx-bind-col-item" />
-                  <col className="ctx-bind-col-notes" />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th>Forecast</th>
-                    <th>Context item</th>
-                    <th>Notes</th>
-                  </tr>
-                </thead>
-              </table>
-            </div>
-
-            <div className="ctx-bind-scroll">
-              <table className="hist-table ctx-bind-table">
-                <colgroup>
-                  <col className="ctx-bind-col-forecast" />
-                  <col className="ctx-bind-col-item" />
-                  <col className="ctx-bind-col-notes" />
-                </colgroup>
-                <tbody>
-                  {filteredBindingRows.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="ctx-empty-cell muted">
-                        {bindingsSearch.trim()
-                          ? "No bindings match your search."
-                          : "No bindings yet."}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredBindingRows.map(({ binding, item, question }) => (
-                      <tr
-                        key={binding.id}
-                        ref={(el) => {
-                          if (el) bindRowRefs.current.set(binding.id, el);
-                          else bindRowRefs.current.delete(binding.id);
-                        }}
-                        className={[
-                          "ctx-bind-row",
-                          highlightedBindingId === binding.id ? "ctx-bind-row-new" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                      >
-                        <td>
-                          <Link className="ctx-bind-cell-link" to={`/q/${binding.questionId}`}>
-                            {question?.title ?? binding.questionId}
-                          </Link>
-                        </td>
-                        <td>
-                          {item ? (
-                            <button
-                              type="button"
-                              className="ctx-bind-cell-link"
-                              onClick={() => setDetailItem(item)}
+              <div className="min-h-0 flex-1 overflow-y-auto bg-background">
+                <Table className="table-fixed">
+                  <colgroup>
+                    <col className="w-[34%]" />
+                    <col className="w-[34%]" />
+                    <col className="w-[32%]" />
+                  </colgroup>
+                  <TableBody>
+                    {filteredBindingRows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="p-8 text-center text-muted-foreground">
+                          {bindingsSearch.trim()
+                            ? "No bindings match your search."
+                            : "No bindings yet."}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredBindingRows.map(({ binding, item, question }) => (
+                        <TableRow
+                          key={binding.id}
+                          ref={(el) => {
+                            if (el) bindRowRefs.current.set(binding.id, el);
+                            else bindRowRefs.current.delete(binding.id);
+                          }}
+                          className={[
+                            "relative transition-colors hover:bg-muted/60",
+                            highlightedBindingId === binding.id
+                              ? "animate-pulse bg-emerald-50"
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                        >
+                          <TableCell>
+                            <Link
+                              className="text-left hover:underline"
+                              to={`/q/${binding.questionId}`}
                             >
-                              {item.title}
-                            </button>
-                          ) : (
-                            binding.contextItemId
-                          )}
-                        </td>
-                        <td className="ctx-bind-notes-cell">
-                          <span className="ctx-bind-notes-text">{binding.notes || "—"}</span>
-                          <button
-                            type="button"
-                            className="ctx-bind-remove-btn"
-                            aria-label="Remove binding"
-                            onClick={() => handleUnbind(binding.id)}
-                          >
-                            ×
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                              {question?.title ?? binding.questionId}
+                            </Link>
+                          </TableCell>
+                          <TableCell>
+                            {item ? (
+                              <Button
+                                type="button"
+                                variant="link"
+                                className="h-auto p-0 text-left text-foreground hover:underline"
+                                onClick={() => setDetailItem(item)}
+                              >
+                                {item.title}
+                              </Button>
+                            ) : (
+                              binding.contextItemId
+                            )}
+                          </TableCell>
+                          <TableCell className="relative pr-9">
+                            <span className="text-sm text-muted-foreground">
+                              {binding.notes || "—"}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-1/2 size-6 -translate-y-1/2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                              aria-label="Remove binding"
+                              onClick={() => handleUnbind(binding.id)}
+                            >
+                              ×
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
-            <div className="ctx-bind-create">
-              <table className="hist-table ctx-bind-table">
-                <colgroup>
-                  <col className="ctx-bind-col-forecast" />
-                  <col className="ctx-bind-col-item" />
-                  <col className="ctx-bind-col-notes" />
-                </colgroup>
-                <tbody>
-                  <tr className="ctx-bind-new-row">
-                    <td>
-                      <InlineCombobox
-                        placeholder="Forecast"
-                        options={forecastComboboxOptions}
-                        value={newBindForecast}
-                        selectedId={newBindForecastId}
-                        onValueChange={(text) => {
-                          setNewBindForecast(text);
-                          const match = forecastComboboxOptions.find(
-                            (o) => o.label.toLowerCase() === text.trim().toLowerCase(),
-                          );
-                          setNewBindForecastId(match && !match.disabled ? match.id : "");
-                        }}
-                        onSelect={(option) => {
-                          setNewBindForecast(option.label);
-                          setNewBindForecastId(option.id);
-                        }}
-                      />
-                    </td>
-                    <td>
-                      <InlineCombobox
-                        placeholder="Context item"
-                        options={contextItemComboboxOptions}
-                        value={newBindItem}
-                        selectedId={newBindItemId}
-                        onValueChange={(text) => {
-                          setNewBindItem(text);
-                          const match = contextItemComboboxOptions.find(
-                            (o) => o.label.toLowerCase() === text.trim().toLowerCase(),
-                          );
-                          setNewBindItemId(match && !match.disabled ? match.id : "");
-                        }}
-                        onSelect={(option) => {
-                          setNewBindItem(option.label);
-                          setNewBindItemId(option.id);
-                        }}
-                      />
-                    </td>
-                    <td className="ctx-bind-create-action">
-                      <input
-                        type="text"
-                        className="ctx-bind-notes-input"
-                        placeholder="Notes"
-                        value={newBindNotes}
-                        onChange={(e) => setNewBindNotes(e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        className="ctx-primary-btn ctx-bind-submit-btn"
-                        disabled={!canCreateBinding}
-                        onClick={handleCreateBinding}
-                      >
-                        Bind
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <div className="relative z-20 shrink-0 overflow-visible border-t-2 bg-muted/40">
+                <Table className="table-fixed">
+                  <colgroup>
+                    <col className="w-[34%]" />
+                    <col className="w-[34%]" />
+                    <col className="w-[32%]" />
+                  </colgroup>
+                  <TableBody>
+                    <TableRow className="bg-muted/40">
+                      <TableCell>
+                        <InlineCombobox
+                          placeholder="Forecast"
+                          options={forecastComboboxOptions}
+                          value={newBindForecast}
+                          selectedId={newBindForecastId}
+                          onValueChange={(text) => {
+                            setNewBindForecast(text);
+                            const match = forecastComboboxOptions.find(
+                              (o) => o.label.toLowerCase() === text.trim().toLowerCase(),
+                            );
+                            setNewBindForecastId(match && !match.disabled ? match.id : "");
+                          }}
+                          onSelect={(option) => {
+                            setNewBindForecast(option.label);
+                            setNewBindForecastId(option.id);
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <InlineCombobox
+                          placeholder="Context item"
+                          options={contextItemComboboxOptions}
+                          value={newBindItem}
+                          selectedId={newBindItemId}
+                          onValueChange={(text) => {
+                            setNewBindItem(text);
+                            const match = contextItemComboboxOptions.find(
+                              (o) => o.label.toLowerCase() === text.trim().toLowerCase(),
+                            );
+                            setNewBindItemId(match && !match.disabled ? match.id : "");
+                          }}
+                          onSelect={(option) => {
+                            setNewBindItem(option.label);
+                            setNewBindItemId(option.id);
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell className="flex items-center justify-end gap-2 pr-3">
+                        <Input
+                          type="text"
+                          className="min-w-0 flex-1"
+                          placeholder="Notes"
+                          value={newBindNotes}
+                          onChange={(e) => setNewBindNotes(e.target.value)}
+                        />
+                        <Button
+                          type="button"
+                          className="min-w-18 shadow-sm"
+                          disabled={!canCreateBinding}
+                          onClick={handleCreateBinding}
+                        >
+                          Bind
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+        </>
       )}
 
       {tab === "governance" && (
         <>
           {canApproveContext() && pendingItems.length > 0 && (
-            <div className="panel">
-              <div className="panel-head">
-                <span>Approval queue</span>
-                <span className="muted">{pendingItems.length} pending</span>
-              </div>
-              <table className="hist-table">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Type</th>
-                    <th>Visibility</th>
-                    <th>Team</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingItems.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.title}</td>
-                      <td>{typeLabel(item)}</td>
-                      <td>
-                        <VisibilityBadge value={item.visibility} />
-                      </td>
-                      <td>{item.owningTeam}</td>
-                      <td className="ctx-actions-cell">
-                        <button
-                          type="button"
-                          className="ctx-primary-btn"
-                          onClick={() => approveContextItem(item.id)}
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          className="ctx-secondary-btn"
-                          onClick={() => rejectContextItem(item.id)}
-                        >
-                          Reject
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Card className="border bg-card">
+              <CardContent>
+                <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                  <span>Approval queue</span>
+                  <span className="text-muted-foreground">{pendingItems.length} pending</span>
+                </div>
+                <Table className="">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Visibility</TableHead>
+                      <TableHead>Team</TableHead>
+                      <TableHead />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingItems.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.title}</TableCell>
+                        <TableCell>{typeLabel(item)}</TableCell>
+                        <TableCell>
+                          <VisibilityBadge value={item.visibility} />
+                        </TableCell>
+                        <TableCell>{item.owningTeam}</TableCell>
+                        <TableCell className="flex gap-2">
+                          <Button type="button" onClick={() => approveContextItem(item.id)}>
+                            Approve
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => rejectContextItem(item.id)}
+                          >
+                            Reject
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           )}
 
-          <div className="panel">
-            <div className="panel-head">
-              <span>Audit log</span>
-              <input
-                type="search"
-                className="ctx-search"
-                placeholder="Filter audit…"
-                value={auditQuery}
-                onChange={(e) => setAuditQuery(e.target.value)}
-              />
-            </div>
-            <table className="hist-table">
-              <thead>
-                <tr>
-                  <th>When</th>
-                  <th>Actor</th>
-                  <th>Action</th>
-                  <th>Detail</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAudit.map((entry) => (
-                  <tr key={entry.id}>
-                    <td className="muted">{entry.timestamp.slice(0, 16).replace("T", " ")}</td>
-                    <td>{userName(entry.actorId)}</td>
-                    <td>
-                      <span className="ctx-type-badge">{entry.action}</span>
-                    </td>
-                    <td>{entry.detail}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Card className="border bg-card">
+            <CardContent>
+              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                <span>Audit log</span>
+                <Input
+                  type="search"
+                  className="flex-1"
+                  placeholder="Filter audit…"
+                  value={auditQuery}
+                  onChange={(e) => setAuditQuery(e.target.value)}
+                />
+              </div>
+              <Table className="">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>When</TableHead>
+                    <TableHead>Actor</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Detail</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAudit.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell className="text-muted-foreground">
+                        {entry.timestamp.slice(0, 16).replace("T", " ")}
+                      </TableCell>
+                      <TableCell>{userName(entry.actorId)}</TableCell>
+                      <TableCell>
+                        <span className="rounded bg-muted px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {entry.action}
+                        </span>
+                      </TableCell>
+                      <TableCell>{entry.detail}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </>
       )}
 
@@ -706,7 +795,12 @@ export default function Context() {
         }}
         onImport={(names) => {
           const title = names.length === 1 ? names[0] : `${names.length} uploaded files`;
-          addContextItem({ type: "document", title, fileNames: names, visibility: "team" });
+          addContextItem({
+            type: "document",
+            title,
+            fileNames: names,
+            visibility: "team",
+          });
         }}
         onNotes={(data) => addContextItem({ type: "manual", ...data })}
         onAddAnalysis={(data) =>

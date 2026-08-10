@@ -3,6 +3,8 @@ import { CONNECTOR_CATEGORIES, type ConnectorCategory } from "../../domain/conne
 import { ORG_INTEGRATIONS, orgIntegrationConnector } from "../../domain/orgIntegrations";
 import { SourceMark } from "../brandIcons";
 import { IconSearch } from "../icons";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 type CategoryFilter = "All" | ConnectorCategory;
 
@@ -31,46 +33,49 @@ export default function OrgAppsPanel({
   }, [apps, query, category]);
 
   return (
-    <section className="ctx-org-apps">
-      <div className="asrc-apps-head">
-        <div className="asrc-search">
-          <IconSearch />
-          <input
-            type="text"
-            placeholder="Search org apps…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
+    <section className="space-y-4">
+      <div className="relative">
+        <IconSearch />
+        <Input
+          className="pl-8"
+          type="text"
+          placeholder="Search org apps…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
       </div>
 
-      <div className="asrc-cats" role="tablist" aria-label="Categories">
+      <div className="flex flex-wrap gap-1" role="tablist" aria-label="Categories">
         {(["All", ...CONNECTOR_CATEGORIES] as CategoryFilter[]).map((cat) => (
-          <button
+          <Button
             key={cat}
             type="button"
             role="tab"
             aria-selected={category === cat}
-            className={`asrc-cat${category === cat ? " active" : ""}`}
+            variant={category === cat ? "secondary" : "ghost"}
+            size="sm"
             onClick={() => setCategory(cat)}
           >
             {cat}
-          </button>
+          </Button>
         ))}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="asrc-empty">No apps match "{query}".</div>
+        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+          No apps match "{query}".
+        </div>
       ) : (
-        <div className="ctx-org-apps-grid">
+        <div className="grid gap-2 sm:grid-cols-2">
           {filtered.map(({ connector }) => (
-            <button
+            <Button
               key={connector.id}
               type="button"
-              className="ctx-org-app-tile"
+              variant="outline"
+              className="h-auto justify-start gap-3 p-3 text-left"
               onClick={() => onSelectApp(connector)}
             >
-              <span className="ctx-org-app-icon">
+              <span className="shrink-0">
                 <SourceMark
                   kind={connector.kind ?? "custom"}
                   mono={connector.mono}
@@ -78,11 +83,11 @@ export default function OrgAppsPanel({
                   size={32}
                 />
               </span>
-              <span className="ctx-org-app-text">
-                <span className="ctx-org-app-name">{connector.name}</span>
+              <span className="min-w-0 flex-1 font-medium">
+                <span>{connector.name}</span>
               </span>
-              <span className="ctx-org-app-action">Add info</span>
-            </button>
+              <span className="text-xs font-medium text-primary">Add info</span>
+            </Button>
           ))}
         </div>
       )}

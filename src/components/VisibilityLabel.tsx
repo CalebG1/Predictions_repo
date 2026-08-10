@@ -12,7 +12,10 @@ export default function VisibilityLabel({
   const showLock = value === "restricted";
 
   return (
-    <span className="visibility-label" title={visibilityConfig[value].description}>
+    <span
+      className="inline-flex items-center gap-1 text-xs text-muted-foreground"
+      title={visibilityConfig[value].description}
+    >
       {showLock && <IconLock />}
       {visibilityLabel(value, owningTeam)}
     </span>

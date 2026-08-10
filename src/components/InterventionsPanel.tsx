@@ -15,6 +15,9 @@ import { useStore } from "../store";
 import { BrandIcon } from "./brandIcons";
 import { IconMail } from "./icons";
 import LaunchRunModal from "./LaunchRunModal";
+import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
+import { Textarea } from "./ui/textarea";
 
 const GAIN_LABELS: Record<GainLevel, string> = {
   high: "High impact",
@@ -22,16 +25,36 @@ const GAIN_LABELS: Record<GainLevel, string> = {
   low: "Low",
 };
 
+function intentClassName(intent: InterventionSuggestion["intent"]): string {
+  return intent === "act"
+    ? "rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground"
+    : "rounded bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground";
+}
+
+function gainClassName(gain: GainLevel): string {
+  if (gain === "high") return "bg-emerald-100 text-emerald-700";
+  if (gain === "medium") return "bg-amber-100 text-amber-700";
+  return "bg-muted text-muted-foreground";
+}
+
 export function ChannelIcon({ channel, size = 14 }: { channel: OutreachChannel; size?: number }) {
   if (channel === "email") {
     return (
-      <span className="int-channel-icon int-channel-icon-email" aria-hidden="true">
+      <span
+        className="inline-flex shrink-0 items-center justify-center rounded-md border bg-muted text-muted-foreground"
+        style={{ width: size + 4, height: size + 4 }}
+        aria-hidden="true"
+      >
         <IconMail />
       </span>
     );
   }
   return (
-    <span className={`int-channel-icon int-channel-icon-${channel}`} aria-hidden="true">
+    <span
+      className="inline-flex shrink-0 items-center justify-center rounded-md border bg-muted"
+      style={{ width: size + 4, height: size + 4 }}
+      aria-hidden="true"
+    >
       <BrandIcon kind={channel} width={size} height={size} />
     </span>
   );
@@ -67,11 +90,13 @@ function RunStatusChip({
   return (
     <Link
       to={`/q/${questionId}/run/${run.id}`}
-      className={`int-run-chip int-run-chip-${snap.phase}`}
+      className="inline-flex items-center gap-1 rounded-full border bg-background px-2 py-1 text-xs font-semibold text-foreground transition-colors hover:border-primary hover:text-primary"
     >
-      {snap.phase !== "done" && <span className="int-run-chip-dot" aria-hidden="true" />}
+      {snap.phase !== "done" && (
+        <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
+      )}
       {label}
-      <span className="int-run-chip-arrow" aria-hidden="true">
+      <span className="text-sm leading-none" aria-hidden="true">
         ›
       </span>
     </Link>
@@ -87,25 +112,25 @@ function RejectForm({
 }) {
   const [reason, setReason] = useState("");
   return (
-    <div className="int-reject-form">
-      <label className="int-reject-label" htmlFor="int-reject-reason">
-        Why are you rejecting this? <span className="muted">(optional)</span>
+    <div className="flex max-w-xl flex-col gap-2">
+      <label className="text-xs font-semibold" htmlFor="reject-reason">
+        Why are you rejecting this? <span className="text-muted-foreground">(optional)</span>
       </label>
-      <textarea
-        id="int-reject-reason"
-        className="int-reject-textarea"
+      <Textarea
+        id="reject-reason"
+        className="min-h-20 resize-y"
         rows={2}
         placeholder="e.g. Already covered by last week's review…"
         value={reason}
         onChange={(e) => setReason(e.target.value)}
       />
-      <div className="int-reject-actions">
-        <button type="button" className="int-btn-ghost" onClick={onCancel}>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Cancel
-        </button>
-        <button type="button" className="int-btn-reject" onClick={() => onConfirm(reason)}>
+        </Button>
+        <Button type="button" variant="destructive" size="sm" onClick={() => onConfirm(reason)}>
           Reject suggestion
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -134,155 +159,152 @@ export default function InterventionsPanel({ questionId }: { questionId: string 
       return <RunStatusChip run={row.run} now={now} questionId={questionId} />;
     }
     return (
-      <div className="int-row-actions">
-        <button type="button" className="int-btn-run" onClick={() => setLaunching(row.suggestion)}>
+      <div className="flex justify-end gap-1.5">
+        <Button type="button" variant="secondary" onClick={() => setLaunching(row.suggestion)}>
           Run
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="int-btn-ghost"
+          variant="ghost"
           onClick={() =>
             setRejectingId(rejectingId === row.suggestion.id ? null : row.suggestion.id)
           }
         >
           Reject
-        </button>
+        </Button>
       </div>
     );
   };
 
   return (
-    <div className="panel int-panel">
-      <div className="int-panel-head">
-        <h4>Drive this outcome</h4>
-        <span className="muted small">
-          Agents that get things done — chase owners, file tickets, secure commitments — plus
-          research runs that sharpen the estimate. Monitor them all under{" "}
-          <Link to="/agents">Agents</Link>.
-        </span>
-      </div>
-
-      {active.length === 0 ? (
-        <p className="muted int-empty">No open suggestions for this question.</p>
-      ) : (
-        <div className="evidence-table-wrap">
-          <table className="evidence-table int-table">
-            <thead>
-              <tr>
-                <th>Suggested agent</th>
-                <th>Expected impact</th>
-                <th>Resources</th>
-                <th aria-label="Actions" />
-              </tr>
-            </thead>
-            <tbody>
-              {active.map((row) => {
-                const s = row.suggestion;
-                return (
-                  <Fragment key={s.id}>
-                    <tr className="int-row">
-                      <td className="int-cell-main">
-                        <span className="int-title">
-                          <span className={`int-intent-badge int-intent-${s.intent}`}>
-                            {INTENT_LABELS[s.intent]}
-                          </span>
-                          {s.title}
-                        </span>
-                        <span className="int-sub">
-                          {s.intent === "act"
-                            ? `Delivers: ${s.expectedOutcome}`
-                            : `Targets: ${s.targets}`}
-                        </span>
-                        <span className="int-approach">{s.approach}</span>
-                      </td>
-                      <td className="int-cell-gain">
-                        <span className={`int-gain-pill int-gain-${s.estimatedGain}`}>
-                          {GAIN_LABELS[s.estimatedGain]}
-                        </span>
-                        <span className="int-gain-framing">{s.gainFraming}</span>
-                      </td>
-                      <td className="int-cell-resources">
-                        <span className="int-resource-preview">
-                          {s.defaultResources.people.slice(0, 3).map((p) => (
-                            <ChannelIcon key={p.name} channel={p.channel} />
-                          ))}
-                          {resourcePreview(s.defaultResources)}
-                        </span>
-                        <span className="int-duration">{s.estimatedDurationLabel}</span>
-                      </td>
-                      <td className="int-cell-actions">{renderActions(row)}</td>
-                    </tr>
-                    {rejectingId === s.id && (
-                      <tr className="int-reject-row">
-                        <td colSpan={4}>
-                          <RejectForm
-                            onCancel={() => setRejectingId(null)}
-                            onConfirm={(reason) => {
-                              rejectIntervention(questionId, s.id, reason);
-                              setRejectingId(null);
-                            }}
-                          />
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+    <Card className="mt-5">
+      <CardContent className="space-y-3">
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h4 className="text-base">Drive this outcome</h4>
+          <span className="text-sm leading-5 text-muted-foreground">
+            Agents that get things done — chase owners, file tickets, secure commitments — plus
+            research runs that sharpen the estimate. Monitor them all under the outcome panel.
+          </span>
         </div>
-      )}
 
-      {dismissed.length > 0 && (
-        <div className="int-dismissed">
-          <button
-            type="button"
-            className="int-dismissed-trigger"
-            aria-expanded={dismissedOpen}
-            onClick={() => setDismissedOpen((v) => !v)}
-          >
-            <span
-              className={`panel-collapse-chevron${dismissedOpen ? " open" : ""}`}
-              aria-hidden="true"
-            />
-            Dismissed ({dismissed.length})
-          </button>
-          {dismissedOpen && (
-            <ul className="int-dismissed-list">
-              {dismissed.map((row) => (
-                <li key={row.suggestion.id}>
-                  <div className="int-dismissed-main">
-                    <span className="int-dismissed-title">{row.suggestion.title}</span>
-                    {row.decision?.rejectReason && (
-                      <span className="int-dismissed-reason">“{row.decision.rejectReason}”</span>
-                    )}
+        {active.length === 0 ? (
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            No open suggestions for this question.
+          </p>
+        ) : (
+          <div className="grid gap-3">
+            {active.map((row) => {
+              const s = row.suggestion;
+              return (
+                <Fragment key={s.id}>
+                  <div className="grid gap-4 rounded-lg border bg-background p-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(10rem,0.8fr)_minmax(12rem,1fr)_auto] lg:items-start">
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={intentClassName(s.intent)}>{INTENT_LABELS[s.intent]}</span>
+                        <span className="text-sm font-semibold leading-5">{s.title}</span>
+                      </div>
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        {s.intent === "act"
+                          ? `Delivers: ${s.expectedOutcome}`
+                          : `Targets: ${s.targets}`}
+                      </p>
+                      <p className="text-xs leading-5 text-muted-foreground">{s.approach}</p>
+                    </div>
+                    <div className="min-w-0 space-y-2">
+                      <span
+                        className={`inline-block rounded-full px-2.5 py-1 text-xs font-bold ${gainClassName(s.estimatedGain)}`}
+                      >
+                        {GAIN_LABELS[s.estimatedGain]}
+                      </span>
+                      <p className="text-xs leading-5 text-muted-foreground">{s.gainFraming}</p>
+                    </div>
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs leading-5">
+                        {s.defaultResources.people.slice(0, 3).map((p) => (
+                          <ChannelIcon key={p.name} channel={p.channel} />
+                        ))}
+                        <span>{resourcePreview(s.defaultResources)}</span>
+                      </div>
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        {s.estimatedDurationLabel}
+                      </p>
+                    </div>
+                    <div className="flex min-w-max lg:justify-end">{renderActions(row)}</div>
                   </div>
-                  <button
-                    type="button"
-                    className="int-btn-ghost"
-                    onClick={() => restoreIntervention(row.suggestion.id)}
-                  >
-                    Restore
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+                  {rejectingId === s.id && (
+                    <div className="rounded-lg border bg-muted/40 p-4">
+                      <RejectForm
+                        onCancel={() => setRejectingId(null)}
+                        onConfirm={(reason) => {
+                          rejectIntervention(questionId, s.id, reason);
+                          setRejectingId(null);
+                        }}
+                      />
+                    </div>
+                  )}
+                </Fragment>
+              );
+            })}
+          </div>
+        )}
 
-      {launching && (
-        <LaunchRunModal
-          suggestion={launching}
-          questionId={questionId}
-          onClose={() => setLaunching(null)}
-          onLaunch={(resources) => {
-            const run = launchInterventionRun(launching, resources);
-            setLaunching(null);
-            navigate(`/q/${questionId}/run/${run.id}`);
-          }}
-        />
-      )}
-    </div>
+        {dismissed.length > 0 && (
+          <div className="mt-4">
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-sm font-medium"
+              aria-expanded={dismissedOpen}
+              onClick={() => setDismissedOpen((v) => !v)}
+            >
+              <span
+                className={`text-muted-foreground transition-transform ${dismissedOpen ? "rotate-90" : ""}`}
+                aria-hidden="true"
+              >
+                ›
+              </span>
+              Dismissed ({dismissed.length})
+            </Button>
+            {dismissedOpen && (
+              <ul className="mt-2 divide-y rounded-lg border">
+                {dismissed.map((row) => (
+                  <li key={row.suggestion.id} className="flex items-center gap-3 p-3">
+                    <div className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium">{row.suggestion.title}</span>
+                      {row.decision?.rejectReason && (
+                        <span className="mt-1 block text-xs italic text-muted-foreground">
+                          “{row.decision.rejectReason}”
+                        </span>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => restoreIntervention(row.suggestion.id)}
+                    >
+                      Restore
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {launching && (
+          <LaunchRunModal
+            suggestion={launching}
+            questionId={questionId}
+            onClose={() => setLaunching(null)}
+            onLaunch={(resources) => {
+              const run = launchInterventionRun(launching, resources);
+              setLaunching(null);
+              navigate(`/q/${questionId}/run/${run.id}`);
+            }}
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }
