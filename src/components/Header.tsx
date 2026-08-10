@@ -13,6 +13,7 @@ export default function Header() {
     { label: "Overview", path: "/" },
     { label: "Projects", path: "/projects" },
     { label: "Analyst workspace", path: "/analyst" },
+    { label: "Issue intelligence", path: "/issue-intelligence" },
     { label: "Forecasts", path: "/movers" },
     { label: "Competitors", path: "/competitors" },
   ];
@@ -23,10 +24,21 @@ export default function Header() {
           <img src={SignalRidgeLogo} alt="Signal Ridge" className="h-7 w-auto" />
         </Link>
         <Badge>{org.name}</Badge>
-        <nav className="ml-2 flex min-w-0 flex-1 items-stretch gap-1 overflow-x-auto self-stretch" aria-label="Primary navigation">
+        <nav
+          className="ml-2 flex min-w-0 flex-1 items-stretch gap-1 overflow-x-auto self-stretch"
+          aria-label="Primary navigation"
+        >
           {tabs.map((tab) => {
             const active = tab.path === "/" ? pathname === "/" : pathname.startsWith(tab.path);
-            return <Link key={tab.path} to={tab.path} className={`flex shrink-0 items-center border-b-2 px-3 text-sm font-medium transition-colors ${active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{tab.label}</Link>;
+            return (
+              <Link
+                key={tab.path}
+                to={tab.path}
+                className={`flex shrink-0 items-center border-b-2 px-3 text-sm font-medium transition-colors ${active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              >
+                {tab.label}
+              </Link>
+            );
           })}
         </nav>
 

@@ -28,6 +28,9 @@ function load<T>(key: string): T[] {
 }
 
 export const loadWorkbookOutputs = () => load<WorkbookOutput>(WORKBOOK_OUTPUTS_KEY);
-export const loadWorkbookOutputBindings = () => load<WorkbookOutputBinding>(WORKBOOK_OUTPUT_BINDINGS_KEY);
-export const saveWorkbookOutputs = (outputs: WorkbookOutput[]) => localStorage.setItem(WORKBOOK_OUTPUTS_KEY, JSON.stringify(outputs));
-export const saveWorkbookOutputBindings = (bindings: WorkbookOutputBinding[]) => localStorage.setItem(WORKBOOK_OUTPUT_BINDINGS_KEY, JSON.stringify(bindings));
+export const loadWorkbookOutputBindings = () =>
+  load<WorkbookOutputBinding>(WORKBOOK_OUTPUT_BINDINGS_KEY);
+export const saveWorkbookOutputs = (outputs: WorkbookOutput[]) =>
+  localStorage.setItem(WORKBOOK_OUTPUTS_KEY, JSON.stringify(outputs));
+export const saveWorkbookOutputBindings = (bindings: WorkbookOutputBinding[]) =>
+  localStorage.setItem(WORKBOOK_OUTPUT_BINDINGS_KEY, JSON.stringify(bindings));

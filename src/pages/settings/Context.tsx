@@ -27,7 +27,13 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { Card, CardContent } from "../../components/ui/card";
-import { loadWorkbookOutputBindings, loadWorkbookOutputs, saveWorkbookOutputBindings, type WorkbookOutput, type WorkbookOutputBinding } from "../../domain/workbookOutputs";
+import {
+  loadWorkbookOutputBindings,
+  loadWorkbookOutputs,
+  saveWorkbookOutputBindings,
+  type WorkbookOutput,
+  type WorkbookOutputBinding,
+} from "../../domain/workbookOutputs";
 
 const TABS = ["library", "bindings", "governance"] as const;
 type Tab = (typeof TABS)[number];
@@ -81,7 +87,9 @@ export default function Context() {
   const [undoBinding, setUndoBinding] = useState<ContextBinding | null>(null);
   const [undoFading, setUndoFading] = useState(false);
   const [workbookOutputs] = useState<WorkbookOutput[]>(loadWorkbookOutputs);
-  const [workbookOutputBindings, setWorkbookOutputBindings] = useState<WorkbookOutputBinding[]>(loadWorkbookOutputBindings);
+  const [workbookOutputBindings, setWorkbookOutputBindings] = useState<WorkbookOutputBinding[]>(
+    loadWorkbookOutputBindings,
+  );
   const [workbookOutputTargets, setWorkbookOutputTargets] = useState<Record<string, string>>({});
 
   const userName = (id: string) =>
@@ -246,19 +254,34 @@ export default function Context() {
 
   const bindWorkbookOutput = (outputId: string) => {
     const questionId = workbookOutputTargets[outputId];
-    if (!questionId || workbookOutputBindings.some((binding) => binding.outputId === outputId && binding.questionId === questionId)) return;
+    if (
+      !questionId ||
+      workbookOutputBindings.some(
+        (binding) => binding.outputId === outputId && binding.questionId === questionId,
+      )
+    )
+      return;
     setWorkbookOutputBindings((bindings) => {
-      const next = [...bindings, { id: `workbook-binding-${Date.now()}`, outputId, questionId, createdAt: new Date().toISOString() }];
+      const next = [
+        ...bindings,
+        {
+          id: `workbook-binding-${Date.now()}`,
+          outputId,
+          questionId,
+          createdAt: new Date().toISOString(),
+        },
+      ];
       saveWorkbookOutputBindings(next);
       return next;
     });
   };
 
-  const unbindWorkbookOutput = (bindingId: string) => setWorkbookOutputBindings((bindings) => {
-    const next = bindings.filter((binding) => binding.id !== bindingId);
-    saveWorkbookOutputBindings(next);
-    return next;
-  });
+  const unbindWorkbookOutput = (bindingId: string) =>
+    setWorkbookOutputBindings((bindings) => {
+      const next = bindings.filter((binding) => binding.id !== bindingId);
+      saveWorkbookOutputBindings(next);
+      return next;
+    });
 
   const clearUndoTimers = () => {
     if (undoFadeTimerRef.current) {
@@ -464,228 +487,308 @@ export default function Context() {
 
       {tab === "bindings" && (
         <>
-        <Card className="mb-4 border bg-card">
-          <CardContent>
-            <div className="mb-4">
-              <span className="text-sm font-semibold">Workbook outputs</span>
-              <p className="mt-1 text-sm text-muted-foreground">Locally saved spreadsheet outputs can be referenced by a forecast here.</p>
-            </div>
-            {workbookOutputs.length === 0 ? <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No workbook outputs yet. Publish a cell from Analyst Workspace → Output.</p> : <div className="space-y-3">{workbookOutputs.map((output) => {
-              const bindings = workbookOutputBindings.filter((binding) => binding.outputId === output.id);
-              const selectedQuestionId = workbookOutputTargets[output.id] ?? "";
-              const duplicate = bindings.some((binding) => binding.questionId === selectedQuestionId);
-              return <div key={output.id} className="rounded-lg border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-medium">{output.name}</p><p className="mt-1 text-xs text-muted-foreground">{output.workbook} · {output.sheet}!{output.cell} · {output.value}</p>{output.formula && <code className="mt-2 block rounded bg-muted px-2 py-1 text-xs">{output.formula}</code>}</div><div className="flex min-w-60 flex-1 gap-2 sm:max-w-md"><Select value={selectedQuestionId} onValueChange={(value) => value && setWorkbookOutputTargets((targets) => ({ ...targets, [output.id]: value }))}><SelectTrigger className="min-w-0 flex-1"><SelectValue placeholder="Choose forecast" /></SelectTrigger><SelectContent>{questions.map((question) => <SelectItem key={question.id} value={question.id}>{question.title}</SelectItem>)}</SelectContent></Select><Button disabled={!selectedQuestionId || duplicate} onClick={() => bindWorkbookOutput(output.id)}>Reference</Button></div></div>{bindings.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{bindings.map((binding) => <span key={binding.id} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{questions.find((question) => question.id === binding.questionId)?.title ?? binding.questionId}<button className="ml-1 text-primary/70 hover:text-primary" aria-label="Remove workbook output reference" onClick={() => unbindWorkbookOutput(binding.id)}>×</button></span>)}</div>}</div>})}</div>}
-          </CardContent>
-        </Card>
-        <Card className="border bg-card relative flex flex-col">
-          <CardContent>
-            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-              <span>Forecast bindings</span>
-            </div>
-
-            {undoBinding && (
-              <div
-                key={undoNoticeId}
-                className={`absolute left-1/2 top-2.5 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-foreground/95 px-3.5 py-2 text-sm text-primary-foreground shadow-lg ${undoFading ? "animate-out fade-out slide-out-to-top-2" : "animate-in fade-in slide-in-from-top-2"}`}
-              >
-                <span>Binding removed</span>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="h-auto p-0 text-primary-foreground"
-                  onClick={handleUndoUnbind}
-                >
-                  Undo
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-6 text-primary-foreground/70 hover:text-primary-foreground"
-                  aria-label="Dismiss"
-                  onClick={clearUndoToast}
-                >
-                  ×
-                </Button>
+          <Card className="mb-4 border bg-card">
+            <CardContent>
+              <div className="mb-4">
+                <span className="text-sm font-semibold">Workbook outputs</span>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Locally saved spreadsheet outputs can be referenced by a forecast here.
+                </p>
               </div>
-            )}
-
-            <div className="border-b px-4 py-3">
-              <Input
-                type="search"
-                className="w-full"
-                placeholder="Search by context item, forecast, or notes…"
-                value={bindingsSearch}
-                onChange={(e) => setBindingsSearch(e.target.value)}
-              />
-            </div>
-
-            <div className="flex min-h-0 max-h-[min(480px,calc(100vh-300px))] flex-col">
-              <div className="shrink-0 border-b bg-background">
-                <Table className="table-fixed">
-                  <colgroup>
-                    <col className="w-[34%]" />
-                    <col className="w-[34%]" />
-                    <col className="w-[32%]" />
-                  </colgroup>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Forecast</TableHead>
-                      <TableHead>Context item</TableHead>
-                      <TableHead>Notes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                </Table>
-              </div>
-
-              <div className="min-h-0 flex-1 overflow-y-auto bg-background">
-                <Table className="table-fixed">
-                  <colgroup>
-                    <col className="w-[34%]" />
-                    <col className="w-[34%]" />
-                    <col className="w-[32%]" />
-                  </colgroup>
-                  <TableBody>
-                    {filteredBindingRows.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={3} className="p-8 text-center text-muted-foreground">
-                          {bindingsSearch.trim()
-                            ? "No bindings match your search."
-                            : "No bindings yet."}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredBindingRows.map(({ binding, item, question }) => (
-                        <TableRow
-                          key={binding.id}
-                          ref={(el) => {
-                            if (el) bindRowRefs.current.set(binding.id, el);
-                            else bindRowRefs.current.delete(binding.id);
-                          }}
-                          className={[
-                            "relative transition-colors hover:bg-muted/60",
-                            highlightedBindingId === binding.id
-                              ? "animate-pulse bg-emerald-50"
-                              : "",
-                          ]
-                            .filter(Boolean)
-                            .join(" ")}
-                        >
-                          <TableCell>
-                            <Link
-                              className="text-left hover:underline"
-                              to={`/q/${binding.questionId}`}
-                            >
-                              {question?.title ?? binding.questionId}
-                            </Link>
-                          </TableCell>
-                          <TableCell>
-                            {item ? (
-                              <Button
-                                type="button"
-                                variant="link"
-                                className="h-auto p-0 text-left text-foreground hover:underline"
-                                onClick={() => setDetailItem(item)}
-                              >
-                                {item.title}
-                              </Button>
-                            ) : (
-                              binding.contextItemId
+              {workbookOutputs.length === 0 ? (
+                <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                  No workbook outputs yet. Publish a cell from Analyst Workspace → Output.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {workbookOutputs.map((output) => {
+                    const bindings = workbookOutputBindings.filter(
+                      (binding) => binding.outputId === output.id,
+                    );
+                    const selectedQuestionId = workbookOutputTargets[output.id] ?? "";
+                    const duplicate = bindings.some(
+                      (binding) => binding.questionId === selectedQuestionId,
+                    );
+                    return (
+                      <div key={output.id} className="rounded-lg border p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="font-medium">{output.name}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {output.workbook} · {output.sheet}!{output.cell} · {output.value}
+                            </p>
+                            {output.formula && (
+                              <code className="mt-2 block rounded bg-muted px-2 py-1 text-xs">
+                                {output.formula}
+                              </code>
                             )}
-                          </TableCell>
-                          <TableCell className="relative pr-9">
-                            <span className="text-sm text-muted-foreground">
-                              {binding.notes || "—"}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="absolute right-2 top-1/2 size-6 -translate-y-1/2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                              aria-label="Remove binding"
-                              onClick={() => handleUnbind(binding.id)}
+                          </div>
+                          <div className="flex min-w-60 flex-1 gap-2 sm:max-w-md">
+                            <Select
+                              value={selectedQuestionId}
+                              onValueChange={(value) =>
+                                value &&
+                                setWorkbookOutputTargets((targets) => ({
+                                  ...targets,
+                                  [output.id]: value,
+                                }))
+                              }
                             >
-                              ×
+                              <SelectTrigger className="min-w-0 flex-1">
+                                <SelectValue placeholder="Choose forecast" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {questions.map((question) => (
+                                  <SelectItem key={question.id} value={question.id}>
+                                    {question.title}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              disabled={!selectedQuestionId || duplicate}
+                              onClick={() => bindWorkbookOutput(output.id)}
+                            >
+                              Reference
                             </Button>
+                          </div>
+                        </div>
+                        {bindings.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {bindings.map((binding) => (
+                              <span
+                                key={binding.id}
+                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary"
+                              >
+                                {questions.find((question) => question.id === binding.questionId)
+                                  ?.title ?? binding.questionId}
+                                <button
+                                  className="ml-1 text-primary/70 hover:text-primary"
+                                  aria-label="Remove workbook output reference"
+                                  onClick={() => unbindWorkbookOutput(binding.id)}
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="border bg-card relative flex flex-col">
+            <CardContent>
+              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                <span>Forecast bindings</span>
+              </div>
+
+              {undoBinding && (
+                <div
+                  key={undoNoticeId}
+                  className={`absolute left-1/2 top-2.5 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-foreground/95 px-3.5 py-2 text-sm text-primary-foreground shadow-lg ${undoFading ? "animate-out fade-out slide-out-to-top-2" : "animate-in fade-in slide-in-from-top-2"}`}
+                >
+                  <span>Binding removed</span>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto p-0 text-primary-foreground"
+                    onClick={handleUndoUnbind}
+                  >
+                    Undo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 text-primary-foreground/70 hover:text-primary-foreground"
+                    aria-label="Dismiss"
+                    onClick={clearUndoToast}
+                  >
+                    ×
+                  </Button>
+                </div>
+              )}
+
+              <div className="border-b px-4 py-3">
+                <Input
+                  type="search"
+                  className="w-full"
+                  placeholder="Search by context item, forecast, or notes…"
+                  value={bindingsSearch}
+                  onChange={(e) => setBindingsSearch(e.target.value)}
+                />
+              </div>
+
+              <div className="flex min-h-0 max-h-[min(480px,calc(100vh-300px))] flex-col">
+                <div className="shrink-0 border-b bg-background">
+                  <Table className="table-fixed">
+                    <colgroup>
+                      <col className="w-[34%]" />
+                      <col className="w-[34%]" />
+                      <col className="w-[32%]" />
+                    </colgroup>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Forecast</TableHead>
+                        <TableHead>Context item</TableHead>
+                        <TableHead>Notes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                  </Table>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto bg-background">
+                  <Table className="table-fixed">
+                    <colgroup>
+                      <col className="w-[34%]" />
+                      <col className="w-[34%]" />
+                      <col className="w-[32%]" />
+                    </colgroup>
+                    <TableBody>
+                      {filteredBindingRows.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={3} className="p-8 text-center text-muted-foreground">
+                            {bindingsSearch.trim()
+                              ? "No bindings match your search."
+                              : "No bindings yet."}
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                      ) : (
+                        filteredBindingRows.map(({ binding, item, question }) => (
+                          <TableRow
+                            key={binding.id}
+                            ref={(el) => {
+                              if (el) bindRowRefs.current.set(binding.id, el);
+                              else bindRowRefs.current.delete(binding.id);
+                            }}
+                            className={[
+                              "relative transition-colors hover:bg-muted/60",
+                              highlightedBindingId === binding.id
+                                ? "animate-pulse bg-emerald-50"
+                                : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                          >
+                            <TableCell>
+                              <Link
+                                className="text-left hover:underline"
+                                to={`/q/${binding.questionId}`}
+                              >
+                                {question?.title ?? binding.questionId}
+                              </Link>
+                            </TableCell>
+                            <TableCell>
+                              {item ? (
+                                <Button
+                                  type="button"
+                                  variant="link"
+                                  className="h-auto p-0 text-left text-foreground hover:underline"
+                                  onClick={() => setDetailItem(item)}
+                                >
+                                  {item.title}
+                                </Button>
+                              ) : (
+                                binding.contextItemId
+                              )}
+                            </TableCell>
+                            <TableCell className="relative pr-9">
+                              <span className="text-sm text-muted-foreground">
+                                {binding.notes || "—"}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-2 top-1/2 size-6 -translate-y-1/2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                aria-label="Remove binding"
+                                onClick={() => handleUnbind(binding.id)}
+                              >
+                                ×
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
 
-              <div className="relative z-20 shrink-0 overflow-visible border-t-2 bg-muted/40">
-                <Table className="table-fixed">
-                  <colgroup>
-                    <col className="w-[34%]" />
-                    <col className="w-[34%]" />
-                    <col className="w-[32%]" />
-                  </colgroup>
-                  <TableBody>
-                    <TableRow className="bg-muted/40">
-                      <TableCell>
-                        <InlineCombobox
-                          placeholder="Forecast"
-                          options={forecastComboboxOptions}
-                          value={newBindForecast}
-                          selectedId={newBindForecastId}
-                          onValueChange={(text) => {
-                            setNewBindForecast(text);
-                            const match = forecastComboboxOptions.find(
-                              (o) => o.label.toLowerCase() === text.trim().toLowerCase(),
-                            );
-                            setNewBindForecastId(match && !match.disabled ? match.id : "");
-                          }}
-                          onSelect={(option) => {
-                            setNewBindForecast(option.label);
-                            setNewBindForecastId(option.id);
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <InlineCombobox
-                          placeholder="Context item"
-                          options={contextItemComboboxOptions}
-                          value={newBindItem}
-                          selectedId={newBindItemId}
-                          onValueChange={(text) => {
-                            setNewBindItem(text);
-                            const match = contextItemComboboxOptions.find(
-                              (o) => o.label.toLowerCase() === text.trim().toLowerCase(),
-                            );
-                            setNewBindItemId(match && !match.disabled ? match.id : "");
-                          }}
-                          onSelect={(option) => {
-                            setNewBindItem(option.label);
-                            setNewBindItemId(option.id);
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell className="flex items-center justify-end gap-2 pr-3">
-                        <Input
-                          type="text"
-                          className="min-w-0 flex-1"
-                          placeholder="Notes"
-                          value={newBindNotes}
-                          onChange={(e) => setNewBindNotes(e.target.value)}
-                        />
-                        <Button
-                          type="button"
-                          className="min-w-18 shadow-sm"
-                          disabled={!canCreateBinding}
-                          onClick={handleCreateBinding}
-                        >
-                          Bind
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <div className="relative z-20 shrink-0 overflow-visible border-t-2 bg-muted/40">
+                  <Table className="table-fixed">
+                    <colgroup>
+                      <col className="w-[34%]" />
+                      <col className="w-[34%]" />
+                      <col className="w-[32%]" />
+                    </colgroup>
+                    <TableBody>
+                      <TableRow className="bg-muted/40">
+                        <TableCell>
+                          <InlineCombobox
+                            placeholder="Forecast"
+                            options={forecastComboboxOptions}
+                            value={newBindForecast}
+                            selectedId={newBindForecastId}
+                            onValueChange={(text) => {
+                              setNewBindForecast(text);
+                              const match = forecastComboboxOptions.find(
+                                (o) => o.label.toLowerCase() === text.trim().toLowerCase(),
+                              );
+                              setNewBindForecastId(match && !match.disabled ? match.id : "");
+                            }}
+                            onSelect={(option) => {
+                              setNewBindForecast(option.label);
+                              setNewBindForecastId(option.id);
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <InlineCombobox
+                            placeholder="Context item"
+                            options={contextItemComboboxOptions}
+                            value={newBindItem}
+                            selectedId={newBindItemId}
+                            onValueChange={(text) => {
+                              setNewBindItem(text);
+                              const match = contextItemComboboxOptions.find(
+                                (o) => o.label.toLowerCase() === text.trim().toLowerCase(),
+                              );
+                              setNewBindItemId(match && !match.disabled ? match.id : "");
+                            }}
+                            onSelect={(option) => {
+                              setNewBindItem(option.label);
+                              setNewBindItemId(option.id);
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell className="flex items-center justify-end gap-2 pr-3">
+                          <Input
+                            type="text"
+                            className="min-w-0 flex-1"
+                            placeholder="Notes"
+                            value={newBindNotes}
+                            onChange={(e) => setNewBindNotes(e.target.value)}
+                          />
+                          <Button
+                            type="button"
+                            className="min-w-18 shadow-sm"
+                            disabled={!canCreateBinding}
+                            onClick={handleCreateBinding}
+                          >
+                            Bind
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
         </>
       )}
 

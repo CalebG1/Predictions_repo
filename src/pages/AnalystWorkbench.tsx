@@ -12,7 +12,13 @@ import { Textarea } from "../components/ui/textarea";
 import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
 import AnalysisPanel from "../components/context/AnalysisPanel";
-import { loadWorkbookOutputBindings, loadWorkbookOutputs, saveWorkbookOutputBindings, saveWorkbookOutputs, type WorkbookOutput } from "../domain/workbookOutputs";
+import {
+  loadWorkbookOutputBindings,
+  loadWorkbookOutputs,
+  saveWorkbookOutputBindings,
+  saveWorkbookOutputs,
+  type WorkbookOutput,
+} from "../domain/workbookOutputs";
 import {
   Dialog,
   DialogContent,
@@ -40,14 +46,14 @@ const forecastReferenceFields: {
   label: string;
   description: string;
 }[] = [
-    { id: "probability", label: "Current probability", description: "Latest event likelihood" },
-    { id: "confidence", label: "Model confidence", description: "Confidence in estimate quality" },
-    { id: "title", label: "Forecast title", description: "Question being forecast" },
-    { id: "baseRate", label: "Prior base rate", description: "Outside-view starting point" },
-    { id: "resolutionDate", label: "Resolution date", description: "When the forecast resolves" },
-    { id: "impact", label: "Impact", description: "Estimated outcome magnitude" },
-    { id: "resolutionSource", label: "Resolution source", description: "Source used to resolve it" },
-  ];
+  { id: "probability", label: "Current probability", description: "Latest event likelihood" },
+  { id: "confidence", label: "Model confidence", description: "Confidence in estimate quality" },
+  { id: "title", label: "Forecast title", description: "Question being forecast" },
+  { id: "baseRate", label: "Prior base rate", description: "Outside-view starting point" },
+  { id: "resolutionDate", label: "Resolution date", description: "When the forecast resolves" },
+  { id: "impact", label: "Impact", description: "Estimated outcome magnitude" },
+  { id: "resolutionSource", label: "Resolution source", description: "Source used to resolve it" },
+];
 
 const templateData: Record<
   Exclude<Template, "Blank">,
@@ -117,8 +123,8 @@ export default function AnalystWorkbench() {
   const question = questions.find((item) => item.id === questionId) ?? questions[0];
   const assumptions = question
     ? assumptionsFor(question.id).filter(
-      (item) => !["archived", "invalidated"].includes(item.status),
-    )
+        (item) => !["archived", "invalidated"].includes(item.status),
+      )
     : [];
   const probability = question ? yesOutcome(question.id)?.currentProbability : undefined;
   const forecast = question
@@ -130,13 +136,20 @@ export default function AnalystWorkbench() {
     switch (field) {
       // The live market/current outcome value is the existing forecast probability.
       // Fall back to the modeled estimate only when an outcome has not been created yet.
-      case "probability": return probability ?? forecast.currentProbability;
-      case "confidence": return forecast.confidenceInEstimateQuality;
-      case "title": return forecast.question;
-      case "baseRate": return forecast.priorBaseRate;
-      case "resolutionDate": return forecast.resolutionDate;
-      case "impact": return forecast.impact;
-      case "resolutionSource": return forecast.resolutionSource;
+      case "probability":
+        return probability ?? forecast.currentProbability;
+      case "confidence":
+        return forecast.confidenceInEstimateQuality;
+      case "title":
+        return forecast.question;
+      case "baseRate":
+        return forecast.priorBaseRate;
+      case "resolutionDate":
+        return forecast.resolutionDate;
+      case "impact":
+        return forecast.impact;
+      case "resolutionSource":
+        return forecast.resolutionSource;
     }
   };
 
@@ -203,34 +216,67 @@ export default function AnalystWorkbench() {
     const workbook = univerAPIRef.current?.getActiveWorkbook();
     const sheet = workbook?.getActiveSheet();
     const currentCell = sheet?.getSelection()?.getCurrentCell();
-    const range = currentCell ? sheet?.getRange(currentCell.actualRow, currentCell.actualColumn) : null;
+    const range = currentCell
+      ? sheet?.getRange(currentCell.actualRow, currentCell.actualColumn)
+      : null;
     const cell = range?.getA1Notation() ?? "A1";
     const value = range?.getValue();
     const formula = range?.getFormula();
-    return { cell, sheet: sheet?.getSheetName() ?? "Sheet1", value: value === undefined || value === null ? "(blank)" : String(value), formula: formula || undefined };
+    return {
+      cell,
+      sheet: sheet?.getSheetName() ?? "Sheet1",
+      value: value === undefined || value === null ? "(blank)" : String(value),
+      formula: formula || undefined,
+    };
   };
 
   const setSelectedCellAsOutput = () => {
     const selected = readActiveCell();
     setSelectionLabel(selected.cell);
     const name = outputName.trim() || `${workbookName} ${selected.cell} output`;
-    const output: WorkbookOutput = { id: `workbook-output-${Date.now()}`, name, workbook: workbookName, cell: selected.cell, sheet: selected.sheet, value: selected.value, formula: selected.formula, createdAt: new Date().toISOString() };
-    setWorkbookOutputs((outputs) => { const next = [output, ...outputs]; saveWorkbookOutputs(next); return next; });
+    const output: WorkbookOutput = {
+      id: `workbook-output-${Date.now()}`,
+      name,
+      workbook: workbookName,
+      cell: selected.cell,
+      sheet: selected.sheet,
+      value: selected.value,
+      formula: selected.formula,
+      createdAt: new Date().toISOString(),
+    };
+    setWorkbookOutputs((outputs) => {
+      const next = [output, ...outputs];
+      saveWorkbookOutputs(next);
+      return next;
+    });
     setOutputName("");
     setAgentStatus(`${name} was saved locally and is ready to reference from Forecast bindings.`);
   };
-  const removeWorkbookOutput = (id: string) => setWorkbookOutputs((outputs) => { const next = outputs.filter((output) => output.id !== id); saveWorkbookOutputs(next); saveWorkbookOutputBindings(loadWorkbookOutputBindings().filter((binding) => binding.outputId !== id)); return next; });
+  const removeWorkbookOutput = (id: string) =>
+    setWorkbookOutputs((outputs) => {
+      const next = outputs.filter((output) => output.id !== id);
+      saveWorkbookOutputs(next);
+      saveWorkbookOutputBindings(
+        loadWorkbookOutputBindings().filter((binding) => binding.outputId !== id),
+      );
+      return next;
+    });
 
   const uploadSpreadsheet = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
     if (!/\.(csv|tsv)$/i.test(file.name)) {
-      setAgentStatus("Upload a CSV or TSV file. Excel import can be added when an XLSX parser is connected.");
+      setAgentStatus(
+        "Upload a CSV or TSV file. Excel import can be added when an XLSX parser is connected.",
+      );
       return;
     }
     const delimiter = /\.tsv$/i.test(file.name) ? "\t" : ",";
-    const rows = (await file.text()).split(/\r?\n/).filter(Boolean).map((line) => line.split(delimiter).map((cell) => cell.trim()));
+    const rows = (await file.text())
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((line) => line.split(delimiter).map((cell) => cell.trim()));
     if (!rows.length) return;
     const api = univerAPIRef.current;
     if (!api) return;
@@ -284,7 +330,8 @@ export default function AnalystWorkbench() {
     sheet.getRange(0, 0, values.length, 3).setValues(values);
     sheet.getRange("A1:C1").setFontWeight("bold");
     workbook.setActiveSheet(targetSheet);
-    const row = forecastReferenceFields.findIndex((field) => field.id === selectedForecastField) + 2;
+    const row =
+      forecastReferenceFields.findIndex((field) => field.id === selectedForecastField) + 2;
     target.setValue(`='Forecast reference'!B${row}`);
     setSelectionLabel(target.getA1Notation());
     const selected = forecastReferenceFields.find((field) => field.id === selectedForecastField);
@@ -323,20 +370,77 @@ export default function AnalystWorkbench() {
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setTemplateOpen(true)}>New from template</Button>
-          <input ref={uploadInputRef} type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" className="hidden" onChange={uploadSpreadsheet} />
-          <Button variant="outline" onClick={() => uploadInputRef.current?.click()}>Upload</Button>
+          <input
+            ref={uploadInputRef}
+            type="file"
+            accept=".csv,.tsv,text/csv,text/tab-separated-values"
+            className="hidden"
+            onChange={uploadSpreadsheet}
+          />
+          <Button variant="outline" onClick={() => uploadInputRef.current?.click()}>
+            Upload
+          </Button>
         </div>
       </header>
       <div className="grid min-h-0 flex-1 grid-cols-[200px_minmax(0,1fr)_minmax(400px,460px)]">
         <nav className="flex min-h-0 flex-col border-r bg-card p-1" aria-label="Workspace view">
-          <p className="px-2 py-2 text-xs font-semibold tracking-widest text-muted-foreground uppercase">Workspace</p>
+          <p className="px-2 py-2 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+            Workspace
+          </p>
           <div className="grid gap-1">
-            <Button type="button" variant={workspaceMode === "spreadsheet" ? "secondary" : "ghost"} className="justify-start" onClick={() => setWorkspaceMode("spreadsheet")}><span className="font-mono text-sm"><SheetIcon /></span>Spreadsheet</Button>
-            <Button type="button" variant={workspaceMode === "code" ? "secondary" : "ghost"} className="justify-start" onClick={() => setWorkspaceMode("code")}><CodeIcon />Code workspace</Button>
+            <Button
+              type="button"
+              variant={workspaceMode === "spreadsheet" ? "secondary" : "ghost"}
+              className="justify-start"
+              onClick={() => setWorkspaceMode("spreadsheet")}
+            >
+              <span className="font-mono text-sm">
+                <SheetIcon />
+              </span>
+              Spreadsheet
+            </Button>
+            <Button
+              type="button"
+              variant={workspaceMode === "code" ? "secondary" : "ghost"}
+              className="justify-start"
+              onClick={() => setWorkspaceMode("code")}
+            >
+              <CodeIcon />
+              Code workspace
+            </Button>
           </div>
         </nav>
-        <div className={`min-h-0 size-full ${workspaceMode === "spreadsheet" ? "block" : "hidden"}`} ref={containerRef} />
-        {workspaceMode === "code" && <section className="min-h-0 overflow-y-auto bg-muted/20 p-6"><div className="mx-auto max-w-4xl"><header className="mb-6"><p className="text-xs font-semibold tracking-widest text-primary uppercase">Analysis notebook</p><h1 className="mt-1 text-2xl font-semibold">Code workspace</h1><p className="mt-2 text-sm text-muted-foreground">Run Python analysis alongside the workbook. Imports, execution results, and notebook cells stay local to this workspace.</p></header><Card className="bg-card"><CardContent className="p-5"><AnalysisPanel submitLabel="Save notebook analysis" onSubmit={(data) => { localStorage.setItem("signal-ridge-code-workspace", JSON.stringify(data)); setAgentStatus(`Saved “${data.title}” as local notebook analysis.`); }} /></CardContent></Card></div></section>}
+        <div
+          className={`min-h-0 size-full ${workspaceMode === "spreadsheet" ? "block" : "hidden"}`}
+          ref={containerRef}
+        />
+        {workspaceMode === "code" && (
+          <section className="min-h-0 overflow-y-auto bg-muted/20 p-6">
+            <div className="mx-auto max-w-4xl">
+              <header className="mb-6">
+                <p className="text-xs font-semibold tracking-widest text-primary uppercase">
+                  Analysis notebook
+                </p>
+                <h1 className="mt-1 text-2xl font-semibold">Code workspace</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Run Python analysis alongside the workbook. Imports, execution results, and
+                  notebook cells stay local to this workspace.
+                </p>
+              </header>
+              <Card className="bg-card">
+                <CardContent className="p-5">
+                  <AnalysisPanel
+                    submitLabel="Save notebook analysis"
+                    onSubmit={(data) => {
+                      localStorage.setItem("signal-ridge-code-workspace", JSON.stringify(data));
+                      setAgentStatus(`Saved “${data.title}” as local notebook analysis.`);
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
         <aside className="flex min-h-0 flex-col border-l bg-muted/20">
           <div className="border-b bg-card p-3">
             <div className="mb-3">
@@ -449,15 +553,23 @@ export default function AnalystWorkbench() {
                     onChange={(event) => setQuestionId(event.target.value)}
                   >
                     {questions.map((item) => (
-                      <option key={item.id} value={item.id}>{item.title}</option>
+                      <option key={item.id} value={item.id}>
+                        {item.title}
+                      </option>
                     ))}
                   </select>
                 </label>
                 <Card className="bg-primary/5">
                   <CardContent className="space-y-1">
-                    <p className="text-sm font-medium">{question?.title ?? "No forecast selected"}</p>
+                    <p className="text-sm font-medium">
+                      {question?.title ?? "No forecast selected"}
+                    </p>
                     <p className="text-xs leading-4 text-muted-foreground">
-                      Current probability {probability === undefined ? "is unavailable" : `${Math.round(probability * 100)}%`} · resolves {question?.resolutionDate ?? "—"}
+                      Current probability{" "}
+                      {probability === undefined
+                        ? "is unavailable"
+                        : `${Math.round(probability * 100)}%`}{" "}
+                      · resolves {question?.resolutionDate ?? "—"}
                     </p>
                   </CardContent>
                 </Card>
@@ -473,9 +585,14 @@ export default function AnalystWorkbench() {
                     >
                       <span className="grid min-w-0 gap-1">
                         <strong>{field.label}</strong>
-                        <small className="whitespace-normal text-muted-foreground">{field.description}</small>
+                        <small className="whitespace-normal text-muted-foreground">
+                          {field.description}
+                        </small>
                       </span>
-                      <output title={formatForecastReferenceValue(field.id)} className="max-w-full truncate rounded-md bg-muted px-2 py-1 text-xs text-foreground">
+                      <output
+                        title={formatForecastReferenceValue(field.id)}
+                        className="max-w-full truncate rounded-md bg-muted px-2 py-1 text-xs text-foreground"
+                      >
                         {formatForecastReferenceValue(field.id)}
                       </output>
                     </Button>
@@ -585,7 +702,10 @@ export default function AnalystWorkbench() {
                             )}
                           </div>
                           <div className="grid gap-2">
-                            <Button variant="outline" onClick={() => removeWorkbookOutput(output.id)}>
+                            <Button
+                              variant="outline"
+                              onClick={() => removeWorkbookOutput(output.id)}
+                            >
                               Remove output
                             </Button>
                           </div>
