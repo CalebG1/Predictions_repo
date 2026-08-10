@@ -47,8 +47,8 @@ interface FormState {
   evidence: EvidenceDraft[];
 }
 
-const defaultForm = (category: Category = "Operational"): FormState => ({
-  title: "",
+const defaultForm = (category: Category = "Operational", title = ""): FormState => ({
+  title,
   description: "",
   resolutionCriteria: "",
   resolutionSource: "",
@@ -89,10 +89,12 @@ export default function CreateQuestionModal({
   open,
   onClose,
   defaultCategory,
+  initialTitle,
 }: {
   open: boolean;
   onClose: () => void;
   defaultCategory?: Category;
+  initialTitle?: string;
 }) {
   const navigate = useNavigate();
   const { startForecastJob, user } = useStore();
@@ -108,11 +110,11 @@ export default function CreateQuestionModal({
 
   useEffect(() => {
     if (!open) return;
-    setForm(defaultForm(defaultCategory));
+    setForm(defaultForm(defaultCategory, initialTitle));
     setStep(0);
     setSubmitting(false);
     setSimilarDismissed(false);
-  }, [open, defaultCategory]);
+  }, [open, defaultCategory, initialTitle]);
 
   useEffect(() => {
     setSimilarDismissed(false);
@@ -193,7 +195,7 @@ export default function CreateQuestionModal({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <DialogHeader className="px-2 pt-2 pr-10">
           <DialogTitle>Create a forecast</DialogTitle>
         </DialogHeader>
@@ -247,8 +249,8 @@ export default function CreateQuestionModal({
                       </svg>
                     </Button>
                   </div>
-                  <ul className="mt-2 space-y-1">
-                    {similar.map((q) => (
+                  <ul className="mt-2 max-h-48 space-y-1 overflow-y-auto pr-1">
+                    {similar.slice(0, 4).map((q) => (
                       <li key={q.id}>
                         <Button
                           type="button"
@@ -264,6 +266,11 @@ export default function CreateQuestionModal({
                       </li>
                     ))}
                   </ul>
+                  {similar.length > 4 && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Showing the 4 closest matches. Refine the question to narrow the list.
+                    </p>
+                  )}
                 </div>
               )}
 

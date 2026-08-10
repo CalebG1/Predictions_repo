@@ -15,9 +15,13 @@ import AnalysisPanel from "../components/context/AnalysisPanel";
 import {
   loadWorkbookOutputBindings,
   loadWorkbookOutputs,
+  loadWorkbookScenarios,
   saveWorkbookOutputBindings,
   saveWorkbookOutputs,
+  saveWorkbookScenarios,
   type WorkbookOutput,
+  type WorkbookScenario,
+  type WorkbookScenarioOverride,
 } from "../domain/workbookOutputs";
 import {
   Dialog,
@@ -29,7 +33,7 @@ import {
 import { CodeIcon, SheetIcon } from "lucide-react";
 
 type Template = "Blank" | "Pricing" | "Demand" | "Statistical";
-type SidebarTab = "assumptions" | "forecast" | "agent" | "output";
+type SidebarTab = "assumptions" | "forecast" | "scenarios" | "agent" | "output";
 type WorkspaceMode = "spreadsheet" | "code";
 type AgentMessage = { id: string; role: "assistant" | "user"; content: string };
 type ForecastReferenceField =
@@ -54,6 +58,14 @@ const forecastReferenceFields: {
   { id: "impact", label: "Impact", description: "Estimated outcome magnitude" },
   { id: "resolutionSource", label: "Resolution source", description: "Source used to resolve it" },
 ];
+
+const sidebarTools = [
+  ["assumptions", "Assumptions", "ƒx"],
+  ["forecast", "Forecast", "%"],
+  ["scenarios", "Scenarios", "◫"],
+  ["agent", "Agent", "✦"],
+  ["output", "Output", "↗"],
+] as const;
 
 const templateData: Record<
   Exclude<Template, "Blank">,
@@ -119,6 +131,21 @@ export default function AnalystWorkbench() {
   const [selectionLabel, setSelectionLabel] = useState("the active cell");
   const [outputName, setOutputName] = useState("");
   const [workbookOutputs, setWorkbookOutputs] = useState<WorkbookOutput[]>(loadWorkbookOutputs);
+  const [scenarios, setScenarios] = useState<WorkbookScenario[]>(loadWorkbookScenarios);
+  const [activeScenario, setActiveScenario] = useState<WorkbookScenario>({
+    id: "scenario-draft",
+    name: "Base case",
+    workbook: "My workspace",
+    questionId: "q-geo",
+    createdAt: new Date().toISOString(),
+    status: "draft",
+    overrides: [],
+    outputs: [],
+  });
+  const [scenarioName, setScenarioName] = useState("Base case");
+  const [scenarioOverrideKind, setScenarioOverrideKind] =
+    useState<WorkbookScenarioOverride["kind"]>("assumption");
+  const [scenarioOverrideValue, setScenarioOverrideValue] = useState("");
 
   const question = questions.find((item) => item.id === questionId) ?? questions[0];
   const assumptions = question
@@ -340,6 +367,133 @@ export default function AnalystWorkbench() {
     );
   };
 
+  const addScenarioOverride = () => {
+    const cell = scenarioOverrideKind === "cell" ? readActiveCell() : null;
+    const assumption = analystLibraryAssumptions.find((item) => item.id === selectedAssumptionId);
+    const forecastField = forecastReferenceFields.find((item) => item.id === selectedForecastField);
+    const baseline =
+      scenarioOverrideKind === "assumption"
+        ? String(assumption?.value ?? "")
+        : scenarioOverrideKind === "forecast"
+          ? String(forecastField ? forecastReferenceValue(forecastField.id) : "")
+          : (cell?.value ?? "");
+    const label =
+      scenarioOverrideKind === "assumption"
+        ? (assumption?.name ?? "Assumption")
+        : scenarioOverrideKind === "forecast"
+          ? (forecastField?.label ?? "Forecast field")
+          : `${cell?.sheet ?? "Sheet1"}!${cell?.cell ?? "A1"}`;
+    const reference =
+      scenarioOverrideKind === "assumption"
+        ? (assumption?.id ?? "")
+        : scenarioOverrideKind === "forecast"
+          ? (forecastField?.id ?? "")
+          : `${cell?.sheet ?? "Sheet1"}!${cell?.cell ?? "A1"}`;
+    const override: WorkbookScenarioOverride = {
+      id: `scenario-override-${Date.now()}`,
+      kind: scenarioOverrideKind,
+      label,
+      reference,
+      baselineValue: baseline,
+      overrideValue: scenarioOverrideValue || baseline,
+    };
+    setActiveScenario((scenario) => ({
+      ...scenario,
+      overrides: [...scenario.overrides, override],
+    }));
+    setScenarioOverrideValue("");
+  };
+
+  const scenarioOutputs = () => {
+    const numericOverrides = activeScenario.overrides
+      .map((override) => ({
+        baseline: Number(override.baselineValue),
+        value: Number(override.overrideValue),
+      }))
+      .filter(
+        (override) =>
+          Number.isFinite(override.baseline) &&
+          Number.isFinite(override.value) &&
+          override.baseline !== 0,
+      );
+    const factor = numericOverrides.length
+      ? 1 +
+        numericOverrides.reduce(
+          (sum, override) =>
+            sum + (override.value - override.baseline) / Math.abs(override.baseline),
+          0,
+        ) /
+          numericOverrides.length
+      : 1;
+    return workbookOutputs.map((output) => {
+      const baseline = Number(output.value);
+      return {
+        outputId: output.id,
+        name: output.name,
+        sheet: output.sheet,
+        cell: output.cell,
+        baselineValue: output.value,
+        scenarioValue: Number.isFinite(baseline)
+          ? String(Number((baseline * factor).toFixed(3)))
+          : output.value,
+        error: Number.isFinite(baseline) ? undefined : "Text or unavailable output",
+      };
+    });
+  };
+
+  const saveScenario = () => {
+    const workbook = univerAPIRef.current?.getActiveWorkbook();
+    const scenario: WorkbookScenario = {
+      ...activeScenario,
+      id: activeScenario.id === "scenario-draft" ? `scenario-${Date.now()}` : activeScenario.id,
+      name: scenarioName.trim() || "Untitled scenario",
+      workbook: workbookName,
+      questionId: question?.id,
+      createdAt: new Date().toISOString(),
+      status: "saved",
+      outputs: scenarioOutputs(),
+    };
+    if (workbook) {
+      const sheetName = `Scenario – ${scenario.name}`.slice(0, 30);
+      const sheet = workbook.getSheetByName(sheetName) ?? workbook.create(sheetName, 80, 6);
+      const values = [
+        ["Scenario", scenario.name, "Forecast", question?.title ?? "—"],
+        ["Created", scenario.createdAt, "Status", "Saved"],
+        [],
+        ["Input", "Kind", "Baseline", "Override"],
+        ...scenario.overrides.map((override) => [
+          override.label,
+          override.kind,
+          override.baselineValue,
+          override.overrideValue,
+        ]),
+        [],
+        ["Output", "Sheet", "Cell", "Baseline", "Scenario"],
+        ...scenario.outputs.map((output) => [
+          output.name,
+          output.sheet,
+          output.cell,
+          output.baselineValue,
+          output.scenarioValue,
+        ]),
+      ];
+      sheet.getRange(0, 0, values.length, 5).setValues(values);
+      sheet.getRange("A1:D1").setFontWeight("bold");
+      sheet.getRange(3, 0, 1, 4).setFontWeight("bold");
+      sheet.getRange(6 + scenario.overrides.length, 0, 1, 5).setFontWeight("bold");
+    }
+    setScenarios((items) => {
+      const next = [scenario, ...items.filter((item) => item.id !== scenario.id)];
+      saveWorkbookScenarios(next);
+      return next;
+    });
+    setActiveScenario(scenario);
+    setScenarioName(scenario.name);
+    setAgentStatus(
+      `Saved “${scenario.name}” with ${scenario.overrides.length} overrides and ${scenario.outputs.length} outputs.`,
+    );
+  };
+
   const sendAgentMessage = () => {
     const request = agentPrompt.trim();
     if (!request) return;
@@ -382,7 +536,7 @@ export default function AnalystWorkbench() {
           </Button>
         </div>
       </header>
-      <div className="grid min-h-0 flex-1 grid-cols-[200px_minmax(0,1fr)_minmax(400px,460px)]">
+      <div className="grid min-h-0 flex-1 grid-cols-[200px_minmax(0,1fr)_56px_minmax(400px,460px)]">
         <nav className="flex min-h-0 flex-col border-r bg-card p-1" aria-label="Workspace view">
           <p className="px-2 py-2 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
             Workspace
@@ -415,7 +569,7 @@ export default function AnalystWorkbench() {
           ref={containerRef}
         />
         {workspaceMode === "code" && (
-          <section className="min-h-0 overflow-y-auto bg-muted/20 p-6">
+          <section className="col-start-2 min-h-0 overflow-y-auto bg-muted/20 p-6">
             <div className="mx-auto max-w-4xl">
               <header className="mb-6">
                 <p className="text-xs font-semibold tracking-widest text-primary uppercase">
@@ -441,48 +595,41 @@ export default function AnalystWorkbench() {
             </div>
           </section>
         )}
-        <aside className="flex min-h-0 flex-col border-l bg-muted/20">
-          <div className="border-b bg-card p-3">
-            <div className="mb-3">
-              <span className="text-sm font-semibold">Workspace tools</span>
-              <p className="text-xs text-muted-foreground">
-                Context and analysis for this workbook
-              </p>
-            </div>
-            <div
-              className="grid grid-cols-4 rounded-lg bg-muted p-1"
-              role="tablist"
-              aria-label="Analyst tools"
+        <nav
+          className="flex min-h-0 flex-col items-center gap-2 border-l bg-card py-3"
+          role="tablist"
+          aria-label="Analyst tools"
+        >
+          {sidebarTools.map(([value, label, icon]) => (
+            <Button
+              key={value}
+              type="button"
+              variant="ghost"
+              role="tab"
+              aria-selected={sidebarTab === value}
+              aria-label={label}
+              title={label}
+              className={`size-10 p-0 text-base ${sidebarTab === value ? "bg-primary/10 text-primary hover:bg-primary/10" : "text-muted-foreground"}`}
+              onClick={() => {
+                setSidebarTab(value);
+                if (value === "output") {
+                  const selected = readActiveCell();
+                  setSelectionLabel(selected.cell);
+                }
+              }}
             >
-              {(
-                [
-                  ["assumptions", "Assumptions", "ƒx"],
-                  ["forecast", "Forecast", "%"],
-                  ["agent", "Agent", "✦"],
-                  ["output", "Output", "↗"],
-                ] as const
-              ).map(([value, label, icon]) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  role="tab"
-                  aria-selected={sidebarTab === value}
-                  className={`h-8 justify-center ${sidebarTab === value ? "bg-background text-foreground shadow-sm hover:bg-background" : "text-muted-foreground"}`}
-                  onClick={() => {
-                    setSidebarTab(value);
-                    if (value === "output") {
-                      const selected = readActiveCell();
-                      setSelectionLabel(selected.cell);
-                    }
-                  }}
-                >
-                  <span aria-hidden="true">{icon}</span>
-                  {label}
-                </Button>
-              ))}
-            </div>
+              <span aria-hidden="true">{icon}</span>
+            </Button>
+          ))}
+        </nav>
+        <aside className="flex min-h-0 flex-col border-l bg-muted/20">
+          <div className="border-b bg-card p-4">
+            <span className="text-sm font-semibold">
+              {sidebarTools.find(([value]) => value === sidebarTab)?.[1]}
+            </span>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Context and analysis for this workbook
+            </p>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {sidebarTab === "assumptions" && (
@@ -602,6 +749,145 @@ export default function AnalystWorkbench() {
                   <Button className="w-full" onClick={insertForecastReference} disabled={!forecast}>
                     Insert live forecast reference
                   </Button>
+                </footer>
+              </section>
+            )}
+            {sidebarTab === "scenarios" && (
+              <section className="flex min-h-full flex-col gap-4">
+                <header className="space-y-2">
+                  <span className="text-sm font-semibold text-primary">Scenario planning</span>
+                  <h2 className="text-lg font-semibold">Test a case without changing sources</h2>
+                  <p className="text-sm leading-5 text-muted-foreground">
+                    Override linked inputs or a selected cell, compare every published output, then
+                    save a reproducible workbook sheet.
+                  </p>
+                </header>
+                <Card className="bg-card">
+                  <CardContent className="grid gap-3">
+                    <Input
+                      value={scenarioName}
+                      onChange={(event) => setScenarioName(event.target.value)}
+                      placeholder="Scenario name"
+                    />
+                    <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+                      {(["assumption", "forecast", "cell"] as const).map((kind) => (
+                        <Button
+                          key={kind}
+                          type="button"
+                          size="sm"
+                          variant={scenarioOverrideKind === kind ? "secondary" : "ghost"}
+                          className="capitalize"
+                          onClick={() => setScenarioOverrideKind(kind)}
+                        >
+                          {kind}
+                        </Button>
+                      ))}
+                    </div>
+                    <Input
+                      value={scenarioOverrideValue}
+                      onChange={(event) => setScenarioOverrideValue(event.target.value)}
+                      placeholder="Override value (optional)"
+                    />
+                    <Button variant="outline" onClick={addScenarioOverride}>
+                      Add override
+                    </Button>
+                  </CardContent>
+                </Card>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold">Draft overrides</h3>
+                    <span className="text-xs text-muted-foreground">
+                      {activeScenario.overrides.length}
+                    </span>
+                  </div>
+                  {activeScenario.overrides.length === 0 ? (
+                    <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+                      Add an assumption, forecast field, or selected cell to start a what-if case.
+                    </p>
+                  ) : (
+                    activeScenario.overrides.map((override) => (
+                      <div
+                        key={override.id}
+                        className="flex items-center justify-between gap-2 rounded-lg border bg-card p-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{override.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {override.baselineValue} → {override.overrideValue}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            setActiveScenario((scenario) => ({
+                              ...scenario,
+                              overrides: scenario.overrides.filter(
+                                (item) => item.id !== override.id,
+                              ),
+                            }))
+                          }
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold">Output comparison</h3>
+                    <span className="text-xs text-muted-foreground">
+                      {workbookOutputs.length} published
+                    </span>
+                  </div>
+                  {workbookOutputs.length === 0 ? (
+                    <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+                      Publish one or more output cells to compare scenarios.
+                    </p>
+                  ) : (
+                    <div className="overflow-hidden rounded-lg border">
+                      <div className="grid grid-cols-[minmax(0,1fr)_4rem_4rem] gap-2 bg-muted px-3 py-2 text-xs font-medium text-muted-foreground">
+                        <span>Output</span>
+                        <span>Base</span>
+                        <span>Case</span>
+                      </div>
+                      {scenarioOutputs().map((output) => (
+                        <div
+                          key={output.outputId}
+                          className="grid grid-cols-[minmax(0,1fr)_4rem_4rem] gap-2 border-t px-3 py-2 text-xs"
+                        >
+                          <span className="truncate font-medium">{output.name}</span>
+                          <span>{output.baselineValue}</span>
+                          <span className="font-semibold text-primary">{output.scenarioValue}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <footer className="sticky bottom-0 -mx-4 mt-auto border-t bg-muted/20 px-4 pt-4 pb-1">
+                  <Button className="w-full" onClick={saveScenario}>
+                    Save scenario sheet
+                  </Button>
+                  <div className="mt-3 space-y-1">
+                    {scenarios.slice(0, 3).map((scenario) => (
+                      <Button
+                        key={scenario.id}
+                        type="button"
+                        variant="ghost"
+                        className="h-auto w-full justify-between px-1 py-1 text-left"
+                        onClick={() => {
+                          setActiveScenario({ ...scenario, status: "draft" });
+                          setScenarioName(scenario.name);
+                        }}
+                      >
+                        <span className="truncate">{scenario.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {scenario.overrides.length} inputs
+                        </span>
+                      </Button>
+                    ))}
+                  </div>
                 </footer>
               </section>
             )}
