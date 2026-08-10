@@ -17,7 +17,6 @@ import { IconMail } from "./icons";
 import LaunchRunModal from "./LaunchRunModal";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Textarea } from "./ui/textarea";
 
 const GAIN_LABELS: Record<GainLevel, string> = {
@@ -178,11 +177,11 @@ export default function InterventionsPanel({ questionId }: { questionId: string 
   };
 
   return (
-    <Card className="border bg-card mt-5">
+    <Card className="mt-5">
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-baseline gap-3">
           <h4 className="text-base">Drive this outcome</h4>
-          <span className="text-muted-foreground small">
+          <span className="text-sm leading-5 text-muted-foreground">
             Agents that get things done — chase owners, file tickets, secure commitments — plus
             research runs that sharpen the estimate. Monitor them all under the outcome panel.
           </span>
@@ -193,81 +192,59 @@ export default function InterventionsPanel({ questionId }: { questionId: string 
             No open suggestions for this question.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
-            <Table className="text-sm">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Suggested agent</TableHead>
-                  <TableHead>Expected impact</TableHead>
-                  <TableHead>Resources</TableHead>
-                  <TableHead aria-label="Actions" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {active.map((row) => {
-                  const s = row.suggestion;
-                  return (
-                    <Fragment key={s.id}>
-                      <TableRow className="hover:bg-muted/60">
-                        <TableCell className="max-w-85 align-top">
-                          <span className="block text-sm font-semibold">
-                            <span className={`mr-2 ${intentClassName(s.intent)}`}>
-                              {INTENT_LABELS[s.intent]}
-                            </span>
-                            {s.title}
-                          </span>
-                          <span className="mt-1 block text-xs text-muted-foreground">
-                            {s.intent === "act"
-                              ? `Delivers: ${s.expectedOutcome}`
-                              : `Targets: ${s.targets}`}
-                          </span>
-                          <span className="mt-1 block text-xs text-muted-foreground">
-                            {s.approach}
-                          </span>
-                        </TableCell>
-                        <TableCell className="min-w-37.5 max-w-47.5 align-top">
-                          <span
-                            className={`inline-block rounded-full px-2.5 py-1 text-xs font-bold ${gainClassName(s.estimatedGain)}`}
-                          >
-                            {GAIN_LABELS[s.estimatedGain]}
-                          </span>
-                          <span className="mt-1 block text-xs text-muted-foreground">
-                            {s.gainFraming}
-                          </span>
-                        </TableCell>
-                        <TableCell className="min-w-40 max-w-52.5 align-top">
-                          <span className="flex flex-wrap items-center gap-1.5 text-xs">
-                            {s.defaultResources.people.slice(0, 3).map((p) => (
-                              <ChannelIcon key={p.name} channel={p.channel} />
-                            ))}
-                            {resourcePreview(s.defaultResources)}
-                          </span>
-                          <span className="mt-1 block text-xs text-muted-foreground">
-                            {s.estimatedDurationLabel}
-                          </span>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap text-right align-top">
-                          {renderActions(row)}
-                        </TableCell>
-                      </TableRow>
-                      {rejectingId === s.id && (
-                        <TableRow className="bg-muted/60">
-                          <TableCell colSpan={4}>
-                            <RejectForm
-                              onCancel={() => setRejectingId(null)}
-                              onConfirm={(reason) => {
-                                rejectIntervention(questionId, s.id, reason);
-                                setRejectingId(null);
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </TableBody>
-            </Table>
+          <div className="grid gap-3">
+            {active.map((row) => {
+              const s = row.suggestion;
+              return (
+                <Fragment key={s.id}>
+                  <div className="grid gap-4 rounded-lg border bg-background p-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(10rem,0.8fr)_minmax(12rem,1fr)_auto] lg:items-start">
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={intentClassName(s.intent)}>{INTENT_LABELS[s.intent]}</span>
+                        <span className="text-sm font-semibold leading-5">{s.title}</span>
+                      </div>
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        {s.intent === "act"
+                          ? `Delivers: ${s.expectedOutcome}`
+                          : `Targets: ${s.targets}`}
+                      </p>
+                      <p className="text-xs leading-5 text-muted-foreground">{s.approach}</p>
+                    </div>
+                    <div className="min-w-0 space-y-2">
+                      <span
+                        className={`inline-block rounded-full px-2.5 py-1 text-xs font-bold ${gainClassName(s.estimatedGain)}`}
+                      >
+                        {GAIN_LABELS[s.estimatedGain]}
+                      </span>
+                      <p className="text-xs leading-5 text-muted-foreground">{s.gainFraming}</p>
+                    </div>
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs leading-5">
+                        {s.defaultResources.people.slice(0, 3).map((p) => (
+                          <ChannelIcon key={p.name} channel={p.channel} />
+                        ))}
+                        <span>{resourcePreview(s.defaultResources)}</span>
+                      </div>
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        {s.estimatedDurationLabel}
+                      </p>
+                    </div>
+                    <div className="flex min-w-max lg:justify-end">{renderActions(row)}</div>
+                  </div>
+                  {rejectingId === s.id && (
+                    <div className="rounded-lg border bg-muted/40 p-4">
+                      <RejectForm
+                        onCancel={() => setRejectingId(null)}
+                        onConfirm={(reason) => {
+                          rejectIntervention(questionId, s.id, reason);
+                          setRejectingId(null);
+                        }}
+                      />
+                    </div>
+                  )}
+                </Fragment>
+              );
+            })}
           </div>
         )}
 

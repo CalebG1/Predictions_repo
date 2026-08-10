@@ -120,7 +120,7 @@ export default function QuestionDetail() {
   }
 
   return (
-    <div className="mx-auto min-h-[calc(100vh-104px)] w-full max-w-[1240px] bg-background px-[22px] pb-22 pt-4">
+    <div className="mx-auto min-h-[calc(100vh-64px)] w-full max-w-[1240px] bg-background px-[22px] pb-22 pt-4">
       <div className="mb-5">
         <div className="mb-3 flex flex-col items-start justify-between gap-4 sm:flex-row">
           <div className="min-w-0 flex-1">

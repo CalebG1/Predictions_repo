@@ -8,7 +8,7 @@ import CategoryPicker from "./CategoryPicker";
 import VisibilityPicker from "./VisibilityPicker";
 import { IconPlus } from "./icons";
 import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
@@ -143,7 +143,6 @@ export default function CreateQuestionModal({
   const stepComplete = [step0Complete, step1Complete, step2Complete][step];
   const canSubmit = step0Complete && step1Complete && step2Complete && !submitting;
   const canGoNext = stepComplete;
-  const showNav = step > 0 || step0Complete;
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -194,12 +193,12 @@ export default function CreateQuestionModal({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto bg-card p-0 sm:max-w-3xl">
-        <DialogHeader className="px-6 pt-6 pr-12">
+      <DialogContent>
+        <DialogHeader className="px-2 pt-2 pr-10">
           <DialogTitle>Create a forecast</DialogTitle>
         </DialogHeader>
 
-        <div className="flex gap-2 px-6" aria-hidden="true">
+        <div className="flex gap-2 px-2" aria-hidden="true">
           {STEPS.map((s, i) => (
             <span
               key={s.title}
@@ -208,7 +207,7 @@ export default function CreateQuestionModal({
           ))}
         </div>
 
-        <div className="space-y-5 px-6 py-5">
+        <div className="space-y-5 px-2 py-3">
           {step === 0 && (
             <>
               <label className="grid gap-1.5 text-sm font-medium">
@@ -399,46 +398,38 @@ export default function CreateQuestionModal({
             </>
           )}
         </div>
+        <DialogFooter className="flex items-center justify-between">
+          {!isFirst ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Previous step"
+              onClick={goBack}
+            >
+              <IconArrow direction="left" />
+            </Button>
+          ) : (
+            <span aria-hidden="true" />
+          )}
 
-        {showNav && (
-          <footer className="flex items-center justify-between border-t px-6 py-4">
-            {!isFirst ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label="Previous step"
-                onClick={goBack}
-              >
-                <IconArrow direction="left" />
-              </Button>
-            ) : (
-              <span aria-hidden="true" />
-            )}
-
-            {isLast ? (
-              <Button
-                type="button"
-                className="min-w-36"
-                disabled={!canSubmit}
-                onClick={handleSubmit}
-              >
-                {submitting ? "Creating…" : "Create forecast"}
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label="Next step"
-                disabled={!canGoNext}
-                onClick={goNext}
-              >
-                <IconArrow direction="right" />
-              </Button>
-            )}
-          </footer>
-        )}
+          {isLast ? (
+            <Button type="button" className="min-w-36" disabled={!canSubmit} onClick={handleSubmit}>
+              {submitting ? "Creating…" : "Create forecast"}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Next step"
+              disabled={!canGoNext}
+              onClick={goNext}
+            >
+              <IconArrow direction="right" />
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

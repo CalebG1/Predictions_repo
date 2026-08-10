@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { Card, CardContent } from "../../components/ui/card";
+import { loadWorkbookOutputBindings, loadWorkbookOutputs, saveWorkbookOutputBindings, type WorkbookOutput, type WorkbookOutputBinding } from "../../domain/workbookOutputs";
 
 const TABS = ["library", "bindings", "governance"] as const;
 type Tab = (typeof TABS)[number];
@@ -79,6 +80,9 @@ export default function Context() {
   const [undoNoticeId, setUndoNoticeId] = useState(0);
   const [undoBinding, setUndoBinding] = useState<ContextBinding | null>(null);
   const [undoFading, setUndoFading] = useState(false);
+  const [workbookOutputs] = useState<WorkbookOutput[]>(loadWorkbookOutputs);
+  const [workbookOutputBindings, setWorkbookOutputBindings] = useState<WorkbookOutputBinding[]>(loadWorkbookOutputBindings);
+  const [workbookOutputTargets, setWorkbookOutputTargets] = useState<Record<string, string>>({});
 
   const userName = (id: string) =>
     users.find((u) => u.id === id)?.name ?? allUsers.find((u) => u.id === id)?.name ?? id;
@@ -239,6 +243,22 @@ export default function Context() {
     setNewBindItemId("");
     setNewBindNotes("");
   };
+
+  const bindWorkbookOutput = (outputId: string) => {
+    const questionId = workbookOutputTargets[outputId];
+    if (!questionId || workbookOutputBindings.some((binding) => binding.outputId === outputId && binding.questionId === questionId)) return;
+    setWorkbookOutputBindings((bindings) => {
+      const next = [...bindings, { id: `workbook-binding-${Date.now()}`, outputId, questionId, createdAt: new Date().toISOString() }];
+      saveWorkbookOutputBindings(next);
+      return next;
+    });
+  };
+
+  const unbindWorkbookOutput = (bindingId: string) => setWorkbookOutputBindings((bindings) => {
+    const next = bindings.filter((binding) => binding.id !== bindingId);
+    saveWorkbookOutputBindings(next);
+    return next;
+  });
 
   const clearUndoTimers = () => {
     if (undoFadeTimerRef.current) {
@@ -443,6 +463,20 @@ export default function Context() {
       )}
 
       {tab === "bindings" && (
+        <>
+        <Card className="mb-4 border bg-card">
+          <CardContent>
+            <div className="mb-4">
+              <span className="text-sm font-semibold">Workbook outputs</span>
+              <p className="mt-1 text-sm text-muted-foreground">Locally saved spreadsheet outputs can be referenced by a forecast here.</p>
+            </div>
+            {workbookOutputs.length === 0 ? <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No workbook outputs yet. Publish a cell from Analyst Workspace → Output.</p> : <div className="space-y-3">{workbookOutputs.map((output) => {
+              const bindings = workbookOutputBindings.filter((binding) => binding.outputId === output.id);
+              const selectedQuestionId = workbookOutputTargets[output.id] ?? "";
+              const duplicate = bindings.some((binding) => binding.questionId === selectedQuestionId);
+              return <div key={output.id} className="rounded-lg border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-medium">{output.name}</p><p className="mt-1 text-xs text-muted-foreground">{output.workbook} · {output.sheet}!{output.cell} · {output.value}</p>{output.formula && <code className="mt-2 block rounded bg-muted px-2 py-1 text-xs">{output.formula}</code>}</div><div className="flex min-w-60 flex-1 gap-2 sm:max-w-md"><Select value={selectedQuestionId} onValueChange={(value) => value && setWorkbookOutputTargets((targets) => ({ ...targets, [output.id]: value }))}><SelectTrigger className="min-w-0 flex-1"><SelectValue placeholder="Choose forecast" /></SelectTrigger><SelectContent>{questions.map((question) => <SelectItem key={question.id} value={question.id}>{question.title}</SelectItem>)}</SelectContent></Select><Button disabled={!selectedQuestionId || duplicate} onClick={() => bindWorkbookOutput(output.id)}>Reference</Button></div></div>{bindings.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{bindings.map((binding) => <span key={binding.id} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{questions.find((question) => question.id === binding.questionId)?.title ?? binding.questionId}<button className="ml-1 text-primary/70 hover:text-primary" aria-label="Remove workbook output reference" onClick={() => unbindWorkbookOutput(binding.id)}>×</button></span>)}</div>}</div>})}</div>}
+          </CardContent>
+        </Card>
         <Card className="border bg-card relative flex flex-col">
           <CardContent>
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
@@ -652,6 +686,7 @@ export default function Context() {
             </div>
           </CardContent>
         </Card>
+        </>
       )}
 
       {tab === "governance" && (

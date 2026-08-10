@@ -6,14 +6,25 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import type { Competitor } from "../domain/competitors";
-import { competitorForQuestion, competitorMoves, competitors, moveForQuestion } from "../domain/competitors";
+import {
+  competitorForQuestion,
+  competitorMoves,
+  competitors,
+  moveForQuestion,
+} from "../domain/competitors";
 import type { ForecastQuestion, Outcome, ProbabilityPoint } from "../domain/types";
 import { pct } from "./ui";
 
-export function CompetitorAvatar({ competitor, size = "sm" }: { competitor: Competitor; size?: "sm" | "lg" }) {
+export function CompetitorAvatar({
+  competitor,
+  size = "sm",
+}: {
+  competitor: Competitor;
+  size?: "sm" | "lg";
+}) {
   return (
     <span
-      className={`comp-avatar${size === "lg" ? " comp-avatar-lg" : ""}`}
+      className={`inline-flex size-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold text-white ${size === "lg" ? "size-12 rounded-xl text-base" : ""}`}
       style={{ background: competitor.color }}
       aria-hidden="true"
     >
@@ -65,21 +76,31 @@ export function buildCompetitorChanges(
   return rows;
 }
 
-export function CompetitorChangeFeed({ rows, showCompetitor = true }: { rows: CompetitorChangeRow[]; showCompetitor?: boolean }) {
+export function CompetitorChangeFeed({
+  rows,
+  showCompetitor = true,
+}: {
+  rows: CompetitorChangeRow[];
+  showCompetitor?: boolean;
+}) {
   if (rows.length === 0) {
     return <p className="dash-sub">No forecast changes in this window.</p>;
   }
   return (
-    <div className={`feed comp-feed${showCompetitor ? "" : " comp-feed-nowho"}`}>
+    <div className="divide-y rounded-lg border bg-card">
       {rows.map((r) => {
         const delta = r.to - r.from;
         const up = delta >= 0;
         return (
-          <Link to={`/q/${r.question.id}`} key={r.question.id} className="feed-row">
+          <Link
+            to={`/q/${r.question.id}`}
+            key={r.question.id}
+            className="grid gap-2 p-3 transition-colors hover:bg-muted/50 md:grid-cols-[auto_8rem_minmax(12rem,1fr)_minmax(10rem,1fr)] md:items-center"
+          >
             {showCompetitor && (
-              <span className="comp-feed-who">
+              <span className="flex min-w-0 items-center gap-2">
                 <CompetitorAvatar competitor={r.competitor} />
-                <span className="comp-feed-name">{r.competitor.name}</span>
+                <span className="truncate text-sm font-semibold">{r.competitor.name}</span>
               </span>
             )}
             <span className={`feed-delta ${up ? "up" : "down"}`}>
@@ -137,50 +158,70 @@ export function NewMovesModal({
     });
 
   return createPortal(
-    <div className="alert-overlay" onMouseDown={onClose}>
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4"
+      onMouseDown={onClose}
+    >
       <div
-        className="alert-modal comp-modal"
+        className="w-full max-w-2xl rounded-xl border bg-card p-6 shadow-xl"
         role="dialog"
         aria-modal="true"
         aria-label="Newly identified moves"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <header className="alert-head">
+        <header className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="alert-title">Newly identified moves</h2>
-            <p className="comp-modal-sub">
-              Candidate competitor actions the question pipeline surfaced from fresh signals — hiring, landing
-              pages, executive commentary — and promoted to active forecasts.
+            <h2 className="text-xl font-semibold tracking-tight">Newly identified moves</h2>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
+              Candidate competitor actions the question pipeline surfaced from fresh signals —
+              hiring, landing pages, executive commentary — and promoted to active forecasts.
             </p>
           </div>
-          <button type="button" className="alert-close" aria-label="Close" onClick={onClose}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+          <button
+            type="button"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="Close"
+            onClick={onClose}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+            >
               <line x1="6" y1="6" x2="18" y2="18" />
               <line x1="18" y1="6" x2="6" y2="18" />
             </svg>
           </button>
         </header>
 
-        <div className="comp-modal-body">
+        <div className="mt-5 grid gap-3">
           {rows.map(({ move, question, competitor, probability }) => (
             <button
               type="button"
               key={question.id}
-              className="comp-new-card"
+              className="grid gap-2 rounded-lg border p-4 text-left transition-colors hover:bg-muted/50"
               onClick={() => {
                 onClose();
                 navigate(`/q/${question.id}`);
               }}
             >
-              <span className="comp-new-head">
+              <span className="flex flex-wrap items-center gap-2">
                 <CompetitorAvatar competitor={competitor} />
-                <span className="comp-feed-name">{competitor.name}</span>
-                <span className="comp-badge">{move.moveCategory}</span>
+                <span className="text-sm font-semibold">{competitor.name}</span>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                  {move.moveCategory}
+                </span>
               </span>
-              <span className="comp-new-body">
+              <span className="text-sm text-foreground">
                 <strong>{pct(probability)}</strong> probability — {question.title}
               </span>
-              <span className="comp-horizon">Expected: {move.expectedHorizon}</span>
+              <span className="text-xs text-muted-foreground">
+                Expected: {move.expectedHorizon}
+              </span>
             </button>
           ))}
           {rows.length === 0 && <p className="dash-sub">No newly identified moves right now.</p>}
@@ -282,7 +323,8 @@ export function useCompetitorIntel(competitorId: string) {
               ...i,
               ...patch,
               sourceUrl: patch.sourceUrl !== undefined ? patch.sourceUrl || undefined : i.sourceUrl,
-              questionId: patch.questionId !== undefined ? patch.questionId || undefined : i.questionId,
+              questionId:
+                patch.questionId !== undefined ? patch.questionId || undefined : i.questionId,
               editedAt: new Date().toISOString(),
             }
           : i,

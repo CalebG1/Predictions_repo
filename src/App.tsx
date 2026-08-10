@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header";
-import CategoryNav from "./components/CategoryNav";
 import Overview from "./pages/Overview";
 import Projects from "./pages/Projects";
 import QuestionDetail from "./pages/QuestionDetail";
@@ -22,7 +21,6 @@ function AppShell() {
   return (
     <>
       <Header />
-      <CategoryNav />
       <Routes>
         <Route path="/" element={<Overview />} />
         <Route path="/projects" element={<Projects />} />

@@ -18,6 +18,24 @@ import {
 } from "../components/competitors";
 import QuestionTable from "../components/QuestionTable";
 import type { EvidenceSource, ForecastQuestion } from "../domain/types";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
+import { Textarea } from "../components/ui/textarea";
 
 type ProfileTab = "forecasts" | "profile" | "intel" | "evidence";
 
@@ -42,33 +60,35 @@ const TABS: { id: ProfileTab; label: string }[] = [
 function DossierTab({ competitor }: { competitor: Competitor }) {
   const d = competitor.dossier;
   return (
-    <div className="comp-tab-panel">
-      <dl className="comp-fact-strip">
+    <div className="space-y-6">
+      <dl className="grid divide-y rounded-xl border sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
         {d.facts.map((f) => (
-          <div className="comp-fact-pair" key={f.label}>
-            <dt>{f.label}</dt>
-            <dd>{f.value}</dd>
+          <div className="p-4" key={f.label}>
+            <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {f.label}
+            </dt>
+            <dd className="mt-1 text-lg font-semibold">{f.value}</dd>
           </div>
         ))}
       </dl>
 
-      <div className="comp-dossier-block">
-        <h3>Strategic posture</h3>
-        <p>{d.strategySummary}</p>
+      <div className="space-y-2">
+        <h3 className="text-base font-semibold">Strategic posture</h3>
+        <p className="text-sm leading-6 text-muted-foreground">{d.strategySummary}</p>
       </div>
 
-      <div className="comp-compare-grid">
-        <div className="comp-compare-card comp-compare-us">
-          <h3>Where we win</h3>
-          <ul>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-5">
+          <h3 className="font-semibold text-primary">Where we win</h3>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             {d.whereWeWin.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
         </div>
-        <div className="comp-compare-card comp-compare-them">
-          <h3>Where {competitor.name} wins</h3>
-          <ul>
+        <div className="rounded-xl border p-5">
+          <h3 className="font-semibold">Where {competitor.name} wins</h3>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             {d.whereTheyWin.map((item) => (
               <li key={item}>{item}</li>
             ))}
@@ -76,9 +96,9 @@ function DossierTab({ competitor }: { competitor: Competitor }) {
         </div>
       </div>
 
-      <div className="comp-dossier-block">
-        <h3>Signals we're watching</h3>
-        <ul className="comp-signal-list">
+      <div className="space-y-2">
+        <h3 className="text-base font-semibold">Signals we're watching</h3>
+        <ul className="space-y-2 text-sm text-muted-foreground">
           {d.watchingFor.map((item) => (
             <li key={item}>{item}</li>
           ))}
@@ -111,26 +131,30 @@ function evidenceSubtitle(e: EvidenceSource): string {
   return e.methodTag ?? e.sourceClass.replace(/_/g, " ");
 }
 
-function EvidenceTab({ rows }: { rows: { evidence: EvidenceSource; question: ForecastQuestion }[] }) {
+function EvidenceTab({
+  rows,
+}: {
+  rows: { evidence: EvidenceSource; question: ForecastQuestion }[];
+}) {
   const navigate = useNavigate();
 
   return (
-    <div className="comp-tab-panel">
+    <div>
       {rows.length === 0 ? (
         <p className="dash-sub">No evidence collected yet.</p>
       ) : (
         <div className="evidence-table-wrap">
-          <table className="evidence-table comp-evidence-table">
-            <thead>
-              <tr>
-                <th>Source</th>
-                <th className="comp-ev-date-col">Date</th>
-                <th>Forecast</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Source</TableHead>
+                <TableHead className="whitespace-nowrap">Date</TableHead>
+                <TableHead>Forecast</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.map(({ evidence, question }) => (
-                <tr
+                <TableRow
                   key={evidence.id}
                   className="evidence-row"
                   tabIndex={0}
@@ -143,21 +167,25 @@ function EvidenceTab({ rows }: { rows: { evidence: EvidenceSource; question: For
                     }
                   }}
                 >
-                  <td className="evidence-cell-source">
+                  <TableCell>
                     <div className="evidence-source-main">
-                      <span className="comp-badge">{evidenceKindLabel(evidence)}</span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                        {evidenceKindLabel(evidence)}
+                      </span>
                       <span className="evidence-source-title">{evidence.title}</span>
                     </div>
                     <span className="evidence-source-sub">{evidenceSubtitle(evidence)}</span>
-                  </td>
-                  <td className="evidence-cell-date comp-ev-date-col">{evidence.retrievedAt.slice(0, 10)}</td>
-                  <td className="comp-ev-forecast-col">
-                    <span className="comp-ev-forecast-link">{question.title}</span>
-                  </td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">
+                    {evidence.retrievedAt.slice(0, 10)}
+                  </TableCell>
+                  <TableCell className="font-medium text-primary">
+                    <span>{question.title}</span>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>
@@ -177,31 +205,47 @@ function IntelItemView({
 }) {
   const linked = item.questionId ? forecasts.find((f) => f.id === item.questionId) : undefined;
   return (
-    <article className="comp-intel-card">
-      <header className="comp-intel-card-head">
-        <span className={`comp-intel-kind comp-intel-kind-${item.kind}`}>{intelKindLabel[item.kind]}</span>
-        <span className="comp-intel-meta">
+    <article className="rounded-xl border bg-card p-4">
+      <header className="flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+          {intelKindLabel[item.kind]}
+        </span>
+        <span className="text-xs text-muted-foreground">
           {item.author.split(" (")[0]} · {item.createdAt.slice(0, 10)}
           {item.editedAt && " · edited"}
         </span>
-        <span className="comp-intel-actions">
-          <button type="button" className="comp-intel-action" onClick={onEdit}>
+        <span className="ml-auto flex gap-2">
+          <Button type="button" variant="ghost" size="xs" onClick={onEdit}>
             Edit
-          </button>
-          <button type="button" className="comp-intel-action danger" aria-label="Delete" onClick={onDelete}>
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="xs"
+            aria-label="Delete"
+            onClick={onDelete}
+          >
             Delete
-          </button>
+          </Button>
         </span>
       </header>
-      <p className="comp-intel-body">{item.body}</p>
+      <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{item.body}</p>
       {item.sourceUrl && (
-        <a className="comp-intel-link" href={item.sourceUrl} target="_blank" rel="noreferrer">
+        <a
+          className="mt-3 block truncate text-xs text-primary hover:underline"
+          href={item.sourceUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
           {item.sourceUrl.replace(/^https?:\/\//, "").slice(0, 64)}
           {item.sourceUrl.length > 72 ? "…" : ""}
         </a>
       )}
       {linked && (
-        <Link to={`/q/${linked.id}`} className="comp-intel-forecast">
+        <Link
+          to={`/q/${linked.id}`}
+          className="mt-3 block rounded-md bg-muted px-3 py-2 text-sm font-medium hover:bg-muted/70"
+        >
           Linked forecast · {linked.title}
         </Link>
       )}
@@ -241,52 +285,57 @@ function IntelForm({
   };
 
   return (
-    <div className="comp-intel-form">
-      <div className="comp-intel-kind-row">
+    <div className="space-y-3 rounded-xl border bg-card p-4">
+      <div className="flex flex-wrap gap-2">
         {(Object.keys(intelKindLabel) as IntelKind[]).map((k) => (
-          <button
+          <Button
             key={k}
             type="button"
-            className={`comp-intel-kind-btn${kind === k ? " active" : ""}`}
+            variant={kind === k ? "default" : "secondary"}
+            size="sm"
             onClick={() => setKind(k)}
           >
             {intelKindLabel[k]}
-          </button>
+          </Button>
         ))}
       </div>
-      <textarea
+      <Textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder={placeholder}
         rows={4}
         aria-label="Intel note"
       />
-      <div className="comp-intel-form-row">
-        <input
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Input
           type="url"
           value={sourceUrl}
           onChange={(e) => setSourceUrl(e.target.value)}
           placeholder="Source URL"
           aria-label="Source URL"
         />
-        <select value={questionId} onChange={(e) => setQuestionId(e.target.value)} aria-label="Link to forecast">
-          <option value="">Link to forecast…</option>
-          {forecasts.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.title.length > 60 ? `${f.title.slice(0, 60)}…` : f.title}
-            </option>
-          ))}
-        </select>
+        <Select value={questionId || null} onValueChange={(value) => setQuestionId(value ?? "")}>
+          <SelectTrigger className="w-full" aria-label="Link to forecast">
+            <SelectValue placeholder="Link to forecast…" />
+          </SelectTrigger>
+          <SelectContent>
+            {forecasts.map((f) => (
+              <SelectItem key={f.id} value={f.id}>
+                {f.title.length > 60 ? `${f.title.slice(0, 60)}…` : f.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-      <div className="comp-intel-form-actions">
+      <div className="flex items-center justify-end gap-2">
         {onCancel && (
-          <button type="button" className="comp-intel-cancel" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
-          </button>
+          </Button>
         )}
-        <button type="button" className="comp-intel-submit" onClick={submit} disabled={!body.trim()}>
+        <Button type="button" onClick={submit} disabled={!body.trim()}>
           {submitLabel}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -306,7 +355,7 @@ function IntelTab({
   const [editingId, setEditingId] = useState<string | null>(null);
 
   return (
-    <div className="comp-tab-panel">
+    <div className="space-y-5">
       {editingId === null && (
         <IntelForm
           forecasts={forecasts}
@@ -325,7 +374,7 @@ function IntelTab({
       )}
 
       {items.length > 0 && (
-        <div className="comp-intel-list">
+        <div className="space-y-3">
           {items.map((item) =>
             editingId === item.id ? (
               <IntelForm
@@ -413,49 +462,59 @@ export default function CompetitorProfile() {
     );
   }
 
-  const forecastOptions: ForecastOption[] = rows.map((r) => ({ id: r.question.id, title: r.question.title }));
+  const forecastOptions: ForecastOption[] = rows.map((r) => ({
+    id: r.question.id,
+    title: r.question.title,
+  }));
 
   return (
-    <div className="dash-page comp-profile-page">
-      <div className="dash-head comp-profile-head">
-        <div className="comp-hero">
+    <div className="mx-auto w-full max-w-[1240px] space-y-6 px-5 py-6">
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="flex items-start gap-4">
           <CompetitorAvatar competitor={competitor} size="lg" />
           <div>
-            <nav className="detail-breadcrumbs" aria-label="Competitor">
+            <nav
+              className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+              aria-label="Competitor"
+            >
               <Link to="/competitors">Competitors</Link>
-              <span className="detail-crumb-sep" aria-hidden="true">
-                ·
-              </span>
+              <span aria-hidden="true">·</span>
               <span>{competitor.name}</span>
             </nav>
-            <h1>{competitor.name}</h1>
-            <p className="dash-sub">{competitor.description}</p>
+            <h1 className="text-3xl font-bold tracking-tight">{competitor.name}</h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{competitor.description}</p>
           </div>
         </div>
       </div>
 
-      <nav className="comp-profile-tabs" aria-label="Company sections">
+      <nav className="flex flex-wrap gap-1 border-b" aria-label="Company sections">
         {TABS.map((t) => (
-          <button
+          <Button
             key={t.id}
             type="button"
-            className={`comp-profile-tab${tab === t.id ? " active" : ""}`}
+            variant="ghost"
+            size="sm"
+            className={`rounded-none border-b-2 ${tab === t.id ? "border-b-primary text-primary" : "border-transparent text-muted-foreground"}`}
             aria-selected={tab === t.id}
             onClick={() => setTab(t.id)}
           >
             {t.label}
-          </button>
+          </Button>
         ))}
       </nav>
 
       {tab === "forecasts" && (
-        <div className="comp-tab-panel">
+        <div>
           <QuestionTable questions={competitorQuestions} />
         </div>
       )}
       {tab === "profile" && <DossierTab competitor={competitor} />}
       {tab === "intel" && (
-        <IntelTab competitorId={competitor.id} competitorName={competitor.name} forecasts={forecastOptions} />
+        <IntelTab
+          competitorId={competitor.id}
+          competitorName={competitor.name}
+          forecasts={forecastOptions}
+        />
       )}
       {tab === "evidence" && <EvidenceTab rows={evidenceRows} />}
     </div>
