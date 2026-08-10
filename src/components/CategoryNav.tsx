@@ -5,6 +5,7 @@ const tabs = [
   { label: "Projects", path: "/projects" },
   { label: "Analyst workspace", path: "/analyst" },
   { label: "Forecasts", path: "/movers" },
+  { label: "Competitors", path: "/competitors" },
 ];
 
 export default function CategoryNav() {

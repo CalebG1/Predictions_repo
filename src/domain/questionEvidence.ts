@@ -37,11 +37,13 @@ const PEOPLE = [
 
 const SLACK_BY_CATEGORY: Record<string, string[]> = {
   "Security/Cyber": ["#secops", "#incidents", "#security-awareness"],
+  Competitive: ["#competitive-intel", "#competitor-watch", "#market-signals"],
   default: ["#signals-feed", "#news-monitor", "#competitive-intel"],
 };
 
 const TEAMS_BY_CATEGORY: Record<string, string[]> = {
   "Security/Cyber": ["SecOps standup", "IAM review", "Incident response"],
+  Competitive: ["Competitive Intel Sync", "Win/Loss Review", "Market Watch"],
   default: ["Product Strategy", "Market Watch", "Leadership Sync"],
 };
 
@@ -63,12 +65,18 @@ function slackMessage(title: string, category: string): string {
   if (category === "Security/Cyber") {
     return `Flagging elevated chatter on ${title.toLowerCase()} — two unresolved critical alerts this week.`;
   }
+  if (category === "Competitive") {
+    return `Field team heard this in two deals this week — bears directly on whether ${title.charAt(0).toLowerCase()}${title.slice(1)}.`;
+  }
   return `Fresh signal on ${title.toLowerCase()} surfaced in channel — worth folding into the next refresh.`;
 }
 
 function teamsMessage(title: string, category: string): string {
   if (category === "Security/Cyber") {
     return `IAM review notes dormant admin accounts still active — relevant to ${title.toLowerCase()}.`;
+  }
+  if (category === "Competitive") {
+    return `Win/loss review surfaced new competitor positioning relevant to whether ${title.charAt(0).toLowerCase()}${title.slice(1)}.`;
   }
   return `Leadership sync flagged a shift in assumptions behind ${title.toLowerCase()}.`;
 }

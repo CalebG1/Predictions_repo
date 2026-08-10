@@ -18,6 +18,8 @@ import {
 import VisibilityPicker from "../components/VisibilityPicker";
 import { overviewHref } from "../components/ui";
 import { Card, CardContent } from "../components/ui/card";
+import { competitorForQuestion } from "../domain/competitors";
+import { CompetitorAvatar } from "../components/competitors";
 
 export default function QuestionDetail() {
   const { id } = useParams();
@@ -26,6 +28,7 @@ export default function QuestionDetail() {
 
   const forecast = useMemo(() => (q ? runForecast(q) : null), [q]);
   const evidence = useMemo(() => (q ? evidenceFor(q.id) : []), [q, evidenceFor]);
+  const competitor = q ? competitorForQuestion(q.id) : undefined;
 
   const chartConfig = useMemo(() => {
     if (!q) return null;
@@ -151,6 +154,20 @@ export default function QuestionDetail() {
               >
                 {q.owningTeam}
               </Link>
+              {competitor && (
+                <>
+                  <span className="text-muted-foreground" aria-hidden="true">
+                    ·
+                  </span>
+                  <Link
+                    to={`/competitors/${competitor.id}`}
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                  >
+                    <CompetitorAvatar competitor={competitor} />
+                    {competitor.name}
+                  </Link>
+                </>
+              )}
             </nav>
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{q.title}</h1>
           </div>

@@ -14,7 +14,8 @@ export type Category =
   | "Supply Chain"
   | "Product"
   | "Reputational"
-  | "Macro";
+  | "Macro"
+  | "Competitive";
 
 export type QuestionType = "binary" | "categorical" | "scalar";
 export type RiskOrOpportunity = "risk" | "opportunity";

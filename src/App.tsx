@@ -15,6 +15,8 @@ import AgentRunMonitor from "./pages/AgentRunMonitor";
 import ProjectDetail from "./pages/ProjectDetail";
 import AnalystWorkbench from "./pages/AnalystWorkbench";
 import Assumptions from "./pages/Assumptions";
+import Competitors from "./pages/Competitors";
+import CompetitorProfile from "./pages/CompetitorProfile";
 
 function AppShell() {
   return (
@@ -31,6 +33,8 @@ function AppShell() {
         <Route path="/q/:id" element={<QuestionDetail />} />
         <Route path="/q/:id/run/:runId" element={<AgentRunMonitor />} />
         <Route path="/movers" element={<Movers />} />
+        <Route path="/competitors" element={<Competitors />} />
+        <Route path="/competitors/:competitorId" element={<CompetitorProfile />} />
         <Route path="/settings" element={<Settings />}>
           <Route index element={<Navigate to="methodology" replace />} />
           <Route path="methodology" element={<Methodology />} />
