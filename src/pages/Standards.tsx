@@ -1,20 +1,24 @@
-// Competitors tab: Kalshi-style market cards grouped by company, with a
-// top-movers sidebar. Click a company header to open its profile; click a
-// card (or its probability pill) to open the forecast.
+// Standards tab: the standardized commitments a selected company reports
+// against each quarter — ~50 per company (20 universal core + 30
+// vertical-specific), instantiated from src/data/questions.json. Company-
+// scoped: executives pick their company and work that set alone.
 
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { probabilityDelta, useStore } from "../store";
 import {
-  competitors,
-  competitorForQuestion,
-  moveForQuestion,
-  moveCategoryOrder,
-  type Competitor,
-  type CompetitorMove,
-  type MoveCategory,
-} from "../domain/competitors";
-import { CompetitorAvatar, NewMovesModal, newlyIdentifiedCount } from "../components/competitors";
+  commitmentForQuestion,
+  commitmentThemeOrder,
+  standardsCompanies,
+  standardsCompanyById,
+  standardsCompanyForQuestion,
+  verticalLabels,
+  type CommitmentScope,
+  type CommitmentTheme,
+  type StandardCommitment,
+  type StandardsCompany,
+} from "../domain/standards";
+import { CompetitorAvatar } from "../components/competitors";
 import { ForecastCard, MoverRow } from "../components/forecast-card";
 import { IconFilter, IconSearch, IconSort } from "../components/icons";
 import type { ForecastQuestion } from "../domain/types";
@@ -39,71 +43,88 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: "most_uncertain", label: "Most uncertain" },
 ];
 
+const DEFAULT_COMPANY_ID = standardsCompanies[0]?.id ?? "jpmorgan";
+
 interface Row {
   question: ForecastQuestion;
-  competitor: Competitor;
-  move: CompetitorMove;
+  company: StandardsCompany;
+  commitment: StandardCommitment;
   probability: number;
   delta7: number | null;
 }
 
-function CompetitorForecastCard({ row }: { row: Row }) {
+function StandardCard({ row }: { row: Row }) {
   return (
     <ForecastCard
       question={row.question}
       probability={row.probability}
       delta7={row.delta7}
-      entity={row.competitor}
-      chipLabel={row.move.moveCategory}
-      badge={row.move.newlyIdentified ? "New" : undefined}
-      horizonText={row.move.expectedHorizon}
-      footerTo={`/competitors/${row.competitor.id}`}
-      footerLabel={`${row.competitor.name} →`}
+      entity={row.company}
+      chipLabel={row.commitment.theme}
+      badge={row.commitment.scope === "universal" ? "Universal" : undefined}
+      horizonText={row.commitment.horizon}
+      footerTo={`/standards?company=${row.company.id}`}
+      footerLabel={`${row.company.name} →`}
     />
   );
 }
 
-export default function Competitors() {
+export default function Standards() {
   const { questions, yesOutcome, historyFor } = useStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [company, setCompany] = useState<string>("all");
-  const [moveCat, setMoveCat] = useState<MoveCategory | "all">("all");
+  const [companyId, setCompanyId] = useState(DEFAULT_COMPANY_ID);
+  const [scope, setScope] = useState<CommitmentScope | "all">("all");
+  const [theme, setTheme] = useState<CommitmentTheme | "all">("all");
   const [sort, setSort] = useState<SortKey>("probability");
-  const [newMovesOpen, setNewMovesOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
-  const allRows = useMemo(() => {
+  // Deep-link / persist the selected company via ?company=<id>.
+  useEffect(() => {
+    const param = searchParams.get("company");
+    if (param && standardsCompanyById(param)) {
+      setCompanyId(param);
+    } else if (!param) {
+      setSearchParams({ company: DEFAULT_COMPANY_ID }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const selectedCompany = standardsCompanyById(companyId) ?? standardsCompanies[0];
+
+  const selectCompany = (id: string) => {
+    if (!standardsCompanyById(id)) return;
+    setCompanyId(id);
+    setSearchParams({ company: id }, { replace: true });
+  };
+
+  const companyRows = useMemo(() => {
+    if (!selectedCompany) return [] as Row[];
     const rows: Row[] = [];
     for (const q of questions) {
-      const competitor = competitorForQuestion(q.id);
-      const move = moveForQuestion(q.id);
-      if (!competitor || !move) continue;
+      const companyMatch = standardsCompanyForQuestion(q.id);
+      const commitment = commitmentForQuestion(q.id);
+      if (!companyMatch || !commitment) continue;
+      if (companyMatch.id !== selectedCompany.id) continue;
       const yes = yesOutcome(q.id);
       if (!yes) continue;
       rows.push({
         question: q,
-        competitor,
-        move,
+        company: companyMatch,
+        commitment,
         probability: yes.currentProbability,
         delta7: probabilityDelta(historyFor(yes.id), 7),
       });
     }
     return rows;
-  }, [questions, yesOutcome, historyFor]);
+  }, [questions, yesOutcome, historyFor, selectedCompany]);
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
-    let list = allRows.filter((r) => {
-      if (
-        query &&
-        !r.question.title.toLowerCase().includes(query) &&
-        !r.competitor.name.toLowerCase().includes(query)
-      ) {
-        return false;
-      }
-      if (company !== "all" && r.competitor.id !== company) return false;
-      if (moveCat !== "all" && r.move.moveCategory !== moveCat) return false;
+    const list = companyRows.filter((r) => {
+      if (query && !r.question.title.toLowerCase().includes(query)) return false;
+      if (scope !== "all" && r.commitment.scope !== scope) return false;
+      if (theme !== "all" && r.commitment.theme !== theme) return false;
       return true;
     });
 
@@ -119,67 +140,79 @@ export default function Competitors() {
           return Math.abs(0.5 - a.probability) - Math.abs(0.5 - b.probability);
       }
     });
-  }, [allRows, search, company, moveCat, sort]);
-
-  const sections = useMemo(() => {
-    const byId = new Map<string, Row[]>();
-    for (const r of rows) {
-      const list = byId.get(r.competitor.id) ?? [];
-      list.push(r);
-      byId.set(r.competitor.id, list);
-    }
-    // Preserve the seed competitor order; drop companies with no matching rows.
-    return competitors
-      .filter((c) => byId.has(c.id))
-      .map((c) => ({ competitor: c, rows: byId.get(c.id)! }));
-  }, [rows]);
+  }, [companyRows, search, scope, theme, sort]);
 
   const topMovers = useMemo(
     () =>
-      [...allRows]
+      [...companyRows]
         .filter((r) => r.delta7 != null && Math.abs(r.delta7) > 0)
         .sort((a, b) => Math.abs(b.delta7 ?? 0) - Math.abs(a.delta7 ?? 0))
         .slice(0, 6),
-    [allRows],
+    [companyRows],
   );
 
   const trending = useMemo(
-    () => [...allRows].sort((a, b) => b.probability - a.probability).slice(0, 5),
-    [allRows],
+    () => [...companyRows].sort((a, b) => b.probability - a.probability).slice(0, 5),
+    [companyRows],
   );
 
-  const newCount = useMemo(() => newlyIdentifiedCount(questions), [questions]);
-  const filtersActive = company !== "all" || moveCat !== "all";
+  const filtersActive = scope !== "all" || theme !== "all";
   const sortLabel = SORTS.find((s) => s.key === sort)?.label;
+
+  if (!selectedCompany) {
+    return (
+      <div className="mx-auto w-full max-w-[1240px] px-5 py-6">
+        <p className="text-sm text-muted-foreground">No standards companies configured.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1240px] flex-col px-5 py-6">
       <div className="shrink-0 space-y-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Competitors</h1>
-          </div>
-          <Button type="button" size="lg" onClick={() => setNewMovesOpen(true)}>
-            <span aria-hidden="true">✦</span>
-            Newly identified moves
-            {newCount > 0 && (
-              <span className="rounded-full bg-primary-foreground/20 px-1.5 text-xs">
-                {newCount}
-              </span>
-            )}
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Standards</h1>
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            The standardized commitments this company reports against every quarter: earnings
+            guidance, performance targets, and risks mitigated. 20 universal core questions plus
+            30 vertical-specific ones.
+          </p>
         </div>
 
-        <NewMovesModal
-          open={newMovesOpen}
-          onClose={() => setNewMovesOpen(false)}
-          questions={questions}
-          yesOutcome={yesOutcome}
-        />
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Company">
+          {standardsCompanies.map((c) => {
+            const active = c.id === selectedCompany.id;
+            return (
+              <Button
+                key={c.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                variant={active ? "default" : "outline"}
+                size="sm"
+                className="gap-2"
+                onClick={() => selectCompany(c.id)}
+              >
+                <CompetitorAvatar competitor={c} />
+                <span className="truncate">{c.name}</span>
+              </Button>
+            );
+          })}
+        </div>
 
         <Card>
           <CardContent className="flex flex-wrap items-center gap-3">
-            <label className="flex min-w-0 flex-1 items-center gap-2 rounded-md border bg-background px-3 py-2">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+              <CompetitorAvatar competitor={selectedCompany} size="lg" />
+              <div className="min-w-0">
+                <h2 className="truncate text-lg font-semibold">{selectedCompany.name}</h2>
+                <p className="text-xs text-muted-foreground">
+                  {verticalLabels[selectedCompany.verticalId]} · {companyRows.length} commitments
+                </p>
+              </div>
+            </div>
+
+            <label className="flex min-w-0 flex-[1_1_14rem] items-center gap-2 rounded-md border bg-background px-3 py-2">
               <span className="text-muted-foreground" aria-hidden="true">
                 <IconSearch />
               </span>
@@ -188,8 +221,8 @@ export default function Competitors() {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search competitor forecasts…"
-                aria-label="Search competitor forecasts"
+                placeholder="Search this company's commitments…"
+                aria-label="Search this company's commitments"
               />
             </label>
 
@@ -211,37 +244,39 @@ export default function Competitors() {
                 />
                 <PopoverContent className="grid w-64 gap-3" align="end" aria-label="Filters">
                   <label className="grid gap-1 text-sm font-medium">
-                    <span className="text-muted-foreground">Company</span>
-                    <Select value={company} onValueChange={(value) => setCompany(value ?? "all")}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All companies</SelectItem>
-                        {competitors.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </label>
-                  <label className="grid gap-1 text-sm font-medium">
-                    <span className="text-muted-foreground">Move type</span>
+                    <span className="text-muted-foreground">Scope</span>
                     <Select
-                      value={moveCat}
+                      value={scope}
                       onValueChange={(value) =>
-                        setMoveCat((value ?? "all") as MoveCategory | "all")
+                        setScope((value ?? "all") as CommitmentScope | "all")
                       }
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All move types</SelectItem>
-                        {moveCategoryOrder.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {c}
+                        <SelectItem value="all">Universal + vertical</SelectItem>
+                        <SelectItem value="universal">Universal core</SelectItem>
+                        <SelectItem value="vertical">Vertical-specific</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <label className="grid gap-1 text-sm font-medium">
+                    <span className="text-muted-foreground">Theme</span>
+                    <Select
+                      value={theme}
+                      onValueChange={(value) =>
+                        setTheme((value ?? "all") as CommitmentTheme | "all")
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All themes</SelectItem>
+                        {commitmentThemeOrder.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -308,34 +343,15 @@ export default function Competitors() {
 
       <div className="p-1 mt-5 min-h-0 flex-1 overflow-auto pb-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <div className="space-y-8">
-            {sections.map(({ competitor, rows: sectionRows }) => (
-              <section key={competitor.id} className="space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <Link
-                    to={`/competitors/${competitor.id}`}
-                    className="inline-flex items-center gap-2 hover:text-primary"
-                  >
-                    <CompetitorAvatar competitor={competitor} />
-                    <h2>{competitor.name}</h2>
-                    <span className="text-muted-foreground" aria-hidden="true">
-                      ›
-                    </span>
-                  </Link>
-                  <span className="text-xs text-muted-foreground">
-                    {sectionRows.length} forecast{sectionRows.length === 1 ? "" : "s"}
-                  </span>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {sectionRows.map((r) => (
-                    <CompetitorForecastCard key={r.question.id} row={r} />
-                  ))}
-                </div>
-              </section>
-            ))}
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {rows.map((r) => (
+                <StandardCard key={r.question.id} row={r} />
+              ))}
+            </div>
             {rows.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                No forecasts match the current filters.
+                No commitments match the current filters.
               </p>
             )}
           </div>
@@ -343,14 +359,14 @@ export default function Competitors() {
           <aside className="space-y-5">
             <Card>
               <CardContent>
-                <Link
-                  to="/competitors"
-                  className="mb-3 flex items-center justify-between text-sm font-semibold hover:text-primary"
+                <button
+                  type="button"
+                  className="mb-3 flex w-full items-center justify-between text-sm font-semibold hover:text-primary"
                   onClick={() => setSort("movers")}
                 >
                   <span>Top movers</span>
                   <span aria-hidden="true">›</span>
-                </Link>
+                </button>
                 <div className="divide-y">
                   {topMovers.map((r) => (
                     <MoverRow
@@ -358,9 +374,12 @@ export default function Competitors() {
                       question={r.question}
                       probability={r.probability}
                       delta7={r.delta7}
-                      subtitle={r.competitor.name}
+                      subtitle={r.commitment.theme}
                     />
                   ))}
+                  {topMovers.length === 0 && (
+                    <p className="text-xs text-muted-foreground">No movers this week.</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -377,7 +396,7 @@ export default function Competitors() {
                       question={r.question}
                       probability={r.probability}
                       delta7={r.delta7}
-                      subtitle={r.competitor.name}
+                      subtitle={r.commitment.theme}
                     />
                   ))}
                 </div>

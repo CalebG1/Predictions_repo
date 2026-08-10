@@ -15,6 +15,7 @@ export default function Header() {
     { label: "Analyst workspace", path: "/analyst" },
     { label: "Forecasts", path: "/movers" },
     { label: "Competitors", path: "/competitors" },
+    { label: "Standards", path: "/standards" },
   ];
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">

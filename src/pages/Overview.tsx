@@ -10,6 +10,7 @@ import QuestionFilters, {
 import QuestionTable from "../components/QuestionTable";
 import CreateQuestionModal, { AddQuestionButton } from "../components/CreateQuestionModal";
 import { isCategory } from "../components/ui";
+import { isStandardsQuestion } from "../domain/standards";
 import type { Category, RiskOrOpportunity, Visibility } from "../domain/types";
 
 type ViewMode = "cards" | "table";
@@ -38,20 +39,27 @@ export default function Overview() {
     setRiskType(typeParam === "risk" || typeParam === "opportunity" ? typeParam : "all");
   }, [searchParams]);
 
-  const categories = useMemo(
-    () => Array.from(new Set(questions.map((q) => q.category))).sort(),
+  // Standardized company commitments have their own tab (/standards); keep
+  // them out of the main question list so they don't drown everything else.
+  const baseQuestions = useMemo(
+    () => questions.filter((q) => !isStandardsQuestion(q.id)),
     [questions],
   );
 
+  const categories = useMemo(
+    () => Array.from(new Set(baseQuestions.map((q) => q.category))).sort(),
+    [baseQuestions],
+  );
+
   const owners = useMemo(
-    () => Array.from(new Set(questions.map((q) => q.owningTeam))).sort(),
-    [questions],
+    () => Array.from(new Set(baseQuestions.map((q) => q.owningTeam))).sort(),
+    [baseQuestions],
   );
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    let list = questions.filter((q) => {
+    let list = baseQuestions.filter((q) => {
       if (query && !q.title.toLowerCase().includes(query)) return false;
       if (cat !== "all" && q.category !== cat) return false;
       if (owner !== "all" && q.owningTeam !== owner) return false;
@@ -87,7 +95,7 @@ export default function Overview() {
 
     return view === "table" ? sortWithPins(list, pinnedIds) : list;
   }, [
-    questions,
+    baseQuestions,
     search,
     cat,
     owner,

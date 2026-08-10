@@ -16,6 +16,7 @@ import {
 } from "./types";
 import { calibrationBins } from "./scoring";
 import { competitorQuestionSeeds } from "./competitors";
+import { standardsQuestionSeeds } from "./standards";
 
 export const organization = { id: "org-1", name: "Northwind Industries" };
 
@@ -933,6 +934,8 @@ const Q: QSeed[] = [
   },
   // Competitive-forecasting universe (Competitors tab) — see domain/competitors.ts.
   ...competitorQuestionSeeds,
+  // Standardized company commitments (Standards tab) — see domain/standards.ts.
+  ...standardsQuestionSeeds,
 ];
 
 export const questions: ForecastQuestion[] = Q.map(({ initial, options, triggers, ...q }) => {
