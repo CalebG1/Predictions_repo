@@ -4,6 +4,7 @@ import { UniverSheetsCorePreset } from "@univerjs/preset-sheets-core";
 import UniverPresetSheetsCoreEnUS from "@univerjs/preset-sheets-core/locales/en-US";
 import { useStore } from "../store";
 import { analystLibraryAssumptions } from "../domain/analystAssumptions";
+import { isStandardsQuestion } from "../domain/standards";
 import { runForecast } from "../domain/engine";
 import { Link } from "react-router-dom";
 import "@univerjs/preset-sheets-core/lib/index.css";
@@ -699,11 +700,13 @@ export default function AnalystWorkbench() {
                     value={question?.id ?? ""}
                     onChange={(event) => setQuestionId(event.target.value)}
                   >
-                    {questions.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.title}
-                      </option>
-                    ))}
+                    {questions
+                      .filter((item) => !isStandardsQuestion(item.id) || item.id === questionId)
+                      .map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.title}
+                        </option>
+                      ))}
                   </select>
                 </label>
                 <Card className="bg-primary/5">

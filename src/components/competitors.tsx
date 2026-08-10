@@ -19,7 +19,8 @@ export function CompetitorAvatar({
   competitor,
   size = "sm",
 }: {
-  competitor: Competitor;
+  /** Any entity with a monogram chip (competitors, standards companies, ...). */
+  competitor: Pick<Competitor, "monogram" | "color">;
   size?: "sm" | "lg";
 }) {
   return (

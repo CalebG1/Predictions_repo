@@ -18,6 +18,7 @@ import Competitors from "./pages/Competitors";
 import CompetitorProfile from "./pages/CompetitorProfile";
 import IssueIntelligence from "./pages/IssueIntelligence";
 import Dependencies from "./pages/Dependencies";
+import Standards from "./pages/Standards";
 
 function AppShell() {
   return (
@@ -37,6 +38,7 @@ function AppShell() {
         <Route path="/movers" element={<Movers />} />
         <Route path="/competitors" element={<Competitors />} />
         <Route path="/competitors/:competitorId" element={<CompetitorProfile />} />
+        <Route path="/standards" element={<Standards />} />
         <Route path="/settings" element={<Settings />}>
           <Route index element={<Navigate to="methodology" replace />} />
           <Route path="methodology" element={<Methodology />} />

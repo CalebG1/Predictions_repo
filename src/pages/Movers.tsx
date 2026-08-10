@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useStore } from "../store";
 import { pct } from "../components/ui";
+import { isStandardsQuestion } from "../domain/standards";
 
 interface MoverRow {
   qid: string;
@@ -17,6 +18,8 @@ export default function Movers() {
 
   const rows: MoverRow[] = [];
   for (const q of questions) {
+    // Standardized company commitments live on their own tab (/standards).
+    if (isStandardsQuestion(q.id)) continue;
     const yes = yesOutcome(q.id);
     if (!yes) continue;
     const h = historyFor(yes.id);
