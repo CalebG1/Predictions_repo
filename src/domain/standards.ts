@@ -508,9 +508,15 @@ function fillTemplate(template: string, rng: Rng, company: StandardsCompany): st
     const a = Math.round(between(rng, 55, 78));
     return `${a}%/${100 - a}%`;
   });
-  out = out.replace(/\[X\] \[boe\/d, MWh, etc\.\]/g, () => `${fmt(clean(between(rng, 2600, 4200)))} Kboe/d`);
+  out = out.replace(
+    /\[X\] \[boe\/d, MWh, etc\.\]/g,
+    () => `${fmt(clean(between(rng, 2600, 4200)))} Kboe/d`,
+  );
   out = out.replace(/\[X\] \[boe\/units\]/g, () => `${fmt(between(rng, 12, 22), 1)}B boe`);
-  out = out.replace(/\[X\] per \[Y\] units/g, () => `${fmt(between(rng, 0.5, 3), 1)} per 1,000 units`);
+  out = out.replace(
+    /\[X\] per \[Y\] units/g,
+    () => `${fmt(between(rng, 0.5, 3), 1)} per 1,000 units`,
+  );
 
   // Ranges.
   out = out.replace(/\$\[low\]-\$\[high\]M/g, () => {
@@ -668,7 +674,9 @@ function buildSeeds(): { seeds: StandardsQuestionSeed[]; commitments: StandardCo
         visibility: "public",
         owningTeam: "Finance",
         createdBy: "u-exec",
-        priorBaseRate: Number(Math.min(0.9, Math.max(0.1, initial + (rng() - 0.5) * 0.1)).toFixed(2)),
+        priorBaseRate: Number(
+          Math.min(0.9, Math.max(0.1, initial + (rng() - 0.5) * 0.1)).toFixed(2),
+        ),
         initial: Number(initial.toFixed(2)),
         triggers: EARNINGS_TRIGGERS,
       });

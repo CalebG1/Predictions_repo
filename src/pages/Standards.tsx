@@ -174,8 +174,8 @@ export default function Standards() {
           <h1 className="text-3xl font-bold tracking-tight">Standards</h1>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
             The standardized commitments this company reports against every quarter: earnings
-            guidance, performance targets, and risks mitigated. 20 universal core questions plus
-            30 vertical-specific ones.
+            guidance, performance targets, and risks mitigated. 20 universal core questions plus 30
+            vertical-specific ones.
           </p>
         </div>
 

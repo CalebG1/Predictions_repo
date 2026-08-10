@@ -330,7 +330,7 @@ export default function EvidenceTable({
   };
 
   return (
-    <Card className="border bg-card">
+    <Card className="mt-5 bg-card">
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-baseline gap-2.5">
           <h4 className="mr-auto">Evidence</h4>

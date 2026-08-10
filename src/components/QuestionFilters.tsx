@@ -6,7 +6,6 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Card, CardContent } from "./ui/card";
 
 export type SortKey = "movers" | "risk_weighted" | "resolving_soon" | "most_uncertain";
 export type HorizonKey = "daily" | "weekly" | "quarterly" | "all";

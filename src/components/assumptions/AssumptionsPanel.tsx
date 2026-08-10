@@ -620,7 +620,7 @@ export default function AssumptionsPanel({
   const isSharedView = kind === "shared";
 
   return (
-    <Card className="border bg-card">
+    <Card className="bg-card">
       <CardContent className="space-y-4 p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2.5">
           <h4>Assumptions</h4>

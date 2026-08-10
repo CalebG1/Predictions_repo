@@ -4,6 +4,8 @@ const tabs = [
   { label: "Overview", path: "/" },
   { label: "Projects", path: "/projects" },
   { label: "Analyst workspace", path: "/analyst" },
+  { label: "Issue intelligence", path: "/issue-intelligence" },
+  { label: "Dependencies", path: "/dependencies" },
   { label: "Forecasts", path: "/movers" },
   { label: "Competitors", path: "/competitors" },
 ];

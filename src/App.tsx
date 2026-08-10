@@ -16,6 +16,8 @@ import AnalystWorkbench from "./pages/AnalystWorkbench";
 import Assumptions from "./pages/Assumptions";
 import Competitors from "./pages/Competitors";
 import CompetitorProfile from "./pages/CompetitorProfile";
+import IssueIntelligence from "./pages/IssueIntelligence";
+import Dependencies from "./pages/Dependencies";
 import Standards from "./pages/Standards";
 
 function AppShell() {
@@ -28,6 +30,8 @@ function AppShell() {
         <Route path="/forecast/:jobId/processing" element={<ForecastProcessing />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/analyst" element={<AnalystWorkbench />} />
+        <Route path="/issue-intelligence" element={<IssueIntelligence />} />
+        <Route path="/dependencies" element={<Dependencies />} />
         <Route path="/assumptions" element={<Assumptions />} />
         <Route path="/q/:id" element={<QuestionDetail />} />
         <Route path="/q/:id/run/:runId" element={<AgentRunMonitor />} />

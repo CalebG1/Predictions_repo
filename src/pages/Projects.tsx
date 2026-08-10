@@ -1,7 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  AlertTriangle,
   ArrowDown,
   ArrowUp,
   CalendarDays,
@@ -12,7 +11,6 @@ import {
   Search,
   Sparkles,
   Star,
-  Target,
 } from "lucide-react";
 import { seedProjects, healthClasses, type Project, type ProjectHealth } from "../domain/projects";
 import { Button } from "../components/ui/button";
@@ -116,32 +114,6 @@ export default function Projects() {
     ]);
     setOpen(false);
   };
-  const stats = [
-    {
-      label: "Portfolio confidence",
-      value: `${Math.round(projects.reduce((s, p) => s + p.confidence, 0) / projects.length)}%`,
-      note: "+2 pts this month",
-      icon: Target,
-    },
-    {
-      label: "Needs attention",
-      value: String(projects.filter((p) => p.health === "At risk").length),
-      note: "2 changed this week",
-      icon: AlertTriangle,
-    },
-    {
-      label: "Open forecasts",
-      value: String(projects.reduce((s, p) => s + p.forecasts, 0)),
-      note: "37 updated today",
-      icon: Sparkles,
-    },
-    {
-      label: "Your watchlist",
-      value: String(projects.filter((p) => p.watched).length),
-      note: "Across 3 industries",
-      icon: Star,
-    },
-  ];
   return (
     <main className="mx-auto max-w-7xl px-5 py-8 pb-24 text-slate-900">
       <header className="flex flex-wrap items-end justify-between gap-4">

@@ -27,7 +27,14 @@ import {
 } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "../components/ui/drawer";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "../components/ui/drawer";
 import {
   Table,
   TableBody,
@@ -182,7 +189,13 @@ export default function ProjectDetail() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => { navigator.clipboard?.writeText(location.href); setToast("Project link copied to clipboard"); }}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              navigator.clipboard?.writeText(location.href);
+              setToast("Project link copied to clipboard");
+            }}
+          >
             <Link2 className="size-4" />
             Share
           </Button>
@@ -223,10 +236,21 @@ export default function ProjectDetail() {
           ))}
         </TabsList>
         <TabsContent value="Overview" className="mt-6">
-          <Overview project={project} tasks={tasks} onTasks={() => setValue("Tasks")} onTaskOpen={setSelectedTask} onEvidence={() => setEvidenceOpen(true)} />
+          <Overview
+            project={project}
+            tasks={tasks}
+            onTasks={() => setValue("Tasks")}
+            onTaskOpen={setSelectedTask}
+            onEvidence={() => setEvidenceOpen(true)}
+          />
         </TabsContent>
         <TabsContent value="Tasks" className="mt-6">
-          <TaskBoard tasks={tasks} toggle={toggle} add={() => setAdding(true)} onOpen={setSelectedTask} />
+          <TaskBoard
+            tasks={tasks}
+            toggle={toggle}
+            add={() => setAdding(true)}
+            onOpen={setSelectedTask}
+          />
         </TabsContent>
         <TabsContent value="Timeline" className="mt-6">
           <Timeline tasks={tasks} onOpen={setSelectedTask} />
@@ -235,10 +259,20 @@ export default function ProjectDetail() {
           <Forecasts project={project} onOpenEvidence={() => setEvidenceOpen(true)} />
         </TabsContent>
         <TabsContent value="Resources" className="mt-6">
-          <Resources items={projectResources} onLink={() => setResourceDialog(true)} onOpen={(name) => setToast(`Opened ${name}`)} />
+          <Resources
+            items={projectResources}
+            onLink={() => setResourceDialog(true)}
+            onOpen={(name) => setToast(`Opened ${name}`)}
+          />
         </TabsContent>
         <TabsContent value="Risks" className="mt-6">
-          <Risks project={project} onReview={(risk) => { setEvidenceOpen(true); setToast(`Showing evidence for ${risk}`); }} />
+          <Risks
+            project={project}
+            onReview={(risk) => {
+              setEvidenceOpen(true);
+              setToast(`Showing evidence for ${risk}`);
+            }}
+          />
         </TabsContent>
         <TabsContent value="Decisions" className="mt-6">
           <Decisions />
@@ -272,10 +306,52 @@ export default function ProjectDetail() {
           </form>
         </DialogContent>
       </Dialog>
-      <Dialog open={resourceDialog} onOpenChange={setResourceDialog}><DialogContent><form onSubmit={linkResource}><DialogHeader><DialogTitle>Link a resource</DialogTitle><DialogDescription>Add a connected folder, document, or dashboard to the project.</DialogDescription></DialogHeader><div className="grid gap-3 py-5"><Input required name="name" placeholder="Resource name" /><Input name="source" placeholder="Source (e.g. Google Drive)" /></div><DialogFooter><Button type="button" variant="ghost" onClick={() => setResourceDialog(false)}>Cancel</Button><Button>Link resource</Button></DialogFooter></form></DialogContent></Dialog>
-      <TaskDrawer task={selectedTask} project={project} onClose={() => setSelectedTask(null)} onToggle={toggle} onEvidence={() => { setSelectedTask(null); setEvidenceOpen(true); }} />
-      <ForecastEvidenceDrawer open={evidenceOpen} project={project} onClose={() => setEvidenceOpen(false)} />
-      {toast && <div className="fixed right-5 bottom-5 z-50 flex items-center gap-3 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-lg"><CheckCircle2 className="size-4 text-emerald-400" />{toast}<button onClick={() => setToast(null)} aria-label="Dismiss notification"><X className="size-4" /></button></div>}
+      <Dialog open={resourceDialog} onOpenChange={setResourceDialog}>
+        <DialogContent>
+          <form onSubmit={linkResource}>
+            <DialogHeader>
+              <DialogTitle>Link a resource</DialogTitle>
+              <DialogDescription>
+                Add a connected folder, document, or dashboard to the project.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 py-5">
+              <Input required name="name" placeholder="Resource name" />
+              <Input name="source" placeholder="Source (e.g. Google Drive)" />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setResourceDialog(false)}>
+                Cancel
+              </Button>
+              <Button>Link resource</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <TaskDrawer
+        task={selectedTask}
+        project={project}
+        onClose={() => setSelectedTask(null)}
+        onToggle={toggle}
+        onEvidence={() => {
+          setSelectedTask(null);
+          setEvidenceOpen(true);
+        }}
+      />
+      <ForecastEvidenceDrawer
+        open={evidenceOpen}
+        project={project}
+        onClose={() => setEvidenceOpen(false)}
+      />
+      {toast && (
+        <div className="fixed right-5 bottom-5 z-50 flex items-center gap-3 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-lg">
+          <CheckCircle2 className="size-4 text-emerald-400" />
+          {toast}
+          <button onClick={() => setToast(null)} aria-label="Dismiss notification">
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
     </main>
   );
 }
@@ -327,7 +403,11 @@ function Overview({
                 .filter((t) => t.status !== "Done")
                 .slice(0, 4)
                 .map((t) => (
-                  <button key={t.id} onClick={() => onTaskOpen(t)} className="flex w-full items-center justify-between gap-3 py-3 text-left text-sm hover:text-blue-700">
+                  <button
+                    key={t.id}
+                    onClick={() => onTaskOpen(t)}
+                    className="flex w-full items-center justify-between gap-3 py-3 text-left text-sm hover:text-blue-700"
+                  >
                     <span>
                       <b>{t.title}</b>
                       <small className="mt-1 block text-slate-500">
@@ -422,7 +502,10 @@ function TaskBoard({
                     variant="ghost"
                     size="icon"
                     className="size-8"
-                    onClick={(event) => { event.stopPropagation(); toggle(t.id); }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggle(t.id);
+                    }}
                     aria-label={t.status === "Done" ? "Reopen task" : "Mark task complete"}
                   >
                     <CheckCircle2
@@ -433,7 +516,9 @@ function TaskBoard({
                 <TableCell
                   className={`max-w-[340px] whitespace-normal font-medium ${t.status === "Done" ? "text-slate-400 line-through" : ""}`}
                 >
-                  <button onClick={() => onOpen(t)} className="text-left hover:text-blue-700">{t.title}</button>
+                  <button onClick={() => onOpen(t)} className="text-left hover:text-blue-700">
+                    {t.title}
+                  </button>
                 </TableCell>
                 <TableCell>{t.assignee}</TableCell>
                 <TableCell className="text-slate-500">{t.due}</TableCell>
@@ -605,14 +690,22 @@ function Timeline({ tasks, onOpen }: { tasks: Task[]; onOpen: (task: Task) => vo
                 {selected.confidence}% likely by the planned date
               </span>
             </div>
-            <Button className="self-center" variant="outline" onClick={() => onOpen(selected.task)}>Open task</Button>
+            <Button className="self-center" variant="outline" onClick={() => onOpen(selected.task)}>
+              Open task
+            </Button>
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
-function Forecasts({ project, onOpenEvidence }: { project: (typeof seedProjects)[number]; onOpenEvidence: () => void }) {
+function Forecasts({
+  project,
+  onOpenEvidence,
+}: {
+  project: (typeof seedProjects)[number];
+  onOpenEvidence: () => void;
+}) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {[
@@ -631,14 +724,24 @@ function Forecasts({ project, onOpenEvidence }: { project: (typeof seedProjects)
             <p className="mt-3 text-sm text-slate-500">
               Evidence updated today · {project.forecasters} forecasters contributing
             </p>
-            <Button variant="link" className="mt-2 px-0" onClick={onOpenEvidence}>Inspect evidence <ChevronRight /></Button>
+            <Button variant="link" className="mt-2 px-0" onClick={onOpenEvidence}>
+              Inspect evidence <ChevronRight />
+            </Button>
           </CardContent>
         </Card>
       ))}
     </div>
   );
 }
-function Resources({ items, onLink, onOpen }: { items: string[]; onLink: () => void; onOpen: (name: string) => void }) {
+function Resources({
+  items,
+  onLink,
+  onOpen,
+}: {
+  items: string[];
+  onLink: () => void;
+  onOpen: (name: string) => void;
+}) {
   return (
     <Card>
       <CardContent className="p-0">
@@ -653,7 +756,11 @@ function Resources({ items, onLink, onOpen }: { items: string[]; onLink: () => v
           </Button>
         </div>
         {items.map((r, i) => (
-          <button key={r} onClick={() => onOpen(r)} className="flex w-full items-center gap-3 border-b p-4 text-left last:border-0 hover:bg-slate-50">
+          <button
+            key={r}
+            onClick={() => onOpen(r)}
+            className="flex w-full items-center gap-3 border-b p-4 text-left last:border-0 hover:bg-slate-50"
+          >
             <span className="rounded bg-blue-50 p-2 text-blue-700">
               {i === 1 ? <Folder className="size-4" /> : <FileText className="size-4" />}
             </span>
@@ -667,7 +774,13 @@ function Resources({ items, onLink, onOpen }: { items: string[]; onLink: () => v
     </Card>
   );
 }
-function Risks({ project, onReview }: { project: (typeof seedProjects)[number]; onReview: (risk: string) => void }) {
+function Risks({
+  project,
+  onReview,
+}: {
+  project: (typeof seedProjects)[number];
+  onReview: (risk: string) => void;
+}) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {project.risks.map((r, i) => (
@@ -738,13 +851,204 @@ function Activity({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function TaskDrawer({ task, project, onClose, onToggle, onEvidence }: { task: Task | null; project: (typeof seedProjects)[number]; onClose: () => void; onToggle: (id: number) => void; onEvidence: () => void }) {
+function TaskDrawer({
+  task,
+  project,
+  onClose,
+  onToggle,
+  onEvidence,
+}: {
+  task: Task | null;
+  project: (typeof seedProjects)[number];
+  onClose: () => void;
+  onToggle: (id: number) => void;
+  onEvidence: () => void;
+}) {
   if (!task) return null;
   const complete = task.status === "Done";
-  return <Drawer open={Boolean(task)} onOpenChange={(open) => !open && onClose()} swipeDirection="right"><DrawerContent className="w-full sm:[--drawer-content-width:44rem]"><div className="flex min-h-0 flex-1 flex-col overflow-y-auto"><DrawerHeader className="flex-row items-start justify-between border-b p-6"><div><p className="text-xs font-semibold tracking-widest text-blue-600 uppercase">Task · {project.name}</p><DrawerTitle className="mt-2 text-xl leading-7">{task.title}</DrawerTitle><DrawerDescription className="mt-2">Track delivery, evidence, and forecast exposure in one place.</DrawerDescription></div><Button variant="ghost" size="icon" onClick={onClose} aria-label="Close task details"><X /></Button></DrawerHeader><div className="space-y-6 p-6"><div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium">{task.status}</span><span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">{task.priority}</span><span className="text-sm text-slate-500">Assigned to {task.assignee} · Due {task.due}</span></div><section><h3 className="font-semibold">Forecast intelligence</h3><p className="mt-2 text-sm leading-6 text-slate-600">This task feeds the {project.nextMilestone} delivery forecast. Current evidence indicates a {task.priority === "Urgent" ? "58%" : "74%"} likelihood of completion by the planned due date.</p><div className="mt-4 rounded-lg border bg-blue-50 p-4"><p className="font-medium">Completion unblocks the next milestone</p><div className="mt-2 h-2 overflow-hidden rounded-full bg-blue-100"><div className="h-full rounded-full bg-blue-600" style={{ width: task.priority === "Urgent" ? "62%" : "74%" }} /></div><p className="mt-2 text-xs text-slate-600">Forecast updates whenever linked evidence changes.</p></div><Button variant="link" className="mt-2 px-0" onClick={onEvidence}>View forecast evidence <ChevronRight /></Button></section><section><h3 className="font-semibold">Signals & evidence</h3><div className="mt-3 divide-y rounded-lg border"><div className="p-4"><p className="font-medium">Thermal model review · Aug 8</p><p className="mt-1 text-sm text-slate-600">A reinforcement tradeoff lowered the task’s on-time forecast by 8 points.</p></div><div className="p-4"><p className="font-medium">Supplier readiness update</p><p className="mt-1 text-sm text-slate-600">Test-article material allocation remains pending confirmation.</p></div></div></section><section><h3 className="font-semibold">Subtasks</h3><div className="mt-3 space-y-2 text-sm"><label className="flex items-center gap-2"><input type="checkbox" defaultChecked /> Confirm reinforcement geometry</label><label className="flex items-center gap-2"><input type="checkbox" /> Align material release</label><label className="flex items-center gap-2"><input type="checkbox" /> Record review decision</label></div></section></div><DrawerFooter className="flex-row justify-end border-t bg-slate-50 p-4"><Button variant="outline" onClick={onClose}>Close</Button><Button onClick={() => onToggle(task.id)}><CheckCircle2 />{complete ? "Reopen task" : "Mark complete"}</Button></DrawerFooter></div></DrawerContent></Drawer>;
+  return (
+    <Drawer open={Boolean(task)} onOpenChange={(open) => !open && onClose()} swipeDirection="right">
+      <DrawerContent className="w-full sm:[--drawer-content-width:44rem]">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <DrawerHeader className="flex-row items-start justify-between border-b p-6">
+            <div>
+              <p className="text-xs font-semibold tracking-widest text-blue-600 uppercase">
+                Task · {project.name}
+              </p>
+              <DrawerTitle className="mt-2 text-xl leading-7">{task.title}</DrawerTitle>
+              <DrawerDescription className="mt-2">
+                Track delivery, evidence, and forecast exposure in one place.
+              </DrawerDescription>
+            </div>
+            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close task details">
+              <X />
+            </Button>
+          </DrawerHeader>
+          <div className="space-y-6 p-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium">
+                {task.status}
+              </span>
+              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                {task.priority}
+              </span>
+              <span className="text-sm text-slate-500">
+                Assigned to {task.assignee} · Due {task.due}
+              </span>
+            </div>
+            <section>
+              <h3 className="font-semibold">Forecast intelligence</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                This task feeds the {project.nextMilestone} delivery forecast. Current evidence
+                indicates a {task.priority === "Urgent" ? "58%" : "74%"} likelihood of completion by
+                the planned due date.
+              </p>
+              <div className="mt-4 rounded-lg border bg-blue-50 p-4">
+                <p className="font-medium">Completion unblocks the next milestone</p>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-blue-100">
+                  <div
+                    className="h-full rounded-full bg-blue-600"
+                    style={{ width: task.priority === "Urgent" ? "62%" : "74%" }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-slate-600">
+                  Forecast updates whenever linked evidence changes.
+                </p>
+              </div>
+              <Button variant="link" className="mt-2 px-0" onClick={onEvidence}>
+                View forecast evidence <ChevronRight />
+              </Button>
+            </section>
+            <section>
+              <h3 className="font-semibold">Signals & evidence</h3>
+              <div className="mt-3 divide-y rounded-lg border">
+                <div className="p-4">
+                  <p className="font-medium">Thermal model review · Aug 8</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    A reinforcement tradeoff lowered the task’s on-time forecast by 8 points.
+                  </p>
+                </div>
+                <div className="p-4">
+                  <p className="font-medium">Supplier readiness update</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Test-article material allocation remains pending confirmation.
+                  </p>
+                </div>
+              </div>
+            </section>
+            <section>
+              <h3 className="font-semibold">Subtasks</h3>
+              <div className="mt-3 space-y-2 text-sm">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" defaultChecked /> Confirm reinforcement geometry
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" /> Align material release
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" /> Record review decision
+                </label>
+              </div>
+            </section>
+          </div>
+          <DrawerFooter className="flex-row justify-end border-t bg-slate-50 p-4">
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+            <Button onClick={() => onToggle(task.id)}>
+              <CheckCircle2 />
+              {complete ? "Reopen task" : "Mark complete"}
+            </Button>
+          </DrawerFooter>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
 }
 
-function ForecastEvidenceDrawer({ open, project, onClose }: { open: boolean; project: (typeof seedProjects)[number]; onClose: () => void }) {
-  const evidence = [{ source: "Thermal model review", time: "Aug 8 · 10:42 AM", impact: "−8 pts", tone: "text-rose-700 bg-rose-50", detail: "The revised thermal model surfaced a reinforcement tradeoff that may compromise side-impact energy absorption." }, { source: "Supplier readiness update", time: "Aug 7 · 4:15 PM", impact: "−3 pts", tone: "text-rose-700 bg-rose-50", detail: "Material allocation remains unconfirmed, reducing the buffer before the alpha test build." }, { source: "Fixture calibration cleared", time: "Aug 7 · 9:18 AM", impact: "+2 pts", tone: "text-emerald-700 bg-emerald-50", detail: "The validation lab cleared fixture calibration, removing a readiness blocker." }];
-  return <Drawer open={open} onOpenChange={(next) => !next && onClose()} swipeDirection="right"><DrawerContent className="w-full sm:[--drawer-content-width:44rem]"><div className="flex min-h-0 flex-1 flex-col overflow-y-auto"><DrawerHeader className="flex-row items-start justify-between border-b p-6"><div><p className="text-xs font-semibold tracking-widest text-blue-600 uppercase">Forecast evidence · {project.name}</p><DrawerTitle className="mt-2 text-xl">Why is this forecast {project.topForecastProbability}%?</DrawerTitle><DrawerDescription className="mt-2">The latest signals and their directional impact on the key project forecast.</DrawerDescription></div><Button variant="ghost" size="icon" onClick={onClose} aria-label="Close forecast evidence"><X /></Button></DrawerHeader><div className="space-y-3 p-6">{evidence.map((item) => <article key={item.source} className="rounded-lg border p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="font-medium">{item.source}</h3><p className="mt-1 text-xs text-slate-500">{item.time}</p></div><span className={`rounded-full px-2 py-1 text-xs font-semibold ${item.tone}`}>{item.impact}</span></div><p className="mt-3 text-sm leading-6 text-slate-600">{item.detail}</p><p className="mt-3 inline-flex items-center gap-1 text-xs text-slate-500"><FileText className="size-3" /> Forecast-relevant evidence</p></article>)}</div><DrawerFooter className="flex-row justify-end border-t bg-slate-50 p-4"><Button onClick={onClose}>Done</Button></DrawerFooter></div></DrawerContent></Drawer>;
+function ForecastEvidenceDrawer({
+  open,
+  project,
+  onClose,
+}: {
+  open: boolean;
+  project: (typeof seedProjects)[number];
+  onClose: () => void;
+}) {
+  const evidence = [
+    {
+      source: "Thermal model review",
+      time: "Aug 8 · 10:42 AM",
+      impact: "−8 pts",
+      tone: "text-rose-700 bg-rose-50",
+      detail:
+        "The revised thermal model surfaced a reinforcement tradeoff that may compromise side-impact energy absorption.",
+    },
+    {
+      source: "Supplier readiness update",
+      time: "Aug 7 · 4:15 PM",
+      impact: "−3 pts",
+      tone: "text-rose-700 bg-rose-50",
+      detail:
+        "Material allocation remains unconfirmed, reducing the buffer before the alpha test build.",
+    },
+    {
+      source: "Fixture calibration cleared",
+      time: "Aug 7 · 9:18 AM",
+      impact: "+2 pts",
+      tone: "text-emerald-700 bg-emerald-50",
+      detail: "The validation lab cleared fixture calibration, removing a readiness blocker.",
+    },
+  ];
+  return (
+    <Drawer open={open} onOpenChange={(next) => !next && onClose()} swipeDirection="right">
+      <DrawerContent className="w-full sm:[--drawer-content-width:44rem]">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <DrawerHeader className="flex-row items-start justify-between border-b p-6">
+            <div>
+              <p className="text-xs font-semibold tracking-widest text-blue-600 uppercase">
+                Forecast evidence · {project.name}
+              </p>
+              <DrawerTitle className="mt-2 text-xl">
+                Why is this forecast {project.topForecastProbability}%?
+              </DrawerTitle>
+              <DrawerDescription className="mt-2">
+                The latest signals and their directional impact on the key project forecast.
+              </DrawerDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              aria-label="Close forecast evidence"
+            >
+              <X />
+            </Button>
+          </DrawerHeader>
+          <div className="space-y-3 p-6">
+            {evidence.map((item) => (
+              <article key={item.source} className="rounded-lg border p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-medium">{item.source}</h3>
+                    <p className="mt-1 text-xs text-slate-500">{item.time}</p>
+                  </div>
+                  <span className={`rounded-full px-2 py-1 text-xs font-semibold ${item.tone}`}>
+                    {item.impact}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{item.detail}</p>
+                <p className="mt-3 inline-flex items-center gap-1 text-xs text-slate-500">
+                  <FileText className="size-3" /> Forecast-relevant evidence
+                </p>
+              </article>
+            ))}
+          </div>
+          <DrawerFooter className="flex-row justify-end border-t bg-slate-50 p-4">
+            <Button onClick={onClose}>Done</Button>
+          </DrawerFooter>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
 }

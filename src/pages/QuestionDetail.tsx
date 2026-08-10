@@ -181,8 +181,8 @@ export default function QuestionDetail() {
         </div>
       </div>
 
-      <Card className="mb-5 border-0 bg-transparent p-0 shadow-none">
-        <CardContent className="p-0">
+      <Card className="mb-5">
+        <CardContent>
           <ProbChart
             points={chartConfig.points}
             endpointLabel={chartConfig.endpointLabel}
