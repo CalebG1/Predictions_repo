@@ -17,6 +17,7 @@ import Assumptions from "./pages/Assumptions";
 import Competitors from "./pages/Competitors";
 import CompetitorProfile from "./pages/CompetitorProfile";
 import Standards from "./pages/Standards";
+import WhiteSpace from "./pages/WhiteSpace";
 
 function AppShell() {
   return (
@@ -35,6 +36,7 @@ function AppShell() {
         <Route path="/competitors" element={<Competitors />} />
         <Route path="/competitors/:competitorId" element={<CompetitorProfile />} />
         <Route path="/standards" element={<Standards />} />
+        <Route path="/whitespace" element={<WhiteSpace />} />
         <Route path="/settings" element={<Settings />}>
           <Route index element={<Navigate to="methodology" replace />} />
           <Route path="methodology" element={<Methodology />} />

@@ -103,6 +103,12 @@ import {
   type InterventionRow,
   type InterventionSuggestion,
 } from "./domain/interventions";
+import {
+  buildWhiteSpaceCandidates,
+  whiteSpaceCandidateById,
+  type WhiteSpaceCandidate,
+  type WhiteSpaceDecision,
+} from "./domain/whitespace";
 
 const ALERTS_STORAGE_KEY = "foresight-probability-alerts";
 const CONTEXT_ITEMS_KEY = "foresight-context-items";
@@ -120,6 +126,30 @@ const ASSUMPTIONS_KEY = "foresight-assumptions";
 const ASSUMPTION_EVIDENCE_LINKS_KEY = "foresight-assumption-evidence-links";
 const ASSUMPTION_PROPOSALS_KEY = "foresight-assumption-proposals";
 const ASSUMPTION_NOTES_KEY = "foresight-assumption-notes";
+const WHITESPACE_DECISIONS_KEY = "foresight-whitespace-decisions";
+
+export interface WhiteSpaceRow {
+  candidate: WhiteSpaceCandidate;
+  decision?: WhiteSpaceDecision;
+}
+
+function loadWhiteSpaceDecisions(): Record<string, WhiteSpaceDecision> {
+  try {
+    const raw = localStorage.getItem(WHITESPACE_DECISIONS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, WhiteSpaceDecision>;
+  } catch {
+    return {};
+  }
+}
+
+function saveWhiteSpaceDecisions(decisions: Record<string, WhiteSpaceDecision>) {
+  try {
+    localStorage.setItem(WHITESPACE_DECISIONS_KEY, JSON.stringify(decisions));
+  } catch {
+    /* ignore quota errors */
+  }
+}
 
 function loadTeamJoinRequests(): TeamJoinRequest[] {
   try {
@@ -607,6 +637,14 @@ interface StoreCtx {
     isChallenge: boolean,
     evidenceId?: string,
   ) => void;
+  /** Active white-space candidates joined with triage decisions. */
+  whiteSpaceRows: WhiteSpaceRow[];
+  /** All rows including dismissed/watching/promoted (for the "show dismissed" toggle). */
+  whiteSpaceRowsAll: WhiteSpaceRow[];
+  promoteWhiteSpaceCandidate: (candidateId: string) => ForecastQuestion | null;
+  watchWhiteSpaceCandidate: (candidateId: string) => void;
+  dismissWhiteSpaceCandidate: (candidateId: string, reason?: string) => void;
+  restoreWhiteSpaceCandidate: (candidateId: string) => void;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -677,6 +715,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [assumptionNotes, setAssumptionNotes] = useState<AssumptionNote[]>(() =>
     loadAssumptionNotes(),
   );
+  const [whiteSpaceDecisions, setWhiteSpaceDecisions] = useState<
+    Record<string, WhiteSpaceDecision>
+  >(() => loadWhiteSpaceDecisions());
   /**
    * Run ids whose probability effect has been applied THIS SESSION. Probability
    * overrides and history live in session state, so completed act-runs re-apply
@@ -2438,6 +2479,113 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [user, persistAssumptionNotes, persistAssumptions],
   );
 
+  const persistWhiteSpaceDecisions = useCallback(
+    (
+      updater: (prev: Record<string, WhiteSpaceDecision>) => Record<string, WhiteSpaceDecision>,
+    ) => {
+      setWhiteSpaceDecisions((prev) => {
+        const next = updater(prev);
+        saveWhiteSpaceDecisions(next);
+        return next;
+      });
+    },
+    [],
+  );
+
+  const whiteSpaceRowsAll = useMemo<WhiteSpaceRow[]>(() => {
+    const active = buildWhiteSpaceCandidates(mergedQuestions);
+    const activeIds = new Set(active.map((c) => c.id));
+    const rows: WhiteSpaceRow[] = active.map((candidate) => ({
+      candidate,
+      decision: whiteSpaceDecisions[candidate.id],
+    }));
+    // Keep promoted/dismissed/watching rows that no longer satisfy a gap
+    // (e.g. after promotion filled the cell) so the user can still find them.
+    for (const [id, decision] of Object.entries(whiteSpaceDecisions)) {
+      if (activeIds.has(id)) continue;
+      const candidate = whiteSpaceCandidateById(id);
+      if (!candidate) continue;
+      rows.push({ candidate, decision });
+    }
+    return rows;
+  }, [mergedQuestions, whiteSpaceDecisions]);
+
+  const whiteSpaceRows = useMemo(
+    () =>
+      whiteSpaceRowsAll.filter(
+        (row) => !row.decision || row.decision.status === "watching",
+      ),
+    [whiteSpaceRowsAll],
+  );
+
+  const promoteWhiteSpaceCandidate = useCallback(
+    (candidateId: string): ForecastQuestion | null => {
+      const candidate = whiteSpaceCandidateById(candidateId);
+      if (!candidate) return null;
+      const existing = whiteSpaceDecisions[candidateId];
+      if (existing?.status === "promoted" && existing.questionId) {
+        const q = mergedQuestions.find((item) => item.id === existing.questionId);
+        return q ?? null;
+      }
+      const question = addQuestion(candidate.createInput);
+      persistWhiteSpaceDecisions((prev) => ({
+        ...prev,
+        [candidateId]: {
+          status: "promoted",
+          decidedAt: new Date().toISOString(),
+          questionId: question.id,
+        },
+      }));
+      return question;
+    },
+    [whiteSpaceDecisions, mergedQuestions, addQuestion, persistWhiteSpaceDecisions],
+  );
+
+  const watchWhiteSpaceCandidate = useCallback(
+    (candidateId: string) => {
+      if (!whiteSpaceCandidateById(candidateId)) return;
+      persistWhiteSpaceDecisions((prev) => ({
+        ...prev,
+        [candidateId]: {
+          status: "watching",
+          decidedAt: new Date().toISOString(),
+          questionId: prev[candidateId]?.questionId,
+        },
+      }));
+    },
+    [persistWhiteSpaceDecisions],
+  );
+
+  const dismissWhiteSpaceCandidate = useCallback(
+    (candidateId: string, reason?: string) => {
+      if (!whiteSpaceCandidateById(candidateId)) return;
+      persistWhiteSpaceDecisions((prev) => ({
+        ...prev,
+        [candidateId]: {
+          status: "dismissed",
+          decidedAt: new Date().toISOString(),
+          dismissReason: reason?.trim() || undefined,
+          questionId: prev[candidateId]?.questionId,
+        },
+      }));
+    },
+    [persistWhiteSpaceDecisions],
+  );
+
+  const restoreWhiteSpaceCandidate = useCallback(
+    (candidateId: string) => {
+      persistWhiteSpaceDecisions((prev) => {
+        if (!(candidateId in prev)) return prev;
+        // Don't un-promote a live question — only clear watch/dismiss.
+        if (prev[candidateId].status === "promoted") return prev;
+        const next = { ...prev };
+        delete next[candidateId];
+        return next;
+      });
+    },
+    [persistWhiteSpaceDecisions],
+  );
+
   const value = useMemo<StoreCtx>(() => {
     const visible = visibleQuestions(user, mergedQuestions, accessGrants);
     const hidden = new Set(hiddenByUser[user.id] ?? []);
@@ -2537,6 +2685,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       rejectAssumptionProposal,
       assumptionNotesFor,
       addAssumptionNote,
+      whiteSpaceRows,
+      whiteSpaceRowsAll,
+      promoteWhiteSpaceCandidate,
+      watchWhiteSpaceCandidate,
+      dismissWhiteSpaceCandidate,
+      restoreWhiteSpaceCandidate,
       outcomesFor: (questionId) =>
         allOutcomes.filter((o) => o.questionId === questionId).map(applyOutcomeOverrides),
       historyFor,
@@ -2645,6 +2799,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     rejectAssumptionProposal,
     assumptionNotesFor,
     addAssumptionNote,
+    whiteSpaceRows,
+    whiteSpaceRowsAll,
+    promoteWhiteSpaceCandidate,
+    watchWhiteSpaceCandidate,
+    dismissWhiteSpaceCandidate,
+    restoreWhiteSpaceCandidate,
   ]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -16,6 +16,7 @@ export default function Header() {
     { label: "Forecasts", path: "/movers" },
     { label: "Competitors", path: "/competitors" },
     { label: "Standards", path: "/standards" },
+    { label: "White space", path: "/whitespace" },
   ];
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
